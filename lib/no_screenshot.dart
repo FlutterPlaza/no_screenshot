@@ -1,6 +1,6 @@
 import 'no_screenshot_platform_interface.dart';
 
- class NoScreenshot implements NoScreenshotPlatform {
+class NoScreenshot implements NoScreenshotPlatform {
   final _instancePlatform = NoScreenshotPlatform.instance;
   NoScreenshot._();
 

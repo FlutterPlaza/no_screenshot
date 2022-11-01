@@ -9,3 +9,8 @@ Updated readme and added sample usage.
 
 ## 0.0.1+2 
 - Adopted MIT license
+
+## 0.0.1+3 
+- Reverted to BSD 3 license 
+- Added documentation
+- Made `NoScreenshot` class a singleton
