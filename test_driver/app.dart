@@ -4,6 +4,5 @@ import '../example/lib/main.dart' as app;
 
 void main() {
   enableFlutterDriverExtension();
-
   app.main();
 }

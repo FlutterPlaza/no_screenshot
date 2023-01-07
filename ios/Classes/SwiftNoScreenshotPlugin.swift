@@ -1,39 +1,72 @@
 import Flutter
 import UIKit
+import ScreenProtectorKit
 
 
-public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin{
-    static var field = UITextField()
+public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
+    private var screenProtectorKit: ScreenProtectorKit? = nil
+    private static var channel: FlutterMethodChannel? = nil
+    static private var preventScreenShot: Bool = false
+
+    init(screenProtectorKit: ScreenProtectorKit) {
+        self.screenProtectorKit = screenProtectorKit
+    }
+
+
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "com.flutterplaza.no_screenshot", binaryMessenger: registrar.messenger())
-        let instance = SwiftNoScreenshotPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.field =  UIApplication.shared.keyWindow!.initializeUITextField(field: field)
+        SwiftNoScreenshotPlugin.channel = FlutterMethodChannel(name: "com.flutterplaza.no_screenshot", binaryMessenger: registrar.messenger())
+        let window = UIApplication.shared.delegate?.window
+
+        let screenProtectorKit = ScreenProtectorKit(window: window as? UIWindow)
+        screenProtectorKit.configurePreventionScreenshot()
+
+        let instance = SwiftNoScreenshotPlugin(screenProtectorKit: screenProtectorKit)
+        registrar.addMethodCallDelegate(instance, channel: SwiftNoScreenshotPlugin.channel!)
+        registrar.addApplicationDelegate(instance)
+    }
+
+
+    public func applicationWillResignActive(_ application: UIApplication) {
+        if SwiftNoScreenshotPlugin.preventScreenShot == true {
+            screenProtectorKit?.enabledPreventScreenshot()
+        } else if SwiftNoScreenshotPlugin.preventScreenShot == false {
+            screenProtectorKit?.disablePreventScreenshot()
         }
     }
-    
+
+    public func applicationDidBecomeActive(_ application: UIApplication) {
+        if SwiftNoScreenshotPlugin.preventScreenShot == true {
+            screenProtectorKit?.enabledPreventScreenshot()
+        } else if SwiftNoScreenshotPlugin.preventScreenShot == false {
+            screenProtectorKit?.disablePreventScreenshot()
+        }
+    }
+
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if(call.method == "screenshotOff"){
-            SwiftNoScreenshotPlugin.field.isSecureTextEntry = true
-        }else if(call.method == "screenshotOn"){
-            SwiftNoScreenshotPlugin.field.isSecureTextEntry = false
-        }else if(call.method == "toggleScreenshot"){
-            SwiftNoScreenshotPlugin.field.isSecureTextEntry = SwiftNoScreenshotPlugin.field.isSecureTextEntry
-            ? false
-            : true
+        if (call.method == "screenshotOff") {
+            SwiftNoScreenshotPlugin.preventScreenShot = false
+            shotOff()
+
+        } else if (call.method == "screenshotOn") {
+            SwiftNoScreenshotPlugin.preventScreenShot = true
+            shotOn()
+        } else if (call.method == "toggleScreenshot") {
+            SwiftNoScreenshotPlugin.preventScreenShot = !SwiftNoScreenshotPlugin.preventScreenShot;
+            SwiftNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
         }
         result(true)
     }
-}
 
-extension UIWindow {
-    func initializeUITextField(field :UITextField) -> UITextField{
-        self.addSubview(field)
-        field.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
-        field.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
-        self.layer.superlayer?.addSublayer(field.layer)
-        field.layer.sublayers?.first?.addSublayer(self.layer)
-        return field;
+    private func shotOff() {
+        screenProtectorKit?.enabledPreventScreenshot()
+    }
+
+    private func shotOn() {
+
+        screenProtectorKit?.disablePreventScreenshot()
+    }
+
+    deinit {
+        screenProtectorKit?.removeAllObserver()
     }
 }
