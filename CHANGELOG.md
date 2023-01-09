@@ -14,3 +14,9 @@ Updated readme and added sample usage.
 - Reverted to BSD 3 license 
 - Added documentation
 - Made `NoScreenshot` class a singleton
+
+## 0.0.1+4 
+- Fixed issue #1[Crashes app when backgrounded on iOS](https://github.com/FlutterPlaza/no_screenshot/issues/1) 
+
+## 0.0.1+5 
+- Fixed broken link from pub dev analyses 
