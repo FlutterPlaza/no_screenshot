@@ -68,16 +68,12 @@ class NoScreenshotPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     activity = binding.activity;
   }
 
-  override fun onDetachedFromActivityForConfigChanges() {
-    activity.clear();
-  }
+  override fun onDetachedFromActivityForConfigChanges() {}
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     activity = binding.activity;
 
   }
 
-  override fun onDetachedFromActivity() {
-    activity.clear();
-  }
+  override fun onDetachedFromActivity() {}
 }
