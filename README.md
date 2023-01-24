@@ -2,17 +2,17 @@
 
 Flutter plugin to enable, disable or toggle screenshot support in your application.
 
-
 ## Features
-  - Disables screenshot and screen recoding on Android and iOS
-  - Enables screenshot and screen recoding on Android and iOS
-  - Toggle screenshot and screen recoding on Android and iOS 
+
+- Disables screenshot and screen recoding on Android and iOS
+- Enables screenshot and screen recoding on Android and iOS
+- Toggles screenshot and screen recoding on Android and iOS
+
 ## Getting started
 
-If you want to prevent user from taking screenshot or recording of your app. You can turn off the screenshot support from the root `didChangeAppLifecycleState` method. 
+If you want to prevent user from taking screenshot or recording of your app. You can turn off the screenshot support from the root `didChangeAppLifecycleState` method.
 
-
-```dart 
+```dart
     class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     final _noScreenshot = NoScreenshot();
 
@@ -53,12 +53,13 @@ If you want to prevent user from taking screenshot or recording of your app. You
 ```
 
 ## Usage
+
 Add `no_screenshot` to your `pubspec.yaml` dependencies
 
-call the singleton `NoScreenshot.instance` anywhere you want to use it. 
+call the singleton `NoScreenshot.instance` anywhere you want to use it.
 For instance;
 
-```dart 
+```dart
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

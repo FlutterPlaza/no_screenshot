@@ -68,16 +68,12 @@ class NoScreenshotPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     activity = binding.activity;
   }
 
-  override fun onDetachedFromActivityForConfigChanges() {
-    TODO("Not yet implemented")
-  }
+  override fun onDetachedFromActivityForConfigChanges() {}
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     activity = binding.activity;
 
   }
 
-  override fun onDetachedFromActivity() {
-    TODO("Not yet implemented")
-  }
+  override fun onDetachedFromActivity() {}
 }
