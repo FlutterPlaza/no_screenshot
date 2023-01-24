@@ -6,7 +6,7 @@ Flutter plugin to enable, disable or toggle screenshot support in your applicati
 
 - Disables screenshot and screen recoding on Android and iOS
 - Enables screenshot and screen recoding on Android and iOS
-- Toggle screenshot and screen recoding on Android and iOS
+- Toggles screenshot and screen recoding on Android and iOS
 
 ## Getting started
 

@@ -29,4 +29,4 @@ Updated readme and added sample usage.
 
 ## 0.0.1+6
 
-- Fixed Non Implemented function in android life-cycle
+- Removed the non implemented override functions in android life-cycle
