@@ -18,12 +18,13 @@ void main() {
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
       switch (methodCall.method) {
         case screenShotOffConst:
-          break;
+          return true;
         case screenShotOnConst:
-          break;
+          return true;
         case toggleScreenShotConst:
-          break;
+          return true;
         default:
+          return false;
       }
     });
   });
@@ -68,8 +69,8 @@ void main() {
         forthScreenshot = await driver.screenshot();
         expect(thirdScreenshot != forthScreenshot, true);
       }
-      final fithScreenshot = await driver.screenshot();
-      expect(forthScreenshot == fithScreenshot, true);
+      final fifthScreenshot = await driver.screenshot();
+      expect(forthScreenshot == fifthScreenshot, true);
     });
   });
   tearDown(() {
