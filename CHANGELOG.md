@@ -35,3 +35,9 @@ Updated readme and added sample usage.
 
 - Set the namespace for android
 - Specify a more current version of ScreenProtectorKit.  This resolves iOS17 issues.
+
+## 0.0.1+8
+
+- fix: screenshot prevention on iOS
+- updated readme by @Musaddiq635 PR[https://github.com/FlutterPlaza/no_screenshot/pull/26]
+- merged fix by @ggiordan PR[https://github.com/FlutterPlaza/no_screenshot/pull/29]
