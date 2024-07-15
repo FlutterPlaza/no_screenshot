@@ -30,3 +30,8 @@ Updated readme and added sample usage.
 ## 0.0.1+6
 
 - Removed the non implemented override functions in android life-cycle
+
+## 0.0.1+7
+
+- Set the namespace for android
+- Specify a more current version of ScreenProtectorKit.  This resolves iOS17 issues.

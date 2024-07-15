@@ -14,7 +14,7 @@ If you want to prevent user from taking screenshot or recording of your app. You
 
 ```dart
     class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-    final _noScreenshot = NoScreenshot();
+    final _noScreenshot = NoScreenshot.instance;
 
   AppLifecycleState? _notification; 
   @override
