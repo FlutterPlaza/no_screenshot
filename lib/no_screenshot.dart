@@ -4,6 +4,9 @@ class NoScreenshot implements NoScreenshotPlatform {
   final _instancePlatform = NoScreenshotPlatform.instance;
   NoScreenshot._();
 
+  @Deprecated("Using this may cause issue\nUse instance directly\ne.g: 'NoScreenshot.instance.screenshotOff()'")
+  NoScreenshot();
+
   /// Made `NoScreenshot` class a singleton
   static NoScreenshot get instance => NoScreenshot._();
 
