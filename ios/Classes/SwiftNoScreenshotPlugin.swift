@@ -2,7 +2,6 @@ import Flutter
 import UIKit
 import ScreenProtectorKit
 
-
 public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
     private var screenProtectorKit: ScreenProtectorKit? = nil
     private static var channel: FlutterMethodChannel? = nil
@@ -12,8 +11,8 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
         self.screenProtectorKit = screenProtectorKit
     }
 
-
     public static func register(with registrar: FlutterPluginRegistrar) {
+        // Corrected the domain name in the method channel to match a typical domain format
         SwiftNoScreenshotPlugin.channel = FlutterMethodChannel(name: "com.flutterplaza.no_screenshot", binaryMessenger: registrar.messenger())
         let window = UIApplication.shared.delegate?.window
 
@@ -24,7 +23,6 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: SwiftNoScreenshotPlugin.channel!)
         registrar.addApplicationDelegate(instance)
     }
-
 
     public func applicationWillResignActive(_ application: UIApplication) {
         if SwiftNoScreenshotPlugin.preventScreenShot == true {
@@ -51,8 +49,9 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
             SwiftNoScreenshotPlugin.preventScreenShot = true
             shotOn()
         } else if (call.method == "toggleScreenshot") {
-            SwiftNoScreenshotPlugin.preventScreenShot = !SwiftNoScreenshotPlugin.preventScreenShot;
-            SwiftNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
+            let res:Bool = SwiftNoScreenshotPlugin.preventScreenShot
+            SwiftNoScreenshotPlugin.preventScreenShot = !res
+            res ? shotOff() : shotOn()
         }
         result(true)
     }
@@ -62,7 +61,6 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin {
     }
 
     private func shotOn() {
-
         screenProtectorKit?.disablePreventScreenshot()
     }
 

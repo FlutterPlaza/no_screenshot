@@ -25,7 +25,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('NoScreenShot Plugin app'),
         ),
         body: Center(
             child: Column(
@@ -35,21 +35,21 @@ class _MyAppState extends State<MyApp> {
               child: const Text('Press to toggle screenshot'),
               onPressed: () async {
                 final result = await _noScreenshot.toggleScreenshot();
-                print(result);
+                debugPrint(result.toString());
               },
             ),
             ElevatedButton(
               child: const Text('Press to turn off screenshot'),
               onPressed: () async {
                 final result = await _noScreenshot.screenshotOff();
-                print(result);
+                debugPrint(result.toString());
               },
             ),
             ElevatedButton(
               child: const Text('Press to turn on screenshot'),
               onPressed: () async {
                 final result = await _noScreenshot.screenshotOn();
-                print(result);
+                debugPrint(result.toString());
               },
             ),
           ],
