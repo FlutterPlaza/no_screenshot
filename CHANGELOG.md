@@ -38,3 +38,10 @@ Updated readme and added sample usage.
 - fix: screenshot prevention on iOS
 - updated readme by @Musaddiq635 PR[https://github.com/FlutterPlaza/no_screenshot/pull/26]
 - merged fix by @ggiordan PR[https://github.com/FlutterPlaza/no_screenshot/pull/29]
+
+## 0.2.0
+
+- Upgrade android to support AGP 8.X
+- merged fix by @alberto-cappellina PR[https://github.com/FlutterPlaza/no_screenshot/pull/27]
+- gradle:7.1.2 -> 7.4.2
+- kotlin_version = '1.6.10' -> '1.6.21'
