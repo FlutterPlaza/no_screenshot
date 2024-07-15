@@ -13,7 +13,9 @@ void main() {
 
   setUp(() async {
     driver = await FlutterDriver.connect();
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
+    // Updated deprecated method usage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
       switch (methodCall.method) {
         case screenShotOffConst:
           break;
@@ -71,7 +73,9 @@ void main() {
     });
   });
   tearDown(() {
-    channel.setMockMethodCallHandler(null);
+    // Updated deprecated method usage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
     driver.close();
   });
 }
