@@ -8,7 +8,6 @@
 .buildlog/
 .history
 .svn/
-.vscode/*
 migrate_working_dir/
 
 # fvm related
