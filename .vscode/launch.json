@@ -8,7 +8,8 @@
             "name": "no_screenshot",
             "request": "launch",
             "type": "dart", 
-            "program": "example/lib/main.dart"
+            "program": "example/lib/main.dart",
+            "args": ["--verbose"]
         }
     ]
 }
