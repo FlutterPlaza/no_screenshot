@@ -47,7 +47,7 @@ Updated readme and added sample usage.
 - kotlin_version = '1.6.10' -> '1.6.21'
 
 
-## 0.2.1
+## 1.0.0-beta.1
 
 ### Summary of Changes
 
