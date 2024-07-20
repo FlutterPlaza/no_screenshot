@@ -36,7 +36,6 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
   final platform = MockNoScreenshotPlatform();
 
   group('NoScreenshotPlatform', () {

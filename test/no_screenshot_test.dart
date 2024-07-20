@@ -42,7 +42,6 @@ class MockNoScreenshotPlatform
 }
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
   final NoScreenshotPlatform initialPlatform = NoScreenshotPlatform.instance;
   MockNoScreenshotPlatform fakePlatform = MockNoScreenshotPlatform();
 
