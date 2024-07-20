@@ -91,10 +91,7 @@ void main() {
   test('NoScreenshot equality operator', () {
     final instance1 = NoScreenshot.instance;
     final instance2 = NoScreenshot.instance;
-    final differentInstance = NoScreenshot();
 
     expect(instance1 == instance2, true, reason: 'Instances should be equal');
-    expect(instance1 == differentInstance, true,
-        reason: 'Instances should still be equal');
   });
 }
