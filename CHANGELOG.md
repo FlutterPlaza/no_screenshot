@@ -45,3 +45,14 @@ Updated readme and added sample usage.
 - merged fix by @alberto-cappellina PR[https://github.com/FlutterPlaza/no_screenshot/pull/27]
 - gradle:7.1.2 -> 7.4.2
 - kotlin_version = '1.6.10' -> '1.6.21'
+
+## 0.2.1
+
+### Summary of Changes
+
+- **Automatic State Persistence**: Removed the need to track `didChangeAppLifecycleState`. The state will now be automatically persisted using native platform SharedPreferences.
+- **Enhanced Example**: Updated the example app to demonstrate the new automatic state persistence and usage of the `NoScreenshot` plugin.
+- **Stream Support**: Provided a stream to listen for screenshot activities, making it easier to react to screenshots in real-time.
+- **Bug Fixes**: Fixed various bugs related to screenshot detection and state management on both Android and iOS platforms.
+- **Documentation Updates**: Improved documentation to reflect the new features and provide clearer usage examples.
+- **Deprecation Notice**: Deprecated the use of the constructor `NoScreenshot()` in favor of the singleton `NoScreenshot.instance`.
