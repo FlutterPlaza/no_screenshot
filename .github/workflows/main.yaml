@@ -11,5 +11,9 @@ jobs:
     with:
       flutter_channel: stable
       flutter_version: 3.22.3
+    # name: Very Good Coverage
+    # uses: VeryGoodOpenSource/very_good_coverage@v2
+    # with:
+      path: '/coverage/lcov.info'
       min_coverage: 75
       # exclude: "lib/no_screenshot_platform_interface.dart lib/no_screenshot_method_channel.dart"
