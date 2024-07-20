@@ -68,7 +68,7 @@ class NoScreenshot implements NoScreenshotPlatform {
             runtimeType == other.runtimeType &&
             _instancePlatform == other._instancePlatform;
   }
-  
+
   @override
   int get hashCode => _instancePlatform.hashCode;
 }
