@@ -43,7 +43,6 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
                   await _noScreenshot.startScreenshotListening();
@@ -65,7 +64,7 @@ class _MyAppState extends State<MyApp> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Text(
-                    'ScreenshotSnapshot Streaming is $_isListeningToScreenshotSnapshot\n\n  Values: ${_latestValue.toString()}'),
+                    "Screenshot Streaming is ${_isListeningToScreenshotSnapshot ? 'ON' : 'OFF'}\n\nIsScreenshotProtectionOn: ${_latestValue.isScreenshotProtectionOn}\nwasScreenshotTaken: ${_latestValue.wasScreenshotTaken}\nScreenshot Path: ${_latestValue.screenshotPath}"),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -88,6 +87,7 @@ class _MyAppState extends State<MyApp> {
                 },
                 child: const Text('Toggle Screenshot'),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
