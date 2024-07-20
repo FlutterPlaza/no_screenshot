@@ -1,11 +1,11 @@
 name: no_screenshot
 description: Flutter plugin to enable, disable or toggle screenshot support in your application.
-version: 0.2.1
+version: 1.0.0-beta.2
 homepage: https://flutterplaza.com
-repository: https://github.com/FlutterPlaza/no_screenshot/releases/tag/v0.2.1
+repository: https://github.com/FlutterPlaza/no_screenshot/releases/tag/v1.0.0-beta.2
 
 environment:
-  sdk: '>=3.4.4 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
   flutter: ">=1.17.0"
 
 dependencies:
