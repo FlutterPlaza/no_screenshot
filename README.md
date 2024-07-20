@@ -1,5 +1,13 @@
 # no_screenshot
 
+<p align="center">
+<a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
+<a href="https://github.com/FlutterPlaza/no_screenshot/actions"><img src="https://github.com/FlutterPlaza/no_screenshot/workflows/build/badge.svg" alt="build"></a>
+<a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg" alt="codecov"></a>
+<a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
+<a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
+</p>
+
 Flutter plugin to enable, disable or toggle screenshot support in your application.
 
 ## Features
@@ -16,7 +24,7 @@ If you want to prevent user from taking screenshot or recording of your app. You
     class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     final _noScreenshot = NoScreenshot.instance;
 
-  AppLifecycleState? _notification; 
+  AppLifecycleState? _notification;
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
       case AppLifecycleState.resumed, :

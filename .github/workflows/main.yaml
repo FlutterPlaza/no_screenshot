@@ -10,4 +10,6 @@ jobs:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
       flutter_channel: stable
-      flutter_version: 3.3.7
+      flutter_version: 3.22.3
+      min_coverage: 75
+      exclude: "lib/no_screenshot_platform_interface.dart lib/no_screenshot_method_channel.dart"

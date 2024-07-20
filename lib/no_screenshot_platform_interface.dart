@@ -45,17 +45,24 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   Future<bool> toggleScreenshot() {
     throw UnimplementedError('toggleScreenshot() has not been implemented.');
   }
-  /// Stream to listen to the increment value
 
+  /// Stream to screenshot activities [ScreenshotSnapshot]
+  ///  This stream will emit a [ScreenshotSnapshot] whenever a screenshot is taken.
+  /// The [ScreenshotSnapshot] contains the path to the screenshot file.
+  ///  throw `UnmimplementedError` if not implement
   Stream<ScreenshotSnapshot> get screenshotStream {
     throw UnimplementedError('incrementStream has not been implemented.');
   }
 
+// Start listening to screenshot activities
   Future<void> startScreenshotListening() {
-    throw UnimplementedError('startScreenshotListening has not been implemented.');
+    throw UnimplementedError(
+        'startScreenshotListening has not been implemented.');
   }
 
+  /// Stop listening to screenshot activities
   Future<void> stopScreenshotListening() {
-    throw UnimplementedError('stopScreenshotListening has not been implemented.');
+    throw UnimplementedError(
+        'stopScreenshotListening has not been implemented.');
   }
 }
