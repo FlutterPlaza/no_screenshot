@@ -1,8 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:no_screenshot/no_screenshot_platform_interface.dart';
 import 'package:no_screenshot/no_screenshot_method_channel.dart';
 import 'package:no_screenshot/screenshot_snapshot.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockNoScreenshotPlatform
@@ -40,25 +41,60 @@ class MockNoScreenshotPlatform
   }
 }
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final NoScreenshotPlatform initialPlatform = NoScreenshotPlatform.instance;
   MockNoScreenshotPlatform fakePlatform = MockNoScreenshotPlatform();
+
+  setUp(() {
+    NoScreenshotPlatform.instance = fakePlatform;
+  });
+
+  tearDown(() {
+    NoScreenshotPlatform.instance = initialPlatform;
+  });
 
   test('$MethodChannelNoScreenshot is the default instance', () {
     expect(initialPlatform, isInstanceOf<MethodChannelNoScreenshot>());
   });
 
-  test('screenshotOn', () async {
-    expect(await fakePlatform.screenshotOn(), true);
-  });
-  // screenshotOff
-  test('screenshotOff', () async {
-    expect(await fakePlatform.screenshotOff(), true);
+  test('NoScreenshot instance is a singleton', () {
+    final instance1 = NoScreenshot.instance;
+    final instance2 = NoScreenshot.instance;
+    expect(instance1, equals(instance2));
   });
 
-  // toggleScreenshot
+  test('screenshotOn', () async {
+    expect(await NoScreenshot.instance.screenshotOn(), true);
+  });
+
+  test('screenshotOff', () async {
+    expect(await NoScreenshot.instance.screenshotOff(), true);
+  });
+
   test('toggleScreenshot', () async {
-    expect(await fakePlatform.toggleScreenshot(), true);
+    expect(await NoScreenshot.instance.toggleScreenshot(), true);
+  });
+
+  test('screenshotStream', () async {
+    expect(NoScreenshot.instance.screenshotStream,
+        isInstanceOf<Stream<ScreenshotSnapshot>>());
+  });
+  test('startScreenshotListening', () async {
+    expect(NoScreenshot.instance.startScreenshotListening(), completes);
+  });
+
+  test('stopScreenshotListening', () async {
+    expect(NoScreenshot.instance.stopScreenshotListening(), completes);
+  });
+
+  test('NoScreenshot equality operator', () {
+    final instance1 = NoScreenshot.instance;
+    final instance2 = NoScreenshot.instance;
+    final differentInstance = NoScreenshot();
+
+    expect(instance1 == instance2, true, reason: 'Instances should be equal');
+    expect(instance1 == differentInstance, true,
+        reason: 'Instances should still be equal');
   });
 }
