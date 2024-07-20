@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:no_screenshot/no_screenshot_platform_interface.dart';
 import 'package:no_screenshot/no_screenshot_method_channel.dart';
+import 'package:no_screenshot/screenshot_snapshot.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockNoScreenshotPlatform
@@ -23,6 +24,19 @@ class MockNoScreenshotPlatform
   Future<bool> toggleScreenshot() async {
     // Mock implementation or return a fixed value
     return Future.value(true);
+  }
+
+  @override
+  Stream<ScreenshotSnapshot> get screenshotStream => const Stream.empty();
+
+  @override
+  Future<void> startScreenshotListening() {
+    return Future.value();
+  }
+
+  @override
+  Future<void> stopScreenshotListening() {
+    return Future.value();
   }
 }
 

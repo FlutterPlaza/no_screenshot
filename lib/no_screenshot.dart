@@ -1,10 +1,13 @@
+import 'package:no_screenshot/screenshot_snapshot.dart';
+
 import 'no_screenshot_platform_interface.dart';
 
 class NoScreenshot implements NoScreenshotPlatform {
   final _instancePlatform = NoScreenshotPlatform.instance;
   NoScreenshot._();
 
-  @Deprecated("Using this may cause issue\nUse instance directly\ne.g: 'NoScreenshot.instance.screenshotOff()'")
+  @Deprecated(
+      "Using this may cause issue\nUse instance directly\ne.g: 'NoScreenshot.instance.screenshotOff()'")
   NoScreenshot();
 
   /// Made `NoScreenshot` class a singleton
@@ -29,5 +32,21 @@ class NoScreenshot implements NoScreenshotPlatform {
   @override
   Future<bool> toggleScreenshot() {
     return _instancePlatform.toggleScreenshot();
+  }
+
+  /// Stream to listen to the increment value
+  @override
+  Stream<ScreenshotSnapshot> get screenshotStream {
+    return _instancePlatform.screenshotStream;
+  }
+
+  @override
+  Future<void> startScreenshotListening() {
+    return _instancePlatform.startScreenshotListening();
+  }
+
+  @override
+  Future<void> stopScreenshotListening() {
+    return _instancePlatform.stopScreenshotListening();
   }
 }
