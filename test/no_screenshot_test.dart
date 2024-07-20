@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:no_screenshot/no_screenshot_platform_interface.dart';
 import 'package:no_screenshot/no_screenshot_method_channel.dart';
