@@ -46,6 +46,7 @@ Updated readme and added sample usage.
 - gradle:7.1.2 -> 7.4.2
 - kotlin_version = '1.6.10' -> '1.6.21'
 
+
 ## 0.2.1
 
 ### Summary of Changes
