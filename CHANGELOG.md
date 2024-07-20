@@ -57,3 +57,7 @@ Updated readme and added sample usage.
 - **Bug Fixes**: Fixed various bugs related to screenshot detection and state management on both Android and iOS platforms.
 - **Documentation Updates**: Improved documentation to reflect the new features and provide clearer usage examples.
 - **Deprecation Notice**: Deprecated the use of the constructor `NoScreenshot()` in favor of the singleton `NoScreenshot.instance`.
+
+## 1.0.0-beta.2
+
+- fix: Pub Point analysis failure.
