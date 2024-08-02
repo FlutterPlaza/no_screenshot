@@ -5,8 +5,9 @@
   <img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml/badge.svg" alt="no_screenshot">
 </a>
   <a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
-<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" ><img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/graph/badge.svg?token=C96E93VG2W"/> </a>
-<a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
+<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" > 
+ <img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg?token=C96E93VG2W"/> 
+ </a><a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
@@ -36,7 +37,7 @@ Screenshots and Recordings
 
 Basic Usage | Advanced Usage
 :-: | :-:
-<video src='https://github.com/user-attachments/assets/0690753d-6d1f-488e-a7a9-48852b2affe8' width=180/> | <video src='https://github.com/user-attachments/assets/d63e2c1c-f35b-4ed3-bfe6-3e21d88a29e8' width=180/>
+<video src='https://github.com/user-attachments/assets/0690753d-6d1f-488e-a7a9-48852b2affe8' width="180" autoplay loop></video> | <video src='https://github.com/user-attachments/assets/d63e2c1c-f35b-4ed3-bfe6-3e21d88a29e8' width="180" autoplay loop></video>
 
 
 
