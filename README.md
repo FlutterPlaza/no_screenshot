@@ -27,106 +27,313 @@ Add `no_screenshot` to your `pubspec.yaml` dependencies.
 
 ## Usage
 
-Call the singleton `NoScreenshot.instance` anywhere you want to use it. For instance:
+- Basic Usage: Enable, disable, and toggle screenshot and screen recording functionalities.
+- Advanced Features: Use stream to listen for screenshot activities and integrate these features into your application.
+
+Screenshots and Recordings
+
+Basic Usage | Advanced Usage
+:-: | :-:
+<video src='example/assets/basic_usage.mp4' width=180/> | <video src='example/assets/advanced_usage.mp4' width=180/>
+
+### Basic Usage
+
+Step 1: Disable Screenshot and Screen Recording
+
+To disable screenshots and screen recording, you first have to import the package, then you can create an instance of the NoScreenshot object, which you can use to turn off screenshot, see code snippet:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void disableScreenshot() async {
+  bool result = await _noScreenshot.screenshotOff();
+  debugPrint('Screenshot Off: $result');
+}
+```
+
+Step 2:  Enable Screenshot and Screen Recording
+
+To re-enable screenshots and screen recording, use this code:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void enableScreenshot() async {
+  bool result = await _noScreenshot.screenshotOn();
+  debugPrint('Enable Screenshot: $result');
+}
+```
+
+Step 3: Toggle Screenshot and Screen Recording
+
+If you just want to toggle the screenshot or screen recording functionality, use this code:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void toggleScreenshot() async {
+  bool result = await _noScreenshot.toggleScreenshot();
+  debugPrint('Toggle Screenshot: $result');
+}
+```
+
+Example UI Integration
+
+Here’s an example of how you might integrate these functionalities into your app's UI:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:no_screenshot/no_screenshot.dart';
-import 'package:no_screenshot/screenshot_snapshot.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const BasicUsage());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class BasicUsage extends StatefulWidget {
+  const BasicUsage({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<BasicUsage> createState() => _BasicUsageState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _BasicUsageState extends State<BasicUsage> {
   final _noScreenshot = NoScreenshot.instance;
-  bool _isListeningToScreenshotSnapshot = false;
-  ScreenshotSnapshot _latestValue = ScreenshotSnapshot(
-    isScreenshotProtectionOn: false,
-    wasScreenshotTaken: false,
-    screenshotPath: '',
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _noScreenshot.screenshotStream.listen((value) {
-      setState(() {
-        _latestValue = value;
-      });
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('No Screenshot Plugin Example'),
+          title: const Text('No Screenshot Basic Usage'),
         ),
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               ElevatedButton(
-                onPressed: () async {
-                  await _noScreenshot.startScreenshotListening();
-                  setState(() {
-                    _isListeningToScreenshotSnapshot = true;
-                  });
-                },
-                child: const Text('Start Listening'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await _noScreenshot.stopScreenshotListening();
-                  setState(() {
-                    _isListeningToScreenshotSnapshot = false;
-                  });
-                },
-                child: const Text('Stop Listening'),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                    "Screenshot Streaming is ${_isListeningToScreenshotSnapshot ? 'ON' : 'OFF'}\n\nIsScreenshotProtectionOn: ${_latestValue.isScreenshotProtectionOn}\nwasScreenshotTaken: ${_latestValue.wasScreenshotTaken}\nScreenshot Path: ${_latestValue.screenshotPath}"),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.screenshotOff();
-                  debugPrint('Screenshot Off: $result');
-                },
+                onPressed: disableScreenshot,
                 child: const Text('Disable Screenshot'),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.screenshotOn();
-                  debugPrint('Enable Screenshot: $result');
-                },
+                onPressed: enableScreenshot,
                 child: const Text('Enable Screenshot'),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.toggleScreenshot();
-                  debugPrint('Toggle Screenshot: $result');
-                },
+                onPressed: toggleScreenshot,
                 child: const Text('Toggle Screenshot'),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 60),
             ],
           ),
         ),
       ),
     );
   }
+
+  void toggleScreenshot() async {
+    bool result = await _noScreenshot.toggleScreenshot();
+    debugPrint('Toggle Screenshot: $result');
+  }
+
+  void enableScreenshot() async {
+    bool result = await _noScreenshot.screenshotOn();
+    debugPrint('Enable Screenshot: $result');
+  }
+
+  void disableScreenshot() async {
+    bool result = await _noScreenshot.screenshotOff();
+    debugPrint('Screenshot Off: $result');
+  }
 }
+```
+
+### Part 2: Advanced Features
+
+Step 1: Listen for Screenshot Activities
+
+To listen for screenshot activities, you can set up a stream listener like this:
+
+NOTE: You first have to import the package, then you can create an instance of the NoScreenshot object, which you can use to listen for screenshot events, see code snippet:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void listenForScreenshot() {
+  _noScreenshot.screenshotStream.listen((value) {
+    print('Screenshot taken: ${value.wasScreenshotTaken}');
+    print('Screenshot path: ${value.screenshotPath}');
+  });
+}
+```
+
+Step 2: Enable screenshot listening
+
+By default, listening to screenshot events is turned off. To listen for screenshot activities, you will need to enable or start listening:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void startScreenshotListening() async {
+  await _noScreenshot.startScreenshotListening();
+}
+```
+
+Step 3: Disable/stop screenshot listening
+
+To stop listen for screenshot activities, code below:
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final _noScreenshot = NoScreenshot.instance;
+
+void stopScreenshotListening() async {
+  await _noScreenshot.stopScreenshotListening();
+}
+```
+
+Example Integration with Application
+
+Incorporate the screenshot listener into your app's main logic:
+
+```dart
+
+import 'package:flutter/material.dart';
+import 'package:no_screenshot/no_screenshot.dart';
+
+void main() {
+  runApp(const AdvancedUsage());
+}
+
+class AdvancedUsage extends StatefulWidget {
+  const AdvancedUsage({super.key});
+
+  @override
+  State<AdvancedUsage> createState() => _AdvancedUsageState();
+}
+
+class _AdvancedUsageState extends State<AdvancedUsage> {
+  final _noScreenshot = NoScreenshot.instance;
+  bool _isListeningToScreenshotSnapshot = false;
+
+  @override
+  void initState() {
+    super.initState();
+    listenForScreenshot();
+  }
+
+  void listenForScreenshot() {
+    _noScreenshot.screenshotStream.listen((value) {
+      if (value.wasScreenshotTaken) showAlert(value.screenshotPath);
+    });
+  }
+
+
+  void stopScreenshotListening() async {
+    await _noScreenshot.stopScreenshotListening();
+    setState(() {
+      _isListeningToScreenshotSnapshot = false;
+    });
+  }
+
+  void startScreenshotListening() async {
+    await _noScreenshot.startScreenshotListening();
+    setState(() {
+      _isListeningToScreenshotSnapshot = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Listen for Screenshot Activities'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: startScreenshotListening,
+              child: const Text('Start Listening'),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Screenshot Listening: $_isListeningToScreenshotSnapshot"),
+                _isListeningToScreenshotSnapshot
+                    ? Container(
+                        height: 20,
+                        width: 20,
+                        margin: const EdgeInsets.only(left: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      )
+                    : const SizedBox.shrink()
+              ],
+            ),
+            ElevatedButton(
+              onPressed: stopScreenshotListening,
+              child: const Text('Stop Listening'),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void showAlert(String path) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Container(
+            padding: const EdgeInsets.all(20.0),
+            height: 280,
+            width: MediaQuery.sizeOf(context).width - 60,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.warning_amber_outlined,
+                  size: 80,
+                  color: Colors.red,
+                ),
+                const Text(
+                  "Alert: screenshot taken",
+                  style: TextStyle(fontSize: 24),
+                ),
+                Text("Path: $path"),
+                const SizedBox(height: 40),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("confirm"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 ```
 
 ## Additional information
