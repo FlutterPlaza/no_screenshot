@@ -1,10 +1,10 @@
 # no_screenshot
 
 <p align="center">
-<a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
-<a href="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yml">
-  <img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yml/badge.svg" alt="build">
+<a href="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml">
+  <img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml/badge.svg" alt="no_screenshot">
 </a>
+  <a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
 <a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" ><img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/graph/badge.svg?token=C96E93VG2W"/> </a>
 <a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
