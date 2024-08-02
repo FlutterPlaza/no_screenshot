@@ -34,7 +34,13 @@ Screenshots and Recordings
 
 Basic Usage | Advanced Usage
 :-: | :-:
-<video src='example/assets/basic_usage.mp4' width=180/> | <video src='example/assets/advanced_usage.mp4' width=180/>
+<video src='https://github.com/user-attachments/assets/0690753d-6d1f-488e-a7a9-48852b2affe8' width=180/> | <video src='https://github.com/user-attachments/assets/d63e2c1c-f35b-4ed3-bfe6-3e21d88a29e8' width=180/>
+
+
+
+
+
+
 
 ### Basic Usage
 
