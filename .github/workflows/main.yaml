@@ -12,3 +12,15 @@ jobs:
       flutter_channel: stable
       flutter_version: 3.22.3
       min_coverage: 75
+
+  upload-coverage-reports:
+    name: Upload coverage reports to Codecov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
