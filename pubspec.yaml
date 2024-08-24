@@ -28,3 +28,5 @@ flutter:
         pluginClass: NoScreenshotPlugin
       ios:
         pluginClass: NoScreenshotPlugin
+      macos:
+        pluginClass: NoScreenshotPlugin
