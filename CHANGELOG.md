@@ -61,3 +61,9 @@ Updated readme and added sample usage.
 ## 1.0.0-beta.2
 
 - fix: Pub Point analysis failure.
+
+## 0.3.1
+
+- feat: added MacOS support
+- fix: fix screenshot state not persisting on iOS
+- chore: added more examples.
