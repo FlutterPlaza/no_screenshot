@@ -1,3 +1,5 @@
 # Contributors
 
-- [Felix Junghans](https://github.com/felixjunghans) - Freelance software developer from the Stuttgart area. [Bio](http://felixjunghans.de/)
+- [Geoffrey Giordano](https://github.com/ggiordan) [PR](https://github.com/FlutterPlaza/no_screenshot/pull/29)
+- [Musaddiq Ahmed Khan](https://github.com/Musaddiq625) [PR](https://github.com/FlutterPlaza/no_screenshot/pull/26)
+- [alberto-cappellina](https://github.com/alberto-cappellina) [PR](https://github.com/FlutterPlaza/no_screenshot/pull/27)
