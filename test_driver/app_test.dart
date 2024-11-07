@@ -13,15 +13,18 @@ void main() {
 
   setUp(() async {
     driver = await FlutterDriver.connect();
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
+    // Updated deprecated method usage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
       switch (methodCall.method) {
         case screenShotOffConst:
-          break;
+          return true;
         case screenShotOnConst:
-          break;
+          return true;
         case toggleScreenShotConst:
-          break;
+          return true;
         default:
+          return false;
       }
     });
   });
@@ -66,12 +69,14 @@ void main() {
         forthScreenshot = await driver.screenshot();
         expect(thirdScreenshot != forthScreenshot, true);
       }
-      final fithScreenshot = await driver.screenshot();
-      expect(forthScreenshot == fithScreenshot, true);
+      final fifthScreenshot = await driver.screenshot();
+      expect(forthScreenshot == fifthScreenshot, true);
     });
   });
   tearDown(() {
-    channel.setMockMethodCallHandler(null);
+    // Updated deprecated method usage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
     driver.close();
   });
 }

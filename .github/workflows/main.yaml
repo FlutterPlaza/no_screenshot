@@ -1,4 +1,4 @@
-name: no_screenshot 
+name: no_screenshot
 
 on: [pull_request, push]
 
@@ -10,4 +10,17 @@ jobs:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
       flutter_channel: stable
-      flutter_version: 3.3.7
+      flutter_version: 3.22.3
+      min_coverage: 75
+
+  upload-coverage-reports:
+    name: Upload coverage reports to Codecov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.5.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
