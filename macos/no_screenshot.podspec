@@ -14,13 +14,9 @@ A new Flutter plugin project.
   s.author           = { 'FlutterPlaza' => 'dev@flutterplaza.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
-  s.dependency 'Flutter'
-  # Updated the dependency version to remove the wildcard and use a specific version range
-  s.dependency       'ScreenProtectorKit', '~> 1.3.1'
-  s.platform = :ios, '10.0'
+  s.dependency 'FlutterMacOS'
 
-  # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
-  # Updated swift_version to a single version as an array is not supported for this attribute
-  s.swift_version    = "5.0"
+  s.platform = :osx, '10.14'
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
+  s.swift_version = '5.0'
 end

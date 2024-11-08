@@ -10,6 +10,6 @@
 
 @implementation NoScreenshotPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-  [SwiftNoScreenshotPlugin registerWithRegistrar:registrar];
+  [NoScreenshotPlugin registerWithRegistrar:registrar];
 }
 @end
