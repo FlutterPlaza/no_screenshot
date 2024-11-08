@@ -74,10 +74,11 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     private func shotOff() {
         NoScreenshotPlugin.preventScreenShot = NoScreenshotPlugin.DISABLESCREENSHOT
-        print("Screenshot prevention activated.")
+        print("Screenshot and screen recording prevention activated.")
+
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
-                window.sharingType = .none
+                window.sharingType = .none // Prevents both screenshots and screen recordings
             }
         }
         persistState()
@@ -85,18 +86,19 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     private func shotOn() {
         NoScreenshotPlugin.preventScreenShot = NoScreenshotPlugin.ENABLESCREENSHOT
-        print("Screenshot prevention deactivated.")
+        print("Screenshot and screen recording prevention deactivated.")
+
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
-                window.sharingType = .readOnly // or .full, depending on your needs
+                window.sharingType = .readOnly // Allows screenshots and screen recordings
             }
         }
         persistState()
     }
 
     private func startListening() {
-        // macOS does not provide a direct API for screenshot events, so we simulate this.
-        print("Start listening for screenshot.")
+        // macOS does not provide a direct API for detecting screen recording events, so we simulate this.
+        print("Start listening for screenshot and screen recording.")
         persistState()
     }
 
@@ -108,7 +110,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
-                window.sharingType = isScreenshotBlocked ? .none : .readOnly // or .full
+                window.sharingType = isScreenshotBlocked ? .none : .readOnly
             }
         }
         print("Updated screenshot state to \(isScreenshotBlocked ? "Blocked" : "Unblocked")")
