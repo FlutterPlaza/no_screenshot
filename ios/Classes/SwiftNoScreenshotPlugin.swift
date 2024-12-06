@@ -50,6 +50,9 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             shotOn()
             updateSharedPreferencesState("")
             result(true)
+        case "setImage":
+            setImage()
+            result(true)
         case "toggleScreenshot":
             SwiftNoScreenshotPlugin.preventScreenShot.toggle()
             !SwiftNoScreenshotPlugin.preventScreenShot ? shotOff() : shotOn()
@@ -73,6 +76,10 @@ public class SwiftNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
     private func shotOn() {
         screenProtectorKit?.disablePreventScreenshot()
+    }
+    
+    private func setImage() {
+        screenProtectorKit?.enabledImageScreen(named: "image")
     }
 
     private func startListening() {
