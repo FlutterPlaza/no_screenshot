@@ -2,7 +2,7 @@ import Flutter
 import UIKit
 import ScreenProtectorKit
 
-public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private var screenProtectorKit: ScreenProtectorKit? = nil
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
@@ -24,7 +24,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         super.init()
 
         // Restore the saved state from UserDefaults
-        var fetchVal = UserDefaults.standard.bool(forKey: NoScreenshotPlugin.preventScreenShotKey)
+        var fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
     }
 
@@ -36,7 +36,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         let screenProtectorKit = ScreenProtectorKit(window: window as? UIWindow)
         screenProtectorKit.configurePreventionScreenshot()
 
-        let instance = NoScreenshotPlugin(screenProtectorKit: screenProtectorKit)
+        let instance = IOSNoScreenshotPlugin(screenProtectorKit: screenProtectorKit)
         registrar.addMethodCallDelegate(instance, channel: methodChannel!)
         eventChannel?.setStreamHandler(instance)
         registrar.addApplicationDelegate(instance)
@@ -64,16 +64,16 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     func persistState() {
         // Persist the state when changed
-        UserDefaults.standard.set(NoScreenshotPlugin.preventScreenShot, forKey: NoScreenshotPlugin.preventScreenShotKey)
-        print("Persisted state: \(NoScreenshotPlugin.preventScreenShot)")
+        UserDefaults.standard.set(IOSNoScreenshotPlugin.preventScreenShot, forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
+        print("Persisted state: \(IOSNoScreenshotPlugin.preventScreenShot)")
         updateSharedPreferencesState("")
     }
 
     func fetchPersistedState() {
         // Restore the saved state from UserDefaults
-        var fetchVal = UserDefaults.standard.bool(forKey: NoScreenshotPlugin.preventScreenShotKey) ? NoScreenshotPlugin.DISABLESCREENSHOT :NoScreenshotPlugin.ENABLESCREENSHOT
+        var fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey) ? IOSNoScreenshotPlugin.DISABLESCREENSHOT :IOSNoScreenshotPlugin.ENABLESCREENSHOT
         updateScreenshotState(isScreenshotBlocked: fetchVal)
-        print("Fetched state: \(NoScreenshotPlugin.preventScreenShot)")
+        print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot)")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -85,7 +85,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             shotOn()
             result(true)
         case "toggleScreenshot":
-            NoScreenshotPlugin.preventScreenShot ? shotOn(): shotOff()
+            IOSNoScreenshotPlugin.preventScreenShot ? shotOn(): shotOff()
             result(true)
         case "startScreenshotListening":
             startListening()
@@ -99,13 +99,13 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     }
 
     private func shotOff() {
-        NoScreenshotPlugin.preventScreenShot = NoScreenshotPlugin.DISABLESCREENSHOT
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
         screenProtectorKit?.enabledPreventScreenshot()
         persistState()
     }
 
     private func shotOn() {
-        NoScreenshotPlugin.preventScreenShot = NoScreenshotPlugin.ENABLESCREENSHOT
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
         screenProtectorKit?.disablePreventScreenshot()
         persistState()
     }
@@ -122,7 +122,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     @objc private func screenshotDetected() {
         print("Screenshot detected")
-        updateSharedPreferencesState(NoScreenshotPlugin.screenshotPathPlaceholder)
+        updateSharedPreferencesState(IOSNoScreenshotPlugin.screenshotPathPlaceholder)
     }
 
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
@@ -135,7 +135,7 @@ public class NoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     private func updateSharedPreferencesState(_ screenshotData: String) {
         let map: [String: Any] = [
-            "is_screenshot_on": NoScreenshotPlugin.preventScreenShot,
+            "is_screenshot_on": IOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
             "was_screenshot_taken": !screenshotData.isEmpty
         ]
