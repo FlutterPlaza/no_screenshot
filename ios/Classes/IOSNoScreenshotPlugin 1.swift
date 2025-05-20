@@ -19,7 +19,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
 
-    init(screenProtectorKit: ScreenProtectorKit) {
+    init(screenProtectorKit: ScreenProtectorKit? = nil) {
         self.screenProtectorKit = screenProtectorKit
         super.init()
 
@@ -32,11 +32,8 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         methodChannel = FlutterMethodChannel(name: methodChannelName, binaryMessenger: registrar.messenger())
         eventChannel = FlutterEventChannel(name: eventChannelName, binaryMessenger: registrar.messenger())
 
-        let window = UIApplication.shared.delegate?.window
-        let screenProtectorKit = ScreenProtectorKit(window: window as? UIWindow)
-        screenProtectorKit.configurePreventionScreenshot()
-
-        let instance = IOSNoScreenshotPlugin(screenProtectorKit: screenProtectorKit)
+        let instance = IOSNoScreenshotPlugin()
+        
         registrar.addMethodCallDelegate(instance, channel: methodChannel!)
         eventChannel?.setStreamHandler(instance)
         registrar.addApplicationDelegate(instance)
@@ -47,6 +44,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
 
     public func applicationDidBecomeActive(_ application: UIApplication) {
+        attachWindowIfNeeded()
         fetchPersistedState()
     }
 
@@ -175,6 +173,30 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             self.screenshotStream()
         }
     }
+    
+    private func attachWindowIfNeeded() {
+        guard screenProtectorKit == nil else { return }
+
+        var activeWindow: UIWindow?
+
+        if #available(iOS 13.0, *) {
+            activeWindow = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first(where: { $0.isKeyWindow })
+        } else {
+            activeWindow = UIApplication.shared.keyWindow
+        }
+
+        if let window = activeWindow {
+            let kit = ScreenProtectorKit(window: window)
+            kit.configurePreventionScreenshot()
+            self.screenProtectorKit = kit
+        } else {
+            print("❗️No active window found to attach ScreenProtectorKit.")
+        }
+    }
+
 
     deinit {
         screenProtectorKit?.removeAllObserver()
