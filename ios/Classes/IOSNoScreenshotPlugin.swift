@@ -24,7 +24,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         super.init()
 
         // Restore the saved state from UserDefaults
-        var fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
+        let fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
     }
 
@@ -83,7 +83,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             shotOn()
             result(true)
         case "toggleScreenshot":
-            IOSNoScreenshotPlugin.preventScreenShot ? shotOn(): shotOff()
+            IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
             result(true)
         case "startScreenshotListening":
             startListening()
@@ -124,6 +124,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
 
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
+        attachWindowIfNeeded()
         if isScreenshotBlocked {
             screenProtectorKit?.enabledPreventScreenshot()
         } else {
@@ -175,20 +176,24 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
     
     private func attachWindowIfNeeded() {
-        guard screenProtectorKit == nil else { return }
-
         var activeWindow: UIWindow?
 
         if #available(iOS 13.0, *) {
-            activeWindow = UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .flatMap { $0.windows }
-                .first(where: { $0.isKeyWindow })
+            if let windowScene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+               let active = windowScene.windows.first(where: { $0.isKeyWindow }) {
+                activeWindow = active
+            }
         } else {
-            activeWindow = UIApplication.shared.keyWindow
+            activeWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
         }
 
         if let window = activeWindow {
+            // Work around: ScreenProtectorKit adds a new UI component to disable screenshots.
+            // The new instance will not be able to disable it anymore, therefore we need to turn it off using the old instance.
+            self.screenProtectorKit?.disablePreventScreenshot()
+
+            // A new instance is created because otherwise we observed app hangs when taking screenshots.
             let kit = ScreenProtectorKit(window: window)
             kit.configurePreventionScreenshot()
             self.screenProtectorKit = kit
