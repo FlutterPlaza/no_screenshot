@@ -161,7 +161,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     }
 
     private fun saveScreenshotState(isSecure: Boolean) {
-        preferences.edit().putBoolean(PREF_KEY_SCREENSHOT, isSecure).apply()
+        Executors.newSingleThreadExecutor().execute {
+            preferences.edit().putBoolean(PREF_KEY_SCREENSHOT, isSecure).apply()
+        }
     }
 
     private fun restoreScreenshotState() {
