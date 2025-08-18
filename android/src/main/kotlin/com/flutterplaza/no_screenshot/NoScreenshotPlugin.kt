@@ -17,6 +17,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
 import org.json.JSONObject
 
 const val SCREENSHOT_ON_CONST = "screenshotOn"
@@ -36,7 +37,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     private lateinit var eventChannel: EventChannel
     private lateinit var context: Context
     private var activity: Activity? = null
-    private lateinit var preferences: SharedPreferences
+    private val preferences: SharedPreferences by lazy {
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    }
     private var screenshotObserver: ContentObserver? = null
     private val handler = Handler(Looper.getMainLooper())
     private var eventSink: EventChannel.EventSink? = null
@@ -45,7 +48,6 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
-        preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
         methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, SCREENSHOT_METHOD_CHANNEL)
         methodChannel.setMethodCallHandler(this)
@@ -163,11 +165,17 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     }
 
     private fun restoreScreenshotState() {
-        val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
-        if (isSecure) {
-            screenshotOff()
-        } else {
-            screenshotOn()
+        Executors.newSingleThreadExecutor().execute {
+            val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
+
+            // Post back to main thread to update UI flags
+            activity?.runOnUiThread {
+                if (isSecure) {
+                    screenshotOff()
+                } else {
+                    screenshotOn()
+                }
+            }
         }
     }
 
