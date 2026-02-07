@@ -1,6 +1,6 @@
 PODS:
   - Flutter (1.0.0)
-  - "no_screenshot (0.0.1+4)":
+  - no_screenshot (0.3.2-beta.1):
     - Flutter
     - ScreenProtectorKit (~> 1.3.1)
   - ScreenProtectorKit (1.3.1)
@@ -21,7 +21,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  no_screenshot: 67d110f12466f4913b488803d4e498d03ef2889e
+  no_screenshot: 908a71edc63ea17016f46537e0f420bc3856ce2c
   ScreenProtectorKit: 83a6281b02c7a5902ee6eac4f5045f674e902ae4
 
 PODFILE CHECKSUM: c4c93c5f6502fe2754f48404d3594bf779584011
