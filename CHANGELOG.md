@@ -67,3 +67,15 @@ Updated readme and added sample usage.
 - feat: added MacOS support
 - fix: fix screenshot state not persisting on iOS
 - chore: added more examples.
+
+## 0.3.2-beta.1
+
+- fix: fix screenshot state not persisting on iOS by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/45
+- chore(deps): bump actions/checkout from 2 to 4 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/43
+- chore(deps): bump codecov/codecov-action from 4.0.1 to 4.5.0 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/42
+- feat: macos support by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/51
+
+## 0.3.2-beta.3
+
+- chore: updated pkg version by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/63
+- fix: duplicate interface definition for class 'NoScreenshotPlugin' by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/62
