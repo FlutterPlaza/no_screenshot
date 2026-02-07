@@ -84,6 +84,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         case "screenshotOn":
             shotOn()
             result(true)
+        case "setImage":
+            setImage()
+            result(true)
         case "toggleScreenshot":
             IOSNoScreenshotPlugin.preventScreenShot ? shotOn(): shotOff()
             result(true)
@@ -108,6 +111,10 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
         screenProtectorKit?.disablePreventScreenshot()
         persistState()
+    }
+    
+    private func setImage() {
+        screenProtectorKit?.enabledImageScreen(named: "image")
     }
 
     private func startListening() {
