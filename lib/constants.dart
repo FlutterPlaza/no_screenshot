@@ -1,5 +1,6 @@
 const screenShotOnConst = "screenshotOn";
 const screenShotOffConst = "screenshotOff";
+const screenSetImage = "toggleScreenshotWithImage";
 const toggleScreenShotConst = "toggleScreenshot";
 const startScreenshotListeningConst = 'startScreenshotListening';
 const stopScreenshotListeningConst = 'stopScreenshotListening';
