@@ -41,11 +41,10 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   }
 
   @override
-  Future<bool> setImage() async {
+  Future<bool> toggleScreenshotWithImage() async {
     final result = await methodChannel.invokeMethod<bool>(screenSetImage);
     return result ?? false;
   }
-
 
   @override
   Future<void> startScreenshotListening() {
