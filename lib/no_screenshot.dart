@@ -33,8 +33,8 @@ class NoScreenshot implements NoScreenshotPlatform {
   }
 
   @override
-  Future<bool> setImage() {
-    return _instancePlatform.setImage();
+  Future<bool> toggleScreenshotWithImage() {
+    return _instancePlatform.toggleScreenshotWithImage();
   }
 
   /// Return `true` if screenshot capabilities has been
