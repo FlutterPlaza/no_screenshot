@@ -21,6 +21,12 @@ class MockNoScreenshotPlatform
   }
 
   @override
+  Future<bool> setImage() async {
+    // Mock implementation or return a fixed value
+    return Future.value(true);
+  }
+
+  @override
   Future<bool> toggleScreenshot() async {
     // Mock implementation or return a fixed value
     return Future.value(true);
