@@ -5,7 +5,9 @@ import 'package:no_screenshot/screenshot_snapshot.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class MockNoScreenshotPlatform with MockPlatformInterfaceMixin implements NoScreenshotPlatform {
+class MockNoScreenshotPlatform
+    with MockPlatformInterfaceMixin
+    implements NoScreenshotPlatform {
   @override
   Future<bool> screenshotOff() async {
     // Mock implementation or return a fixed value
@@ -79,7 +81,8 @@ void main() {
   });
 
   test('screenshotStream', () async {
-    expect(NoScreenshot.instance.screenshotStream, isInstanceOf<Stream<ScreenshotSnapshot>>());
+    expect(NoScreenshot.instance.screenshotStream,
+        isInstanceOf<Stream<ScreenshotSnapshot>>());
   });
   test('startScreenshotListening', () async {
     expect(NoScreenshot.instance.startScreenshotListening(), completes);

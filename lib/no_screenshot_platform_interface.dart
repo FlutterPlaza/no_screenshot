@@ -41,8 +41,9 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// Return `true` if screenshot capabilities has been
   /// successfully enabled or is currently enabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
-  Future<bool> setImage() {
-    throw UnimplementedError('setImage() has not been implemented.');
+  Future<bool> toggleScreenshotWithImage() {
+    throw UnimplementedError(
+        'toggleScreenshotWithImage() has not been implemented.');
   }
 
   /// Return `true` if screenshot capabilities has been
@@ -63,11 +64,13 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
 
 // Start listening to screenshot activities
   Future<void> startScreenshotListening() {
-    throw UnimplementedError('startScreenshotListening has not been implemented.');
+    throw UnimplementedError(
+        'startScreenshotListening has not been implemented.');
   }
 
   /// Stop listening to screenshot activities
   Future<void> stopScreenshotListening() {
-    throw UnimplementedError('stopScreenshotListening has not been implemented.');
+    throw UnimplementedError(
+        'stopScreenshotListening has not been implemented.');
   }
 }
