@@ -83,6 +83,61 @@ void main() {
       await platform.stopScreenshotListening();
       expect(true, true); // Add more specific expectations if needed
     });
+
+    test('toggleScreenshotWithImage', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenSetImage) {
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithImage();
+      expect(result, expected);
+    });
+
+    test('toggleScreenshotWithImage returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithImage();
+      expect(result, false);
+    });
+
+    test('screenshotOn returns false when channel returns null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.screenshotOn();
+      expect(result, false);
+    });
+
+    test('screenshotOff returns false when channel returns null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.screenshotOff();
+      expect(result, false);
+    });
+
+    test('toggleScreenshot returns false when channel returns null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.toggleScreenshot();
+      expect(result, false);
+    });
   });
 
   group('ScreenshotSnapshot', () {
@@ -150,6 +205,25 @@ void main() {
 
       expect(snapshot1.hashCode, snapshot2.hashCode);
       expect(snapshot1.hashCode, isNot(snapshot3.hashCode));
+    });
+
+    test('fromMap with empty map uses defaults', () {
+      final snapshot = ScreenshotSnapshot.fromMap({});
+      expect(snapshot.screenshotPath, '');
+      expect(snapshot.isScreenshotProtectionOn, false);
+      expect(snapshot.wasScreenshotTaken, false);
+    });
+
+    test('fromMap with null values uses defaults', () {
+      final map = <String, dynamic>{
+        'screenshot_path': null,
+        'is_screenshot_on': null,
+        'was_screenshot_taken': null,
+      };
+      final snapshot = ScreenshotSnapshot.fromMap(map);
+      expect(snapshot.screenshotPath, '');
+      expect(snapshot.isScreenshotProtectionOn, false);
+      expect(snapshot.wasScreenshotTaken, false);
     });
 
     test('toString', () {
