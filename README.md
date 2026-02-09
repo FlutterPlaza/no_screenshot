@@ -21,7 +21,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Enable screenshot & screen recording | ✅ | ✅ | ✅ |
 | Toggle screenshot protection | ✅ | ✅ | ✅ |
 | Listen for screenshot events (stream) | ✅ | ✅ | ✅ |
-| Image overlay in app switcher / recents | ✅ | ✅ | - |
+| Image overlay in app switcher / recents | ✅ | ✅ | ✅ |
 
 > **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
 
@@ -132,6 +132,7 @@ Future<void> toggleOverlay() async {
 
 - **Android:** `android/app/src/main/res/drawable/image.png`
 - **iOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
+- **macOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
 
 When enabled, the overlay image is shown whenever the app goes to the background or appears in the app switcher. Screenshot protection is also automatically activated.
 

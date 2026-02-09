@@ -8,11 +8,14 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     private var eventSink: FlutterEventSink? = nil
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
+    private var isImageOverlayModeEnabled: Bool = false
+    private var overlayImageView: NSImageView? = nil
 
     private static let ENABLESCREENSHOT = false
     private static let DISABLESCREENSHOT = true
 
     private static let preventScreenShotKey = "preventScreenShot"
+    private static let imageOverlayModeKey = "imageOverlayMode"
     private static let methodChannelName = "com.flutterplaza.no_screenshot_methods"
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
@@ -25,6 +28,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         registrar.addMethodCallDelegate(instance, channel: methodChannel!)
         eventChannel?.setStreamHandler(instance)
 
+        instance.isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: imageOverlayModeKey)
+
         // Observe when the application goes to background or foreground
         NotificationCenter.default.addObserver(instance, selector: #selector(appWillResignActive), name: NSApplication.didResignActiveNotification, object: nil)
         NotificationCenter.default.addObserver(instance, selector: #selector(appDidBecomeActive), name: NSApplication.didBecomeActiveNotification, object: nil)
@@ -32,22 +37,40 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
     @objc func appWillResignActive() {
         persistState()
+
+        if isImageOverlayModeEnabled {
+            // Temporarily lift screenshot prevention so the overlay image is
+            // visible in Mission Control / app switcher (sharingType .none
+            // would show a blank window).
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .readOnly
+                }
+            }
+            showImageOverlay()
+        }
     }
 
     @objc func appDidBecomeActive() {
+        // Remove the image overlay first, then restore screenshot protection.
+        if isImageOverlayModeEnabled {
+            removeImageOverlay()
+        }
         fetchPersistedState()
     }
 
     func persistState() {
         UserDefaults.standard.set(MacOSNoScreenshotPlugin.preventScreenShot, forKey: MacOSNoScreenshotPlugin.preventScreenShotKey)
-        print("Persisted state: \(MacOSNoScreenshotPlugin.preventScreenShot)")
+        UserDefaults.standard.set(isImageOverlayModeEnabled, forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
+        print("Persisted state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
         updateSharedPreferencesState("")
     }
 
     func fetchPersistedState() {
         let fetchVal = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.preventScreenShotKey) ? MacOSNoScreenshotPlugin.DISABLESCREENSHOT : MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+        isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
-        print("Fetched state: \(MacOSNoScreenshotPlugin.preventScreenShot)")
+        print("Fetched state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -61,6 +84,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         case "toggleScreenshot":
             MacOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
             result(true)
+        case "toggleScreenshotWithImage":
+            let isActive = toggleScreenshotWithImage()
+            result(isActive)
         case "startScreenshotListening":
             startListening()
             result("Listening started")
@@ -94,6 +120,59 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             }
         }
         persistState()
+    }
+
+    private func toggleScreenshotWithImage() -> Bool {
+        isImageOverlayModeEnabled.toggle()
+
+        if isImageOverlayModeEnabled {
+            // Enable screenshot prevention
+            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .none
+                }
+            }
+        } else {
+            // Disable screenshot prevention and remove any overlay
+            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .readOnly
+                }
+            }
+            removeImageOverlay()
+        }
+
+        persistState()
+        return isImageOverlayModeEnabled
+    }
+
+    private func showImageOverlay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.overlayImageView == nil else { return }
+            guard let window = NSApplication.shared.windows.first,
+                  let contentView = window.contentView else { return }
+            guard let image = NSImage(named: "image") else {
+                print("No overlay image named 'image' found in asset catalog.")
+                return
+            }
+
+            let imageView = NSImageView(frame: contentView.bounds)
+            imageView.image = image
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            imageView.autoresizingMask = [.width, .height]
+            contentView.addSubview(imageView, positioned: .above, relativeTo: contentView.subviews.last)
+            self.overlayImageView = imageView
+        }
+    }
+
+    private func removeImageOverlay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.overlayImageView?.removeFromSuperview()
+            self.overlayImageView = nil
+        }
     }
 
     private func startListening() {
