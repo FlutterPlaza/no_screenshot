@@ -99,7 +99,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           _buildSection(
             title: 'Screenshot & Recording Protection',
-            subtitle: 'Android & iOS',
+            subtitle: 'Android, iOS & macOS',
             children: [
               _StatusRow(
                 label: 'Protection',
@@ -136,7 +136,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           _buildSection(
             title: 'Screenshot Monitoring',
-            subtitle: 'Android & iOS',
+            subtitle: 'Android, iOS & macOS',
             children: [
               _StatusRow(
                 label: 'Monitoring',
@@ -169,7 +169,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           _buildSection(
             title: 'Overlay Image',
-            subtitle: 'Android & iOS',
+            subtitle: 'Android, iOS & macOS',
             children: [
               _StatusRow(
                 label: 'Overlay',
