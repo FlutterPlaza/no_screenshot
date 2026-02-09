@@ -21,8 +21,7 @@ class MockNoScreenshotPlatform
   }
 
   @override
-  Future<bool> setImage() async {
-    // Mock implementation or return a fixed value
+  Future<bool> toggleScreenshotWithImage() async {
     return Future.value(true);
   }
 
@@ -92,10 +91,27 @@ void main() {
     expect(NoScreenshot.instance.stopScreenshotListening(), completes);
   });
 
+  test('toggleScreenshotWithImage', () async {
+    expect(await NoScreenshot.instance.toggleScreenshotWithImage(), true);
+  });
+
   test('NoScreenshot equality operator', () {
     final instance1 = NoScreenshot.instance;
     final instance2 = NoScreenshot.instance;
 
     expect(instance1 == instance2, true, reason: 'Instances should be equal');
+  });
+
+  test('NoScreenshot hashCode consistency', () {
+    final instance1 = NoScreenshot.instance;
+    final instance2 = NoScreenshot.instance;
+
+    expect(instance1.hashCode, instance2.hashCode);
+  });
+
+  test('deprecated constructor still works', () {
+    // ignore: deprecated_member_use
+    final instance = NoScreenshot();
+    expect(instance, isA<NoScreenshot>());
   });
 }
