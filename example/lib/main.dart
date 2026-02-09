@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     _noScreenshot.screenshotStream.listen((value) {
       setState(() => _latestSnapshot = value);
       if (value.wasScreenshotTaken) {
-        print('Screenshot taken at path: ${value.screenshotPath}');
+        debugPrint('Screenshot taken at path: ${value.screenshotPath}');
         _showScreenshotAlert(value.screenshotPath);
       }
     });
