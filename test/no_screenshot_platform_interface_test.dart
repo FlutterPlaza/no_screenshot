@@ -89,49 +89,40 @@ void main() {
         'base NoScreenshotPlatform.toggleScreenshotWithImage() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.toggleScreenshotWithImage(),
+      expect(() => basePlatform.toggleScreenshotWithImage(),
           throwsUnimplementedError);
     });
 
-    test(
-        'base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',
+    test('base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotOff(), throwsUnimplementedError);
+      expect(() => basePlatform.screenshotOff(), throwsUnimplementedError);
     });
 
-    test(
-        'base NoScreenshotPlatform.screenshotOn() throws UnimplementedError',
+    test('base NoScreenshotPlatform.screenshotOn() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotOn(), throwsUnimplementedError);
+      expect(() => basePlatform.screenshotOn(), throwsUnimplementedError);
     });
 
     test(
         'base NoScreenshotPlatform.toggleScreenshot() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.toggleScreenshot(), throwsUnimplementedError);
+      expect(() => basePlatform.toggleScreenshot(), throwsUnimplementedError);
     });
 
-    test(
-        'base NoScreenshotPlatform.screenshotStream throws UnimplementedError',
+    test('base NoScreenshotPlatform.screenshotStream throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotStream, throwsUnimplementedError);
+      expect(() => basePlatform.screenshotStream, throwsUnimplementedError);
     });
 
     test(
         'base NoScreenshotPlatform.startScreenshotListening() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.startScreenshotListening(),
+      expect(() => basePlatform.startScreenshotListening(),
           throwsUnimplementedError);
     });
 
@@ -139,8 +130,7 @@ void main() {
         'base NoScreenshotPlatform.stopScreenshotListening() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.stopScreenshotListening(),
+      expect(() => basePlatform.stopScreenshotListening(),
           throwsUnimplementedError);
     });
   });
