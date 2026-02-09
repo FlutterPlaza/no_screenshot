@@ -4,6 +4,7 @@ import ScreenProtectorKit
 
 public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private var screenProtectorKit: ScreenProtectorKit? = nil
+    private weak var attachedWindow: UIWindow? = nil
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
     private static var preventScreenShot: Bool = false
@@ -36,47 +37,56 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         eventChannel = FlutterEventChannel(name: eventChannelName, binaryMessenger: registrar.messenger())
 
         let instance = IOSNoScreenshotPlugin()
-        
+
         registrar.addMethodCallDelegate(instance, channel: methodChannel!)
         eventChannel?.setStreamHandler(instance)
         registrar.addApplicationDelegate(instance)
     }
 
+    // MARK: - App Lifecycle
+    //
+    // Image overlay lifecycle is intentionally handled in exactly two places:
+    //   SHOW: applicationWillResignActive  (app is about to lose focus)
+    //   HIDE: applicationDidBecomeActive   (app is fully interactive again)
+    //
+    // willResignActive always fires before didEnterBackground, and
+    // didBecomeActive always fires after willEnterForeground, so a single
+    // show/hide pair covers both the app-switcher peek and the full
+    // background → foreground round-trip without double-showing the image.
+
     public func applicationWillResignActive(_ application: UIApplication) {
         persistState()
 
         if isImageOverlayModeEnabled {
-         //   screenProtectorKit?.disablePreventScreenshot()
+            // Temporarily lift screenshot prevention so the overlay image is
+            // visible in the app switcher (otherwise ScreenProtectorKit's
+            // secure text field would show a blank screen).
+            screenProtectorKit?.disablePreventScreenshot()
             screenProtectorKit?.enabledImageScreen(named: "image")
         }
     }
 
     public func applicationDidBecomeActive(_ application: UIApplication) {
-        attachWindowIfNeeded()
-        fetchPersistedState()
-
+        // Remove the image overlay FIRST, while screenProtectorKit still
+        // points to the instance that showed it.
         if isImageOverlayModeEnabled {
             screenProtectorKit?.disableImageScreen()
-           // screenProtectorKit?.enabledPreventScreenshot()
         }
+
+        // Now restore screenshot protection (and re-attach the window if it
+        // changed while the app was in the background).
+        fetchPersistedState()
     }
 
     public func applicationWillEnterForeground(_ application: UIApplication) {
-        fetchPersistedState()
-        
-        // Hide image overlay when app enters foreground if image overlay mode is enabled
-        if isImageOverlayModeEnabled {
-            screenProtectorKit?.disableImageScreen()
-        }
+        // Image overlay removal is handled in applicationDidBecomeActive
+        // which always fires after this callback.
     }
 
     public func applicationDidEnterBackground(_ application: UIApplication) {
         persistState()
-        
-        // Show image overlay when app enters background if image overlay mode is enabled
-        if isImageOverlayModeEnabled {
-            screenProtectorKit?.enabledImageScreen(named: "image")
-        }
+        // Image overlay was already shown in applicationWillResignActive
+        // which always fires before this callback.
     }
 
     public func applicationWillTerminate(_ application: UIApplication) {
@@ -93,7 +103,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     func fetchPersistedState() {
         // Restore the saved state from UserDefaults
-        var fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey) ? IOSNoScreenshotPlugin.DISABLESCREENSHOT :IOSNoScreenshotPlugin.ENABLESCREENSHOT
+        let fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey) ? IOSNoScreenshotPlugin.DISABLESCREENSHOT : IOSNoScreenshotPlugin.ENABLESCREENSHOT
         isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
         print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
@@ -135,11 +145,11 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         screenProtectorKit?.disablePreventScreenshot()
         persistState()
     }
-    
+
     private func toggleScreenshotWithImage() -> Bool {
         // Toggle the image overlay mode state
         isImageOverlayModeEnabled.toggle()
-        
+
         if isImageOverlayModeEnabled {
             // Mode is now active (true) - screenshot prevention should be ON (screenshots blocked)
             IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
@@ -150,7 +160,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             screenProtectorKit?.disablePreventScreenshot()
             screenProtectorKit?.disableImageScreen()
         }
-        
+
         persistState()
         return isImageOverlayModeEnabled
     }
@@ -221,7 +231,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             self.screenshotStream()
         }
     }
-    
+
     private func attachWindowIfNeeded() {
         var activeWindow: UIWindow?
 
@@ -235,20 +245,29 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             activeWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
         }
 
-        if let window = activeWindow {
-            // Work around: ScreenProtectorKit adds a new UI component to disable screenshots.
-            // The new instance will not be able to disable it anymore, therefore we need to turn it off using the old instance.
-            self.screenProtectorKit?.disablePreventScreenshot()
-
-            // A new instance is created because otherwise we observed app hangs when taking screenshots.
-            let kit = ScreenProtectorKit(window: window)
-            kit.configurePreventionScreenshot()
-            self.screenProtectorKit = kit
-        } else {
+        guard let window = activeWindow else {
             print("❗️No active window found to attach ScreenProtectorKit.")
+            return
         }
-    }
 
+        // Skip re-creation if already attached to this window.
+        if window === attachedWindow && screenProtectorKit != nil {
+            return
+        }
+
+        // Clean up the old instance: remove its image overlay and screenshot
+        // protection UI before replacing it. A new ScreenProtectorKit instance
+        // cannot remove UI elements added by the previous one.
+        if isImageOverlayModeEnabled {
+            screenProtectorKit?.disableImageScreen()
+        }
+        screenProtectorKit?.disablePreventScreenshot()
+
+        let kit = ScreenProtectorKit(window: window)
+        kit.configurePreventionScreenshot()
+        self.screenProtectorKit = kit
+        self.attachedWindow = window
+    }
 
     deinit {
         screenProtectorKit?.removeAllObserver()
