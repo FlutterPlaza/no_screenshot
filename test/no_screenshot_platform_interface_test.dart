@@ -3,6 +3,10 @@ import 'package:no_screenshot/no_screenshot_method_channel.dart';
 import 'package:no_screenshot/no_screenshot_platform_interface.dart';
 import 'package:no_screenshot/screenshot_snapshot.dart';
 
+/// A minimal subclass that does NOT override toggleScreenshotWithImage,
+/// so we can verify the base class throws UnimplementedError.
+class BaseNoScreenshotPlatform extends NoScreenshotPlatform {}
+
 class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   @override
   Future<bool> screenshotOff() async {
@@ -27,6 +31,11 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   @override
   Future<void> startScreenshotListening() async {
     return;
+  }
+
+  @override
+  Future<bool> toggleScreenshotWithImage() async {
+    return true;
   }
 
   @override
@@ -70,6 +79,69 @@ void main() {
         'stopScreenshotListening should not throw UnimplementedError when called',
         () async {
       expect(platform.stopScreenshotListening(), completes);
+    });
+
+    test('toggleScreenshotWithImage should return true when called', () async {
+      expect(await platform.toggleScreenshotWithImage(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.toggleScreenshotWithImage() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.toggleScreenshotWithImage(),
+          throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotOff(), throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotOn() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotOn(), throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.toggleScreenshot() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.toggleScreenshot(), throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotStream throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotStream, throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.startScreenshotListening() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.startScreenshotListening(),
+          throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.stopScreenshotListening() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.stopScreenshotListening(),
+          throwsUnimplementedError);
     });
   });
 }
