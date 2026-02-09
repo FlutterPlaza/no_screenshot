@@ -1,0 +1,35 @@
+# Automated publishing to pub.dev using OIDC (OpenID Connect).
+# No long-lived secrets are needed. Authentication uses a temporary
+# GitHub-signed OIDC token that pub.dev verifies.
+#
+# Prerequisites:
+#   1. Go to https://pub.dev/packages/no_screenshot/admin
+#   2. Click "Enable publishing from GitHub Actions"
+#   3. Set repository to: FlutterPlaza/no_screenshot
+#   4. Set tag pattern to: v{{version}}
+#      This matches tags like v1.2.3 and v0.3.2-beta.3
+#
+# To publish, push a tag matching the pattern (version must match pubspec.yaml):
+#   git tag v0.3.2-beta.3
+#   git push origin v0.3.2-beta.3
+#
+# See: https://dart.dev/tools/pub/automated-publishing
+
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      # Must match the tag pattern configured on pub.dev (v{{version}}).
+      # The trailing * allows pre-release suffixes like -beta.3.
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    permissions:
+      # Required: allows the workflow to request an OIDC token from GitHub.
+      # pub.dev verifies this token to authenticate the publish request.
+      id-token: write
+    # Uses the reusable publish workflow provided by dart-lang/setup-dart.
+    # This handles OIDC token exchange and runs `dart pub publish --force`.
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

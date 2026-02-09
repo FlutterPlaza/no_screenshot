@@ -1,15 +1,20 @@
 package com.flutterplaza.no_screenshot
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.net.Uri
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.view.ViewGroup
 import android.view.WindowManager.LayoutParams
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -17,6 +22,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
 import org.json.JSONObject
 
 const val SCREENSHOT_ON_CONST = "screenshotOn"
@@ -28,37 +34,47 @@ const val STOP_SCREENSHOT_LISTENING_CONST = "stopScreenshotListening"
 const val SCREENSHOT_PATH = "screenshot_path"
 const val PREF_KEY_SCREENSHOT = "is_screenshot_on"
 const val SCREENSHOT_TAKEN = "was_screenshot_taken"
+const val SET_IMAGE_CONST = "toggleScreenshotWithImage"
+const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
 const val SCREENSHOT_METHOD_CHANNEL = "com.flutterplaza.no_screenshot_methods"
 const val SCREENSHOT_EVENT_CHANNEL = "com.flutterplaza.no_screenshot_streams"
 
-class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, EventChannel.StreamHandler {
+class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware,
+    EventChannel.StreamHandler {
     private lateinit var methodChannel: MethodChannel
     private lateinit var eventChannel: EventChannel
     private lateinit var context: Context
     private var activity: Activity? = null
-    private lateinit var preferences: SharedPreferences
+    private val preferences: SharedPreferences by lazy {
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    }
     private var screenshotObserver: ContentObserver? = null
     private val handler = Handler(Looper.getMainLooper())
     private var eventSink: EventChannel.EventSink? = null
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Boolean = false
+    private var isImageOverlayModeEnabled: Boolean = false
+    private var overlayImageView: ImageView? = null
+    private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
-        preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-        methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, SCREENSHOT_METHOD_CHANNEL)
+        methodChannel =
+            MethodChannel(flutterPluginBinding.binaryMessenger, SCREENSHOT_METHOD_CHANNEL)
         methodChannel.setMethodCallHandler(this)
 
         eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, SCREENSHOT_EVENT_CHANNEL)
         eventChannel.setStreamHandler(this)
 
         initScreenshotObserver()
+        registerLifecycleCallbacks()
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         methodChannel.setMethodCallHandler(null)
         screenshotObserver?.let { context.contentResolver.unregisterContentObserver(it) }
+        unregisterLifecycleCallbacks()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -66,34 +82,50 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         restoreScreenshotState()
     }
 
-    override fun onDetachedFromActivityForConfigChanges() {}
+    override fun onDetachedFromActivityForConfigChanges() {
+        removeImageOverlay()
+        activity = null
+    }
+
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
         restoreScreenshotState()
     }
 
-    override fun onDetachedFromActivity() {}
+    override fun onDetachedFromActivity() {
+        removeImageOverlay()
+        activity = null
+    }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
         when (call.method) {
             SCREENSHOT_ON_CONST -> {
                 result.success(screenshotOn().also { updateSharedPreferencesState("") })
             }
+
             SCREENSHOT_OFF_CONST -> {
                 result.success(screenshotOff().also { updateSharedPreferencesState("") })
             }
+
             TOGGLE_SCREENSHOT_CONST -> {
                 toggleScreenshot()
                 result.success(true.also { updateSharedPreferencesState("") })
             }
+
             START_SCREENSHOT_LISTENING_CONST -> {
                 startListening()
                 result.success("Listening started")
             }
+
             STOP_SCREENSHOT_LISTENING_CONST -> {
                 stopListening()
                 result.success("Listening stopped".also { updateSharedPreferencesState("") })
             }
+
+            SET_IMAGE_CONST -> {
+                result.success(toggleScreenshotWithImage())
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -108,12 +140,97 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         eventSink = null
     }
 
+    private fun registerLifecycleCallbacks() {
+        val app = context as? Application ?: return
+        lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityPaused(act: Activity) {
+                if (act == activity && isImageOverlayModeEnabled) {
+                    act.window?.clearFlags(LayoutParams.FLAG_SECURE)
+                    showImageOverlay(act)
+
+                }
+            }
+
+            override fun onActivityResumed(act: Activity) {
+                if (act == activity && isImageOverlayModeEnabled) {
+                    removeImageOverlay()
+                    act.window?.addFlags(LayoutParams.FLAG_SECURE)
+                }
+            }
+
+            override fun onActivityCreated(act: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityStarted(act: Activity) {}
+            override fun onActivityStopped(act: Activity) {}
+            override fun onActivitySaveInstanceState(act: Activity, outState: Bundle) {
+                if (act == activity && isImageOverlayModeEnabled) {
+                    showImageOverlay(act)
+                }
+            }
+            override fun onActivityDestroyed(act: Activity) {}
+        }
+        app.registerActivityLifecycleCallbacks(lifecycleCallbacks)
+    }
+
+    private fun unregisterLifecycleCallbacks() {
+        val app = context as? Application ?: return
+        lifecycleCallbacks?.let { app.unregisterActivityLifecycleCallbacks(it) }
+        lifecycleCallbacks = null
+    }
+
+    private fun showImageOverlay(activity: Activity) {
+        if (overlayImageView != null) return
+        val resId = activity.resources.getIdentifier("image", "drawable", activity.packageName)
+        if (resId == 0) return
+        activity.runOnUiThread {
+            val imageView = ImageView(activity).apply {
+                setImageResource(resId)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+            (activity.window.decorView as? ViewGroup)?.addView(imageView)
+            overlayImageView = imageView
+        }
+    }
+
+    private fun removeImageOverlay() {
+        val imageView = overlayImageView ?: return
+        val act = activity
+        if (act != null) {
+            act.runOnUiThread {
+                (imageView.parent as? ViewGroup)?.removeView(imageView)
+                overlayImageView = null
+            }
+        } else {
+            (imageView.parent as? ViewGroup)?.removeView(imageView)
+            overlayImageView = null
+        }
+    }
+
+    private fun toggleScreenshotWithImage(): Boolean {
+        isImageOverlayModeEnabled = !preferences.getBoolean(PREF_KEY_IMAGE_OVERLAY, false)
+        saveImageOverlayState(isImageOverlayModeEnabled)
+
+        if (isImageOverlayModeEnabled) {
+            screenshotOff()
+        } else {
+            screenshotOn()
+            removeImageOverlay()
+        }
+        updateSharedPreferencesState("")
+        return isImageOverlayModeEnabled
+    }
+
     private fun initScreenshotObserver() {
         screenshotObserver = object : ContentObserver(Handler()) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
                 uri?.let {
-                    if (it.toString().contains(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
+                    if (it.toString()
+                            .contains(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
+                    ) {
                         Log.d("ScreenshotProtection", "Screenshot detected")
                         updateSharedPreferencesState(it.path ?: "")
                     }
@@ -124,7 +241,11 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
     private fun startListening() {
         screenshotObserver?.let {
-            context.contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, it)
+            context.contentResolver.registerContentObserver(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                true,
+                it
+            )
         }
     }
 
@@ -159,28 +280,49 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     }
 
     private fun saveScreenshotState(isSecure: Boolean) {
-        preferences.edit().putBoolean(PREF_KEY_SCREENSHOT, isSecure).apply()
+        Executors.newSingleThreadExecutor().execute {
+            preferences.edit().putBoolean(PREF_KEY_SCREENSHOT, isSecure).apply()
+        }
+    }
+
+    private fun saveImageOverlayState(enabled: Boolean) {
+        Executors.newSingleThreadExecutor().execute {
+            preferences.edit().putBoolean(PREF_KEY_IMAGE_OVERLAY, enabled).apply()
+        }
     }
 
     private fun restoreScreenshotState() {
-        val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
-        if (isSecure) {
-            screenshotOff()
-        } else {
-            screenshotOn()
+        Executors.newSingleThreadExecutor().execute {
+            val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
+            val overlayEnabled = preferences.getBoolean(PREF_KEY_IMAGE_OVERLAY, false)
+            isImageOverlayModeEnabled = overlayEnabled
+
+            activity?.runOnUiThread {
+                if (isImageOverlayModeEnabled || isSecure) {
+                    screenshotOff()
+                } else {
+                    screenshotOn()
+                }
+            }
         }
     }
 
     private fun updateSharedPreferencesState(screenshotData: String) {
-        val jsonString = convertMapToJsonString(mapOf(
-            PREF_KEY_SCREENSHOT to preferences.getBoolean(PREF_KEY_SCREENSHOT, false),
-            SCREENSHOT_PATH to screenshotData,
-            SCREENSHOT_TAKEN to screenshotData.isNotEmpty()
-        ))
-        if (lastSharedPreferencesState != jsonString) {
-            hasSharedPreferencesChanged = true
-            lastSharedPreferencesState = jsonString
-        }
+        Handler(Looper.getMainLooper()).postDelayed({
+            val isSecure =
+                (activity?.window?.attributes?.flags ?: 0) and LayoutParams.FLAG_SECURE != 0
+            val jsonString = convertMapToJsonString(
+                mapOf(
+                    PREF_KEY_SCREENSHOT to isSecure,
+                    SCREENSHOT_PATH to screenshotData,
+                    SCREENSHOT_TAKEN to screenshotData.isNotEmpty()
+                )
+            )
+            if (lastSharedPreferencesState != jsonString) {
+                hasSharedPreferencesChanged = true
+                lastSharedPreferencesState = jsonString
+            }
+        }, 100)
     }
 
     private fun convertMapToJsonString(map: Map<String, Any>): String {

@@ -67,3 +67,33 @@ Updated readme and added sample usage.
 - feat: added MacOS support
 - fix: fix screenshot state not persisting on iOS
 - chore: added more examples.
+
+## 0.3.2-beta.1
+
+- fix: fix screenshot state not persisting on iOS by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/45
+- chore(deps): bump actions/checkout from 2 to 4 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/43
+- chore(deps): bump codecov/codecov-action from 4.0.1 to 4.5.0 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/42
+- feat: macos support by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/51
+
+## 0.3.2-beta.3
+
+- chore: updated pkg version by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/63
+- fix: duplicate interface definition for class 'NoScreenshotPlugin' by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/62
+
+## 0.3.2
+
+- feat: macos support by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/51
+- fix: fix screenshot state not persisting on iOS by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/45
+- fix: duplicate interface definition for class 'NoScreenshotPlugin' by @fonkamloic in https://github.com/FlutterPlaza/no_screenshot/pull/62
+- chore(deps): bump actions/checkout from 2 to 4 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/43
+- chore(deps): bump codecov/codecov-action from 4.0.1 to 4.5.0 by @dependabot in https://github.com/FlutterPlaza/no_screenshot/pull/42
+
+## 0.3.3-beta.1
+
+- feat: added `toggleScreenshotWithImage()` API to display a custom image overlay when the app goes to the background or app switcher, preventing screenshot content exposure on both Android and iOS by @zhangyuanyuan-bear and @fonkamloic.
+- feat: image overlay mode persists across app restarts via platform SharedPreferences/UserDefaults by @zhangyuanyuan-bear and @fonkamloic.
+- fix: use `Executors` for SharedPreferences access on Android to avoid strict mode violations on startup by @djamoapp.
+- fix: properly clean up image overlay and activity references on detach/config changes (Android) by @fonkamloic.
+- chore: updated Kotlin and Gradle versions in Android build configuration by @bamlab.
+- chore: updated example app to demonstrate the new image overlay feature by @fonkamloic.
+- ci: added automated pub.dev publish workflow by @fonkamloic.

@@ -5,346 +5,306 @@
   <img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml/badge.svg" alt="no_screenshot">
 </a>
   <a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
-<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" > 
- <img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg?token=C96E93VG2W"/> 
+<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" >
+ <img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg?token=C96E93VG2W"/>
  </a><a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-The Flutter plugin will enable, disable, or toggle screenshot support in your application.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, and **show a custom image overlay** in the app switcher on Android, iOS, and macOS.
 
 ## Features
 
-- Disables screenshot and screen recording on Android and iOS.
-- Enables screenshot and screen recording on Android and iOS.
-- Toggles screenshot and screen recording on Android and iOS.
-- Provides a stream to listen for screenshot activities.
+| Feature | Android | iOS | macOS |
+|---|:---:|:---:|:---:|
+| Disable screenshot & screen recording | ✅ | ✅ | ✅ |
+| Enable screenshot & screen recording | ✅ | ✅ | ✅ |
+| Toggle screenshot protection | ✅ | ✅ | ✅ |
+| Listen for screenshot events (stream) | ✅ | ✅ | ✅ |
+| Image overlay in app switcher / recents | ✅ | ✅ | - |
 
-## Update
+> **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
 
-Tracking `didChangeAppLifecycleState` is no longer required. The state will be persisted automatically in the native platform SharedPreferences.
+## Installation
 
-## Getting started
+Add `no_screenshot` to your `pubspec.yaml`:
 
-Add `no_screenshot` to your `pubspec.yaml` dependencies.
+```yaml
+dependencies:
+  no_screenshot: ^0.3.3-beta.1
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+## Quick Start
+
+```dart
+import 'package:no_screenshot/no_screenshot.dart';
+
+final noScreenshot = NoScreenshot.instance;
+
+// Disable screenshots & screen recording
+await noScreenshot.screenshotOff();
+
+// Re-enable screenshots & screen recording
+await noScreenshot.screenshotOn();
+
+// Toggle between enabled / disabled
+await noScreenshot.toggleScreenshot();
+```
 
 ## Usage
 
-- Basic Usage: Enable, disable, and toggle screenshot and screen recording functionalities.
-- Advanced Features: Use stream to listen for screenshot activities and integrate these features into your application.
+### 1. Screenshot & Screen Recording Protection
 
-Screenshots and Recordings
-
-Basic Usage | Advanced Usage
-:-: | :-:
-<video src='https://github.com/user-attachments/assets/0690753d-6d1f-488e-a7a9-48852b2affe8' width="180" autoplay loop></video> | <video src='https://github.com/user-attachments/assets/d63e2c1c-f35b-4ed3-bfe6-3e21d88a29e8' width="180" autoplay loop></video>
-
-
-
-
-
-
-
-### Basic Usage
-
-Step 1: Disable Screenshot and Screen Recording
-
-To disable screenshots and screen recording, you first have to import the package, then you can create an instance of the NoScreenshot object, which you can use to turn off screenshot, see code snippet:
+Block or allow screenshots and screen recording with a single method call.
 
 ```dart
-import 'package:no_screenshot/no_screenshot.dart';
-
 final _noScreenshot = NoScreenshot.instance;
 
-void disableScreenshot() async {
-  bool result = await _noScreenshot.screenshotOff();
-  debugPrint('Screenshot Off: $result');
+// Disable screenshots (returns true on success)
+Future<void> disableScreenshot() async {
+  final result = await _noScreenshot.screenshotOff();
+  debugPrint('screenshotOff: $result');
+}
+
+// Enable screenshots (returns true on success)
+Future<void> enableScreenshot() async {
+  final result = await _noScreenshot.screenshotOn();
+  debugPrint('screenshotOn: $result');
+}
+
+// Toggle the current state
+Future<void> toggleScreenshot() async {
+  final result = await _noScreenshot.toggleScreenshot();
+  debugPrint('toggleScreenshot: $result');
 }
 ```
 
-Step 2:  Enable Screenshot and Screen Recording
+### 2. Screenshot Monitoring (Stream)
 
-To re-enable screenshots and screen recording, use this code:
+Listen for screenshot events in real time. Monitoring is **off by default** -- you must explicitly start it.
 
 ```dart
-import 'package:no_screenshot/no_screenshot.dart';
-
 final _noScreenshot = NoScreenshot.instance;
 
-void enableScreenshot() async {
-  bool result = await _noScreenshot.screenshotOn();
-  debugPrint('Enable Screenshot: $result');
+// 1. Subscribe to the stream
+_noScreenshot.screenshotStream.listen((snapshot) {
+  debugPrint('Protection active: ${snapshot.isScreenshotProtectionOn}');
+  debugPrint('Screenshot taken: ${snapshot.wasScreenshotTaken}');
+  debugPrint('Path: ${snapshot.screenshotPath}');
+});
+
+// 2. Start monitoring
+await _noScreenshot.startScreenshotListening();
+
+// 3. Stop monitoring when no longer needed
+await _noScreenshot.stopScreenshotListening();
+```
+
+The stream emits a `ScreenshotSnapshot` object:
+
+| Property | Type | Description |
+|---|---|---|
+| `isScreenshotProtectionOn` | `bool` | Whether screenshot protection is currently active |
+| `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
+| `screenshotPath` | `String` | Path of the captured screenshot (when available) |
+
+### 3. Image Overlay (App Switcher / Recents)
+
+Show a custom image when the app appears in the app switcher or recents screen. This prevents sensitive content from being visible in thumbnails.
+
+```dart
+final _noScreenshot = NoScreenshot.instance;
+
+// Toggle the image overlay on/off (returns the new state)
+Future<void> toggleOverlay() async {
+  final isActive = await _noScreenshot.toggleScreenshotWithImage();
+  debugPrint('Image overlay active: $isActive');
 }
 ```
 
-Step 3: Toggle Screenshot and Screen Recording
+**Setup:** Place your overlay image in the platform-specific asset locations:
 
-If you just want to toggle the screenshot or screen recording functionality, use this code:
+- **Android:** `android/app/src/main/res/drawable/image.png`
+- **iOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
 
-```dart
-import 'package:no_screenshot/no_screenshot.dart';
+When enabled, the overlay image is shown whenever the app goes to the background or appears in the app switcher. Screenshot protection is also automatically activated.
 
-final _noScreenshot = NoScreenshot.instance;
+## Full Example
 
-void toggleScreenshot() async {
-  bool result = await _noScreenshot.toggleScreenshot();
-  debugPrint('Toggle Screenshot: $result');
-}
-```
-
-Example UI Integration
-
-Here’s an example of how you might integrate these functionalities into your app's UI:
+Below is a complete example showing all features together. See the full source in [`example/lib/main.dart`](example/lib/main.dart).
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:no_screenshot/no_screenshot.dart';
+import 'package:no_screenshot/screenshot_snapshot.dart';
 
 void main() {
-  runApp(const BasicUsage());
+  runApp(const MyApp());
 }
 
-class BasicUsage extends StatefulWidget {
-  const BasicUsage({super.key});
-
-  @override
-  State<BasicUsage> createState() => _BasicUsageState();
-}
-
-class _BasicUsageState extends State<BasicUsage> {
-  final _noScreenshot = NoScreenshot.instance;
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('No Screenshot Basic Usage'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: disableScreenshot,
-                child: const Text('Disable Screenshot'),
-              ),
-              ElevatedButton(
-                onPressed: enableScreenshot,
-                child: const Text('Enable Screenshot'),
-              ),
-              ElevatedButton(
-                onPressed: toggleScreenshot,
-                child: const Text('Toggle Screenshot'),
-              ),
-              const SizedBox(height: 60),
-            ],
-          ),
-        ),
+      title: 'No Screenshot Example',
+      theme: ThemeData(
+        colorSchemeSeed: Colors.deepPurple,
+        useMaterial3: true,
       ),
+      home: const HomePage(),
     );
   }
-
-  void toggleScreenshot() async {
-    bool result = await _noScreenshot.toggleScreenshot();
-    debugPrint('Toggle Screenshot: $result');
-  }
-
-  void enableScreenshot() async {
-    bool result = await _noScreenshot.screenshotOn();
-    debugPrint('Enable Screenshot: $result');
-  }
-
-  void disableScreenshot() async {
-    bool result = await _noScreenshot.screenshotOff();
-    debugPrint('Screenshot Off: $result');
-  }
-}
-```
-
-### Part 2: Advanced Features
-
-Step 1: Listen for Screenshot Activities
-
-To listen for screenshot activities, you can set up a stream listener like this:
-
-NOTE: You first have to import the package, then you can create an instance of the NoScreenshot object, which you can use to listen for screenshot events, see code snippet:
-
-```dart
-import 'package:no_screenshot/no_screenshot.dart';
-
-final _noScreenshot = NoScreenshot.instance;
-
-void listenForScreenshot() {
-  _noScreenshot.screenshotStream.listen((value) {
-    print('Screenshot taken: ${value.wasScreenshotTaken}');
-    print('Screenshot path: ${value.screenshotPath}');
-  });
-}
-```
-
-Step 2: Enable screenshot listening
-
-By default, listening to screenshot events is turned off. To listen for screenshot activities, you will need to enable or start listening:
-
-```dart
-import 'package:no_screenshot/no_screenshot.dart';
-
-final _noScreenshot = NoScreenshot.instance;
-
-void startScreenshotListening() async {
-  await _noScreenshot.startScreenshotListening();
-}
-```
-
-Step 3: Disable/stop screenshot listening
-
-To stop listen for screenshot activities, code below:
-
-```dart
-import 'package:no_screenshot/no_screenshot.dart';
-
-final _noScreenshot = NoScreenshot.instance;
-
-void stopScreenshotListening() async {
-  await _noScreenshot.stopScreenshotListening();
-}
-```
-
-Example Integration with Application
-
-Incorporate the screenshot listener into your app's main logic:
-
-```dart
-
-import 'package:flutter/material.dart';
-import 'package:no_screenshot/no_screenshot.dart';
-
-void main() {
-  runApp(const AdvancedUsage());
 }
 
-class AdvancedUsage extends StatefulWidget {
-  const AdvancedUsage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<AdvancedUsage> createState() => _AdvancedUsageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _AdvancedUsageState extends State<AdvancedUsage> {
+class _HomePageState extends State<HomePage> {
   final _noScreenshot = NoScreenshot.instance;
-  bool _isListeningToScreenshotSnapshot = false;
+  bool _isMonitoring = false;
+  bool _isOverlayImageOn = false;
+  ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
+    isScreenshotProtectionOn: false,
+    wasScreenshotTaken: false,
+    screenshotPath: '',
+  );
 
   @override
   void initState() {
     super.initState();
-    listenForScreenshot();
-  }
-
-  void listenForScreenshot() {
     _noScreenshot.screenshotStream.listen((value) {
-      if (value.wasScreenshotTaken) showAlert(value.screenshotPath);
+      setState(() => _latestSnapshot = value);
+      if (value.wasScreenshotTaken) {
+        debugPrint('Screenshot taken at path: ${value.screenshotPath}');
+      }
     });
   }
 
+  // ── Screenshot Protection ──────────────────────────────────────────
 
-  void stopScreenshotListening() async {
-    await _noScreenshot.stopScreenshotListening();
-    setState(() {
-      _isListeningToScreenshotSnapshot = false;
-    });
+  Future<void> _disableScreenshot() async {
+    final result = await _noScreenshot.screenshotOff();
+    debugPrint('screenshotOff: $result');
   }
 
-  void startScreenshotListening() async {
+  Future<void> _enableScreenshot() async {
+    final result = await _noScreenshot.screenshotOn();
+    debugPrint('screenshotOn: $result');
+  }
+
+  Future<void> _toggleScreenshot() async {
+    final result = await _noScreenshot.toggleScreenshot();
+    debugPrint('toggleScreenshot: $result');
+  }
+
+  // ── Screenshot Monitoring ──────────────────────────────────────────
+
+  Future<void> _startMonitoring() async {
     await _noScreenshot.startScreenshotListening();
-    setState(() {
-      _isListeningToScreenshotSnapshot = true;
-    });
+    setState(() => _isMonitoring = true);
+  }
+
+  Future<void> _stopMonitoring() async {
+    await _noScreenshot.stopScreenshotListening();
+    setState(() => _isMonitoring = false);
+  }
+
+  // ── Image Overlay ─────────────────────────────────────────────────
+
+  Future<void> _toggleScreenshotWithImage() async {
+    final result = await _noScreenshot.toggleScreenshotWithImage();
+    debugPrint('toggleScreenshotWithImage: $result');
+    setState(() => _isOverlayImageOn = result);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Listen for Screenshot Activities'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: startScreenshotListening,
-              child: const Text('Start Listening'),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Screenshot Listening: $_isListeningToScreenshotSnapshot"),
-                _isListeningToScreenshotSnapshot
-                    ? Container(
-                        height: 20,
-                        width: 20,
-                        margin: const EdgeInsets.only(left: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      )
-                    : const SizedBox.shrink()
-              ],
-            ),
-            ElevatedButton(
-              onPressed: stopScreenshotListening,
-              child: const Text('Stop Listening'),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void showAlert(String path) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          child: Container(
-            padding: const EdgeInsets.all(20.0),
-            height: 280,
-            width: MediaQuery.sizeOf(context).width - 60,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.warning_amber_outlined,
-                  size: 80,
-                  color: Colors.red,
-                ),
-                const Text(
-                  "Alert: screenshot taken",
-                  style: TextStyle(fontSize: 24),
-                ),
-                Text("Path: $path"),
-                const SizedBox(height: 40),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("confirm"),
-                ),
-              ],
-            ),
+      appBar: AppBar(title: const Text('No Screenshot Example')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Screenshot protection buttons
+          ElevatedButton(
+            onPressed: _disableScreenshot,
+            child: const Text('Disable Screenshot'),
           ),
-        );
-      },
+          ElevatedButton(
+            onPressed: _enableScreenshot,
+            child: const Text('Enable Screenshot'),
+          ),
+          ElevatedButton(
+            onPressed: _toggleScreenshot,
+            child: const Text('Toggle Screenshot'),
+          ),
+
+          const Divider(),
+
+          // Monitoring buttons
+          ElevatedButton(
+            onPressed: _startMonitoring,
+            child: const Text('Start Monitoring'),
+          ),
+          ElevatedButton(
+            onPressed: _stopMonitoring,
+            child: const Text('Stop Monitoring'),
+          ),
+          Text('Monitoring: $_isMonitoring'),
+          Text('Last snapshot: $_latestSnapshot'),
+
+          const Divider(),
+
+          // Image overlay toggle
+          ElevatedButton(
+            onPressed: _toggleScreenshotWithImage,
+            child: const Text('Toggle Image Overlay'),
+          ),
+          Text('Overlay active: $_isOverlayImageOn'),
+        ],
+      ),
     );
   }
 }
-
 ```
 
-## Additional information
+## API Reference
 
-Check out our repo for Open-Source contributions. Contributions are welcome!
+| Method | Return Type | Description |
+|---|---|---|
+| `NoScreenshot.instance` | `NoScreenshot` | Singleton instance of the plugin |
+| `screenshotOff()` | `Future<bool>` | Disable screenshots & screen recording |
+| `screenshotOn()` | `Future<bool>` | Enable screenshots & screen recording |
+| `toggleScreenshot()` | `Future<bool>` | Toggle screenshot protection on/off |
+| `toggleScreenshotWithImage()` | `Future<bool>` | Toggle image overlay mode (returns new state) |
+| `startScreenshotListening()` | `Future<void>` | Start monitoring for screenshot events |
+| `stopScreenshotListening()` | `Future<void>` | Stop monitoring for screenshot events |
+| `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot activity events |
+
+## Contributors
+
+Thanks to everyone who has contributed to this project!
+
+<a href="https://github.com/fonkamloic"><img src="https://github.com/fonkamloic.png" width="60" height="60" style="border-radius:50%" alt="@fonkamloic"></a>
+<a href="https://github.com/zhangyuanyuan-bear"><img src="https://github.com/zhangyuanyuan-bear.png" width="60" height="60" style="border-radius:50%" alt="@zhangyuanyuan-bear"></a>
+<a href="https://github.com/qk7b"><img src="https://github.com/qk7b.png" width="60" height="60" style="border-radius:50%" alt="@qk7b"></a>
+<a href="https://github.com/T-moz"><img src="https://github.com/T-moz.png" width="60" height="60" style="border-radius:50%" alt="@T-moz"></a>
+<a href="https://github.com/ggiordan"><img src="https://github.com/ggiordan.png" width="60" height="60" style="border-radius:50%" alt="@ggiordan"></a>
+<a href="https://github.com/Musaddiq625"><img src="https://github.com/Musaddiq625.png" width="60" height="60" style="border-radius:50%" alt="@Musaddiq625"></a>
+<a href="https://github.com/albertocappellina-intesys"><img src="https://github.com/albertocappellina-intesys.png" width="60" height="60" style="border-radius:50%" alt="@albertocappellina-intesys"></a>
+<a href="https://github.com/kefeh"><img src="https://github.com/kefeh.png" width="60" height="60" style="border-radius:50%" alt="@kefeh"></a>
+
+## License
+
+BSD 3-Clause License. See [LICENSE](LICENSE) for details.

@@ -10,11 +10,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private var eventSink: FlutterEventSink? = nil
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
+    private var isImageOverlayModeEnabled: Bool = false
 
     private static let ENABLESCREENSHOT = false
     private static let DISABLESCREENSHOT = true
 
     private static let preventScreenShotKey = "preventScreenShot"
+    private static let imageOverlayModeKey = "imageOverlayMode"
     private static let methodChannelName = "com.flutterplaza.no_screenshot_methods"
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
@@ -25,6 +27,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
         // Restore the saved state from UserDefaults
         let fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
+        isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
     }
 
@@ -41,19 +44,39 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     public func applicationWillResignActive(_ application: UIApplication) {
         persistState()
+
+        if isImageOverlayModeEnabled {
+         //   screenProtectorKit?.disablePreventScreenshot()
+            screenProtectorKit?.enabledImageScreen(named: "image")
+        }
     }
 
     public func applicationDidBecomeActive(_ application: UIApplication) {
         attachWindowIfNeeded()
         fetchPersistedState()
+
+        if isImageOverlayModeEnabled {
+            screenProtectorKit?.disableImageScreen()
+           // screenProtectorKit?.enabledPreventScreenshot()
+        }
     }
 
     public func applicationWillEnterForeground(_ application: UIApplication) {
         fetchPersistedState()
+        
+        // Hide image overlay when app enters foreground if image overlay mode is enabled
+        if isImageOverlayModeEnabled {
+            screenProtectorKit?.disableImageScreen()
+        }
     }
 
     public func applicationDidEnterBackground(_ application: UIApplication) {
         persistState()
+        
+        // Show image overlay when app enters background if image overlay mode is enabled
+        if isImageOverlayModeEnabled {
+            screenProtectorKit?.enabledImageScreen(named: "image")
+        }
     }
 
     public func applicationWillTerminate(_ application: UIApplication) {
@@ -63,15 +86,17 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     func persistState() {
         // Persist the state when changed
         UserDefaults.standard.set(IOSNoScreenshotPlugin.preventScreenShot, forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
-        print("Persisted state: \(IOSNoScreenshotPlugin.preventScreenShot)")
+        UserDefaults.standard.set(isImageOverlayModeEnabled, forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
+        print("Persisted state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
         updateSharedPreferencesState("")
     }
 
     func fetchPersistedState() {
         // Restore the saved state from UserDefaults
         var fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey) ? IOSNoScreenshotPlugin.DISABLESCREENSHOT :IOSNoScreenshotPlugin.ENABLESCREENSHOT
+        isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
-        print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot)")
+        print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -82,6 +107,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         case "screenshotOn":
             shotOn()
             result(true)
+        case "toggleScreenshotWithImage":
+            let isActive = toggleScreenshotWithImage()
+            result(isActive)
         case "toggleScreenshot":
             IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
             result(true)
@@ -106,6 +134,25 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
         screenProtectorKit?.disablePreventScreenshot()
         persistState()
+    }
+    
+    private func toggleScreenshotWithImage() -> Bool {
+        // Toggle the image overlay mode state
+        isImageOverlayModeEnabled.toggle()
+        
+        if isImageOverlayModeEnabled {
+            // Mode is now active (true) - screenshot prevention should be ON (screenshots blocked)
+            IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
+            screenProtectorKit?.enabledPreventScreenshot()
+        } else {
+            // Mode is now inactive (false) - screenshot prevention should be OFF (screenshots allowed)
+            IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
+            screenProtectorKit?.disablePreventScreenshot()
+            screenProtectorKit?.disableImageScreen()
+        }
+        
+        persistState()
+        return isImageOverlayModeEnabled
     }
 
     private func startListening() {

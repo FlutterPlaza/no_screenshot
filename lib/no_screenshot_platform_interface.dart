@@ -39,6 +39,14 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   }
 
   /// Return `true` if screenshot capabilities has been
+  /// successfully enabled or is currently enabled and `false` otherwise.
+  /// throw `UnmimplementedError` if not implement
+  Future<bool> toggleScreenshotWithImage() {
+    throw UnimplementedError(
+        'toggleScreenshotWithImage() has not been implemented.');
+  }
+
+  /// Return `true` if screenshot capabilities has been
   /// successfully toggle from it previous state and `false` if the attempt
   /// to toggle failed.
   /// throw `UnmimplementedError` if not implement
