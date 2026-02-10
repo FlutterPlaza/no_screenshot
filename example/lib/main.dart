@@ -363,8 +363,7 @@ class _SnapshotInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-              '${l.protectionActive}: ${snapshot.isScreenshotProtectionOn}',
+          Text('${l.protectionActive}: ${snapshot.isScreenshotProtectionOn}',
               style: style?.copyWith(
                   color: snapshot.isScreenshotProtectionOn
                       ? Colors.green
