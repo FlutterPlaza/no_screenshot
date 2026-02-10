@@ -10,6 +10,14 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     private var hasSharedPreferencesChanged: Bool = false
     private var isImageOverlayModeEnabled: Bool = false
     private var overlayImageView: NSImageView? = nil
+    private var metadataQuery: NSMetadataQuery? = nil
+    private var isListening: Bool = false
+    private var lastScreenshotDate: Date = Date()
+    private var isScreenCaptureUIRunning: Bool = false
+    private var screenCaptureUITerminatedAt: Date? = nil
+    private var lastPasteboardChangeCount: Int = NSPasteboard.general.changeCount
+    private var pasteboardPollTimer: Timer? = nil
+    private var lastDetectionTime: Date = Date.distantPast
 
     private static let ENABLESCREENSHOT = false
     private static let DISABLESCREENSHOT = true
@@ -176,13 +184,166 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     }
 
     private func startListening() {
-        // macOS does not provide a direct API for detecting screen recording events, so we simulate this.
-        print("Start listening for screenshot and screen recording.")
+        guard !isListening else { return }
+        isListening = true
+        lastScreenshotDate = Date()
+
+        // 1. NSMetadataQuery — detects screenshots saved to disk (always available).
+        let query = NSMetadataQuery()
+        query.predicate = NSPredicate(format: "kMDItemIsScreenCapture = 1")
+        query.searchScopes = [NSMetadataQueryLocalComputerScope]
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(metadataQueryDidFinishGathering(_:)),
+            name: .NSMetadataQueryDidFinishGathering,
+            object: query
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(metadataQueryDidUpdate(_:)),
+            name: .NSMetadataQueryDidUpdate,
+            object: query
+        )
+
+        query.start()
+        metadataQuery = query
+        print("Start listening for screenshots via NSMetadataQuery.")
+
+        // 2. NSWorkspace process monitor — detects screencaptureui launch.
+        //    Catches screenshots from any source (keyboard shortcuts, Screenshot.app,
+        //    Touch Bar, CLI, etc.) including those saved only to clipboard.
+        //    No special permissions required; works in sandboxed apps.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidLaunchApplication(_:)),
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+
+        // 3. NSWorkspace terminate monitor — tracks when screencaptureui exits.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidTerminateApplication(_:)),
+            name: NSWorkspace.didTerminateApplicationNotification,
+            object: nil
+        )
+
+        // Check if screencaptureui is already running
+        isScreenCaptureUIRunning = NSWorkspace.shared.runningApplications.contains {
+            $0.bundleIdentifier == "com.apple.screencaptureui"
+        }
+
+        print("NSWorkspace observer active — monitoring for screencaptureui process.")
+
+        // 4. Pasteboard polling — detects clipboard-only screenshots.
+        lastPasteboardChangeCount = NSPasteboard.general.changeCount
+        pasteboardPollTimer = Timer.scheduledTimer(
+            timeInterval: 0.5,
+            target: self,
+            selector: #selector(checkPasteboardForScreenshot),
+            userInfo: nil,
+            repeats: true
+        )
+        print("Pasteboard poll timer active (0.5s interval).")
+
         persistState()
     }
 
+    @objc private func workspaceDidLaunchApplication(_ notification: Notification) {
+        guard isListening,
+              let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              app.bundleIdentifier == "com.apple.screencaptureui" else {
+            return
+        }
+        isScreenCaptureUIRunning = true
+        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder)
+    }
+
+    @objc private func workspaceDidTerminateApplication(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              app.bundleIdentifier == "com.apple.screencaptureui" else {
+            return
+        }
+        isScreenCaptureUIRunning = false
+        screenCaptureUITerminatedAt = Date()
+    }
+
+    @objc private func checkPasteboardForScreenshot() {
+        let pasteboard = NSPasteboard.general
+        let currentCount = pasteboard.changeCount
+        guard currentCount != lastPasteboardChangeCount else { return }
+        lastPasteboardChangeCount = currentCount
+
+        // Only treat as a screenshot if screencaptureui is running or recently terminated (< 3s)
+        let isRecentlyTerminated: Bool
+        if let terminatedAt = screenCaptureUITerminatedAt {
+            isRecentlyTerminated = Date().timeIntervalSince(terminatedAt) < 3.0
+        } else {
+            isRecentlyTerminated = false
+        }
+
+        guard isScreenCaptureUIRunning || isRecentlyTerminated else { return }
+
+        // Verify the pasteboard contains image data
+        let imageTypes: [NSPasteboard.PasteboardType] = [.tiff, .png]
+        guard pasteboard.availableType(from: imageTypes) != nil else { return }
+
+        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder)
+    }
+
+    @objc private func metadataQueryDidFinishGathering(_ notification: Notification) {
+        // Ignore pre-existing screenshots; we only care about new ones.
+    }
+
+    @objc private func metadataQueryDidUpdate(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let addedItems = userInfo[NSMetadataQueryUpdateAddedItemsKey] as? [NSMetadataItem] else {
+            return
+        }
+
+        for item in addedItems {
+            guard let creationDate = item.value(forAttribute: kMDItemContentCreationDate as String) as? Date,
+                  creationDate > lastScreenshotDate else {
+                continue
+            }
+
+            let path = (item.value(forAttribute: kMDItemPath as String) as? String) ?? MacOSNoScreenshotPlugin.screenshotPathPlaceholder
+            lastScreenshotDate = creationDate
+            updateSharedPreferencesState(path)
+        }
+    }
+
     private func stopListening() {
-        print("Stop listening for screenshot.")
+        guard isListening else { return }
+        isListening = false
+
+        if let query = metadataQuery {
+            query.stop()
+            NotificationCenter.default.removeObserver(self, name: .NSMetadataQueryDidFinishGathering, object: query)
+            NotificationCenter.default.removeObserver(self, name: .NSMetadataQueryDidUpdate, object: query)
+            metadataQuery = nil
+        }
+
+        NSWorkspace.shared.notificationCenter.removeObserver(
+            self,
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.removeObserver(
+            self,
+            name: NSWorkspace.didTerminateApplicationNotification,
+            object: nil
+        )
+
+        pasteboardPollTimer?.invalidate()
+        pasteboardPollTimer = nil
+
+        isScreenCaptureUIRunning = false
+        screenCaptureUITerminatedAt = nil
+        lastDetectionTime = Date.distantPast
+
+        print("Stop listening for screenshots.")
         persistState()
     }
 
@@ -196,6 +357,18 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     }
 
     private func updateSharedPreferencesState(_ screenshotData: String) {
+        // Debounce: suppress duplicate screenshot detection events within 2 seconds,
+        // unless the new event carries a real file path (NSMetadataQuery upgrade).
+        // Non-detection calls (empty screenshotData from persistState) are never debounced.
+        if !screenshotData.isEmpty {
+            let now = Date()
+            let hasRealPath = screenshotData != MacOSNoScreenshotPlugin.screenshotPathPlaceholder
+            if now.timeIntervalSince(lastDetectionTime) < 2.0 && !hasRealPath {
+                return
+            }
+            lastDetectionTime = now
+        }
+
         let map: [String: Any] = [
             "is_screenshot_on": MacOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
