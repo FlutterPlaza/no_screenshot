@@ -120,3 +120,14 @@ Updated readme and added sample usage.
 - fix(macos): track `screencaptureui` process lifecycle (launch + termination) for reliable detection by @fonkamloic.
 - fix(macos): add 2s debounce to suppress duplicate detection events while allowing file-path upgrades from `NSMetadataQuery` by @fonkamloic.
 - docs: updated macOS screenshot monitoring documentation to reflect three detection methods by @fonkamloic.
+
+## 0.3.5
+
+- fix(ios): fix iOS 26 RTL layout shift by dropping `ScreenProtectorKit` and inlining screenshot prevention with `forceLeftToRight` semantics by @fonkamloic.
+- fix(ios): fix `EXC_BAD_ACCESS` crash in `_collectExistingTraitCollectionsForTraitTracking` on iOS 26+ caused by circular view hierarchy by @fonkamloic.
+- fix(ios): fix bottom-right content alignment caused by Auto Layout constraint offset during layer reparenting by @fonkamloic.
+- feat(ios): removed `ScreenProtectorKit` dependency — all iOS screenshot prevention is now inlined by @fonkamloic.
+- feat(example): add EN/AR localization and RTL toggle to example app for testing RTL layout by @fonkamloic.
+- docs: document `screenshotPath` availability — file path is only available on macOS; Android and iOS return a placeholder by @fonkamloic.
+- docs: add LTR/RTL language support note to README by @fonkamloic.
+- docs: add GIF demo placeholders for every feature on every platform by @fonkamloic.

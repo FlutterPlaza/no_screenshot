@@ -18,9 +18,13 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Enable screenshot & screen recording | ✅ | ✅ | ✅ |
 | Toggle screenshot protection | ✅ | ✅ | ✅ |
 | Listen for screenshot events (stream) | ✅ | ✅ | ✅ |
+| Screenshot file path | ❌ | ❌ | ✅ |
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ |
+| LTR & RTL language support | ✅ | ✅ | ✅ |
 
 > **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
+
+> **Note:** `screenshotPath` is only available on **macOS** (via Spotlight / `NSMetadataQuery`). On Android and iOS the path is not accessible due to platform limitations — the field will contain a placeholder string. Use `wasScreenshotTaken` to detect screenshot events on all platforms.
 
 ## Installation
 
@@ -28,7 +32,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.3.4
+  no_screenshot: ^0.3.5
 ```
 
 Then run:
@@ -82,6 +86,12 @@ Future<void> toggleScreenshot() async {
 }
 ```
 
+#### Enable / Disable Screenshot
+
+| Android | iOS |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_android.gif" width="300" alt="Screenshot on/off on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_ios.gif" width="300" alt="Screenshot on/off on iOS"> |
+
 ### 2. Screenshot Monitoring (Stream)
 
 Listen for screenshot events in real time. Monitoring is **off by default** -- you must explicitly start it.
@@ -109,7 +119,13 @@ The stream emits a `ScreenshotSnapshot` object:
 |---|---|---|
 | `isScreenshotProtectionOn` | `bool` | Whether screenshot protection is currently active |
 | `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
-| `screenshotPath` | `String` | Path of the captured screenshot (when available) |
+| `screenshotPath` | `String` | File path of the screenshot (**macOS only** — see note below) |
+
+> **Screenshot path availability:** The actual file path of a captured screenshot is only available on **macOS**, where it is retrieved via Spotlight (`NSMetadataQuery`). On **Android** and **iOS**, the operating system does not expose the screenshot file path to apps — the field will contain a placeholder string. Always use `wasScreenshotTaken` to detect screenshot events reliably across all platforms.
+
+| Android | iOS |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_android.gif" width="300" alt="Screenshot monitoring on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_ios.gif" width="300" alt="Screenshot monitoring on iOS"> |
 
 ### macOS Screenshot Monitoring
 
@@ -144,6 +160,28 @@ Future<void> toggleOverlay() async {
 - **macOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
 
 When enabled, the overlay image is shown whenever the app goes to the background or appears in the app switcher. Screenshot protection is also automatically activated.
+
+| Android | iOS |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_android.gif" width="300" alt="Image overlay on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_ios.gif" width="300" alt="Image overlay on iOS"> |
+
+### macOS Demo
+
+All features (screenshot protection, monitoring, and image overlay) on macOS:
+
+| macOS |
+|:---:|
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/all_features_macos.gif" width="600" alt="All features on macOS"> |
+
+## RTL Language Support
+
+This plugin works correctly with both **LTR** (left-to-right) and **RTL** (right-to-left) languages such as Arabic and Hebrew. On iOS, the internal screenshot prevention mechanism uses `forceLeftToRight` semantics to avoid layout shifts caused by the underlying `UITextField` layer trick.
+
+The example app includes an RTL toggle to verify correct behavior:
+
+| RTL Support (iOS) |
+|:---:|
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/rtl_support_ios.gif" width="300" alt="RTL support on iOS"> |
 
 ## Full Example
 

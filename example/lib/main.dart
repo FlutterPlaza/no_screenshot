@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 import 'package:no_screenshot/screenshot_snapshot.dart';
+
+import 'app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isRTL = false;
+
+  void _toggleRTL(bool value) {
+    setState(() => _isRTL = value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,13 +31,24 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.deepPurple,
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      locale: _isRTL ? const Locale('ar') : const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: HomePage(isRTL: _isRTL, onRTLChanged: _toggleRTL),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.isRTL, required this.onRTLChanged});
+
+  final bool isRTL;
+  final ValueChanged<bool> onRTLChanged;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -92,17 +117,27 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('No Screenshot Example')),
+      appBar: AppBar(
+        title: Text(l.appTitle),
+        actions: [
+          Text(l.rtl),
+          Switch(
+            value: widget.isRTL,
+            onChanged: widget.onRTLChanged,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
-            title: 'Screenshot & Recording Protection',
-            subtitle: 'Android, iOS & macOS',
+            title: l.protectionSectionTitle,
+            subtitle: l.platformSubtitle,
             children: [
               _StatusRow(
-                label: 'Protection',
+                label: l.protection,
                 isOn: _latestSnapshot.isScreenshotProtectionOn,
               ),
               const SizedBox(height: 12),
@@ -110,16 +145,16 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: _FeatureButton(
-                      label: 'Disable Screenshot',
-                      subtitle: 'Blocks capture & recording',
+                      label: l.disableScreenshot,
+                      subtitle: l.blocksCapture,
                       onPressed: _disableScreenshot,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _FeatureButton(
-                      label: 'Enable Screenshot',
-                      subtitle: 'Allows capture & recording',
+                      label: l.enableScreenshot,
+                      subtitle: l.allowsCapture,
                       onPressed: _enableScreenshot,
                     ),
                   ),
@@ -127,19 +162,19 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 8),
               _FeatureButton(
-                label: 'Toggle Screenshot',
-                subtitle: 'Switch between enabled / disabled',
+                label: l.toggleScreenshot,
+                subtitle: l.toggleScreenshotSubtitle,
                 onPressed: _toggleScreenshot,
               ),
             ],
           ),
           const SizedBox(height: 16),
           _buildSection(
-            title: 'Screenshot Monitoring',
-            subtitle: 'Android, iOS & macOS',
+            title: l.monitoringSectionTitle,
+            subtitle: l.platformSubtitle,
             children: [
               _StatusRow(
-                label: 'Monitoring',
+                label: l.monitoring,
                 isOn: _isMonitoring,
               ),
               const SizedBox(height: 8),
@@ -149,16 +184,16 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: _FeatureButton(
-                      label: 'Enable Monitoring',
-                      subtitle: 'Start listening for screenshots',
+                      label: l.enableMonitoring,
+                      subtitle: l.startListening,
                       onPressed: _startMonitoring,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _FeatureButton(
-                      label: 'Disable Monitoring',
-                      subtitle: 'Stop listening for screenshots',
+                      label: l.disableMonitoring,
+                      subtitle: l.stopListening,
                       onPressed: _stopMonitoring,
                     ),
                   ),
@@ -168,18 +203,17 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           _buildSection(
-            title: 'Overlay Image',
-            subtitle: 'Android, iOS & macOS',
+            title: l.overlaySectionTitle,
+            subtitle: l.platformSubtitle,
             children: [
               _StatusRow(
-                label: 'Overlay',
+                label: l.overlay,
                 isOn: _isOverlayImageOn,
               ),
               const SizedBox(height: 12),
               _FeatureButton(
-                label: 'Toggle Screenshot With Image',
-                subtitle:
-                    'Show overlay image when app is in recents / app switcher',
+                label: l.toggleScreenshotWithImage,
+                subtitle: l.overlaySubtitle,
                 onPressed: _toggleScreenshotWithImage,
               ),
             ],
@@ -223,17 +257,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showScreenshotAlert(String path) {
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_amber_outlined,
             size: 48, color: Colors.red),
-        title: const Text('Screenshot Detected'),
-        content: Text('Path: $path'),
+        title: Text(l.screenshotDetected),
+        content: Text('${l.path}: $path'),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(l.ok),
           ),
         ],
       ),
@@ -262,7 +297,7 @@ class _FeatureButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
           ),
@@ -290,6 +325,7 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         Text('$label: ', style: Theme.of(context).textTheme.bodyMedium),
@@ -302,7 +338,7 @@ class _StatusRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(isOn ? 'ON' : 'OFF'),
+        Text(isOn ? l.on : l.off),
       ],
     );
   }
@@ -315,6 +351,7 @@ class _SnapshotInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.bodySmall;
     return Container(
       width: double.infinity,
@@ -326,14 +363,15 @@ class _SnapshotInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Protection active: ${snapshot.isScreenshotProtectionOn}',
+          Text(
+              '${l.protectionActive}: ${snapshot.isScreenshotProtectionOn}',
               style: style?.copyWith(
                   color: snapshot.isScreenshotProtectionOn
                       ? Colors.green
                       : Colors.red)),
-          Text('Screenshot taken: ${snapshot.wasScreenshotTaken}',
+          Text('${l.screenshotTaken}: ${snapshot.wasScreenshotTaken}',
               style: style),
-          Text('Path: ${snapshot.screenshotPath}', style: style),
+          Text('${l.path}: ${snapshot.screenshotPath}', style: style),
         ],
       ),
     );
