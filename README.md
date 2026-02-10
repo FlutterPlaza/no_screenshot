@@ -1,13 +1,10 @@
 # no_screenshot
 
 <p align="center">
-<a href="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml">
-  <img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml/badge.svg" alt="no_screenshot">
-</a>
-  <a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
-<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot" >
- <img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg?token=C96E93VG2W"/>
- </a><a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
+<a href="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml"><img src="https://github.com/FlutterPlaza/no_screenshot/actions/workflows/main.yaml/badge.svg?branch=development" alt="CI"></a>
+<a href="https://codecov.io/gh/FlutterPlaza/no_screenshot"><img src="https://codecov.io/gh/FlutterPlaza/no_screenshot/branch/development/graph/badge.svg?token=C96E93VG2W" alt="Codecov"></a>
+<a href="https://pub.dev/packages/no_screenshot"><img src="https://img.shields.io/pub/v/no_screenshot.svg" alt="Pub"></a>
+<a href="https://github.com/FlutterPlaza/no_screenshot"><img src="https://img.shields.io/github/stars/FlutterPlaza/no_screenshot.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
@@ -31,7 +28,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.3.3-beta.1
+  no_screenshot: ^0.3.4
 ```
 
 Then run:
@@ -113,6 +110,18 @@ The stream emits a `ScreenshotSnapshot` object:
 | `isScreenshotProtectionOn` | `bool` | Whether screenshot protection is currently active |
 | `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
 | `screenshotPath` | `String` | Path of the captured screenshot (when available) |
+
+### macOS Screenshot Monitoring
+
+On macOS, screenshot monitoring uses three complementary detection methods — **no special permissions required**:
+
+| Method | What it detects |
+|---|---|
+| `NSMetadataQuery` (Spotlight) | Screenshots saved to disk — provides the actual file path |
+| `NSWorkspace` process monitor | `screencaptureui` process launch & termination — tracks the screenshot lifecycle |
+| Pasteboard polling | Clipboard-only screenshots (Cmd+Ctrl+Shift+3/4) — detected when image data appears on the pasteboard while `screencaptureui` is active or recently exited |
+
+> **Note:** Pasteboard-based detection is scoped to the `screencaptureui` process window (running or terminated < 3 s ago) to avoid false positives from normal copy/paste. When "Show Floating Thumbnail" is disabled in macOS screenshot settings, the `screencaptureui` process does not launch; in that case only file-saved screenshots are detected via `NSMetadataQuery`.
 
 ### 3. Image Overlay (App Switcher / Recents)
 
@@ -299,6 +308,7 @@ Thanks to everyone who has contributed to this project!
 
 <a href="https://github.com/fonkamloic"><img src="https://github.com/fonkamloic.png" width="60" height="60" style="border-radius:50%" alt="@fonkamloic"></a>
 <a href="https://github.com/zhangyuanyuan-bear"><img src="https://github.com/zhangyuanyuan-bear.png" width="60" height="60" style="border-radius:50%" alt="@zhangyuanyuan-bear"></a>
+<a href="https://github.com/BranislavKljaic96"><img src="https://github.com/BranislavKljaic96.png" width="60" height="60" style="border-radius:50%" alt="@BranislavKljaic96"></a>
 <a href="https://github.com/qk7b"><img src="https://github.com/qk7b.png" width="60" height="60" style="border-radius:50%" alt="@qk7b"></a>
 <a href="https://github.com/T-moz"><img src="https://github.com/T-moz.png" width="60" height="60" style="border-radius:50%" alt="@T-moz"></a>
 <a href="https://github.com/ggiordan"><img src="https://github.com/ggiordan.png" width="60" height="60" style="border-radius:50%" alt="@ggiordan"></a>
