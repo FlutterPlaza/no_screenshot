@@ -175,7 +175,7 @@ All features (screenshot protection, monitoring, and image overlay) on macOS:
 
 ## RTL Language Support
 
-This plugin works correctly with both **LTR** (left-to-right) and **RTL** (right-to-left) languages such as Arabic and Hebrew. On iOS, the internal screenshot prevention mechanism uses `forceLeftToRight` semantics to avoid layout shifts caused by the underlying `UITextField` layer trick.
+This plugin works correctly with both **LTR** (left-to-right) and **RTL** (right-to-left) languages such as Arabic and Hebrew. On iOS 26+, the internal screenshot prevention mechanism uses `forceLeftToRight` semantics to avoid a layout shift to the right when the device language is set to Arabic or another RTL language (see [flutter/flutter#175523](https://github.com/flutter/flutter/issues/175523)).
 
 The example app includes an RTL toggle to verify correct behavior:
 
