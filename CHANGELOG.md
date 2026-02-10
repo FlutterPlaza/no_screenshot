@@ -92,8 +92,31 @@ Updated readme and added sample usage.
 
 - feat: added `toggleScreenshotWithImage()` API to display a custom image overlay when the app goes to the background or app switcher, preventing screenshot content exposure on both Android and iOS by @zhangyuanyuan-bear and @fonkamloic.
 - feat: image overlay mode persists across app restarts via platform SharedPreferences/UserDefaults by @zhangyuanyuan-bear and @fonkamloic.
-- fix: use `Executors` for SharedPreferences access on Android to avoid strict mode violations on startup by @djamoapp.
+- fix: use `Executors` for SharedPreferences access on Android to avoid strict mode violations on startup by @qk7b.
 - fix: properly clean up image overlay and activity references on detach/config changes (Android) by @fonkamloic.
-- chore: updated Kotlin and Gradle versions in Android build configuration by @bamlab.
+- chore: updated Kotlin and Gradle versions in Android build configuration by @T-moz.
 - chore: updated example app to demonstrate the new image overlay feature by @fonkamloic.
 - ci: added automated pub.dev publish workflow by @fonkamloic.
+
+## 0.3.3
+
+- feat(macos): added macOS support for `toggleScreenshotWithImage()` by @fonkamloic.
+- feat: added `toggleScreenshotWithImage()` API to display a custom image overlay when the app goes to the background or app switcher, preventing screenshot content exposure on both Android and iOS by @zhangyuanyuan-bear and @fonkamloic.
+- feat: image overlay mode persists across app restarts via platform SharedPreferences/UserDefaults by @zhangyuanyuan-bear and @fonkamloic.
+- fix(ios): prevent stale image overlay by consolidating lifecycle handling by @BranislavKljaic96 and @fonkamloic.
+- fix(ios): native code now works with both SceneDelegate and AppDelegate by @BranislavKljaic96 in https://github.com/FlutterPlaza/no_screenshot/pull/86.
+- fix: use `Executors` for SharedPreferences access on Android to avoid strict mode violations on startup by @qk7b in https://github.com/FlutterPlaza/no_screenshot/pull/74.
+- fix: properly clean up image overlay and activity references on detach/config changes (Android) by @fonkamloic.
+- chore: updated Kotlin and Gradle versions in Android build configuration by @T-moz in https://github.com/FlutterPlaza/no_screenshot/pull/76.
+- chore: updated example app to demonstrate the new image overlay feature by @fonkamloic.
+- test: added `toggleScreenshotWithImage` tests and fixed CI codecov upload by @fonkamloic.
+- ci: added automated pub.dev publish workflow by @fonkamloic.
+
+
+## 0.3.4
+
+- fix(macos): detect clipboard-only screenshots (Cmd+Ctrl+Shift+3/4) via pasteboard polling by @fonkamloic.
+- fix(macos): detect repeated screenshots while `screencaptureui` is still running by @fonkamloic.
+- fix(macos): track `screencaptureui` process lifecycle (launch + termination) for reliable detection by @fonkamloic.
+- fix(macos): add 2s debounce to suppress duplicate detection events while allowing file-path upgrades from `NSMetadataQuery` by @fonkamloic.
+- docs: updated macOS screenshot monitoring documentation to reflect three detection methods by @fonkamloic.
