@@ -90,7 +90,7 @@ Future<void> toggleScreenshot() async {
 
 | Android | iOS |
 |:---:|:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_android.gif" width="300" alt="Screenshot on/off on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_ios.gif" width="300" alt="Screenshot on/off on iOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_android.gif" width="350" alt="Screenshot on/off on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_on_off_ios.gif" width="333" alt="Screenshot on/off on iOS"> |
 
 ### 2. Screenshot Monitoring (Stream)
 
@@ -125,7 +125,7 @@ The stream emits a `ScreenshotSnapshot` object:
 
 | Android | iOS |
 |:---:|:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_android.gif" width="300" alt="Screenshot monitoring on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_ios.gif" width="300" alt="Screenshot monitoring on iOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_android.gif" width="350" alt="Screenshot monitoring on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/screenshot_monitoring_ios.gif" width="333" alt="Screenshot monitoring on iOS"> |
 
 ### macOS Screenshot Monitoring
 
@@ -163,7 +163,7 @@ When enabled, the overlay image is shown whenever the app goes to the background
 
 | Android | iOS |
 |:---:|:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_android.gif" width="300" alt="Image overlay on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_ios.gif" width="300" alt="Image overlay on iOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_android.gif" width="350" alt="Image overlay on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_ios.gif" width="333" alt="Image overlay on iOS"> |
 
 ### macOS Demo
 
@@ -171,7 +171,7 @@ All features (screenshot protection, monitoring, and image overlay) on macOS:
 
 | macOS |
 |:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/all_features_macos.gif" width="600" alt="All features on macOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/all_features_macos.gif" width="732" alt="All features on macOS"> |
 
 ## RTL Language Support
 
@@ -181,7 +181,7 @@ The example app includes an RTL toggle to verify correct behavior:
 
 | RTL Support (iOS) |
 |:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/rtl_support_ios.gif" width="300" alt="RTL support on iOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/rtl_support_ios.gif" width="333" alt="RTL support on iOS"> |
 
 ## Full Example
 
