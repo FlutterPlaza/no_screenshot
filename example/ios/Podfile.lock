@@ -2,16 +2,10 @@ PODS:
   - Flutter (1.0.0)
   - no_screenshot (0.3.2-beta.3):
     - Flutter
-    - ScreenProtectorKit (~> 1.3.1)
-  - ScreenProtectorKit (1.3.1)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - no_screenshot (from `.symlinks/plugins/no_screenshot/ios`)
-
-SPEC REPOS:
-  trunk:
-    - ScreenProtectorKit
 
 EXTERNAL SOURCES:
   Flutter:
@@ -20,9 +14,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/no_screenshot/ios"
 
 SPEC CHECKSUMS:
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  no_screenshot: be17af44d81c8aad04dcab01badb48c3954380fa
-  ScreenProtectorKit: 83a6281b02c7a5902ee6eac4f5045f674e902ae4
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  no_screenshot: e91f3e7a771bf761b087c575028bb1b24a7ca33d
 
 PODFILE CHECKSUM: cc1f88378b4bfcf93a6ce00d2c587857c6008d3b
 
