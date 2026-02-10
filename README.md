@@ -171,7 +171,7 @@ All features (screenshot protection, monitoring, and image overlay) on macOS:
 
 | macOS |
 |:---:|
-| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/all_features_macos.gif" width="732" alt="All features on macOS"> |
+| <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/all_features_macos.gif" width="1098" alt="All features on macOS"> |
 
 ## RTL Language Support
 
