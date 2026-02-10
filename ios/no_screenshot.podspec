@@ -15,8 +15,6 @@ A new Flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  # Updated the dependency version to remove the wildcard and use a specific version range
-  s.dependency       'ScreenProtectorKit', '~> 1.3.1'
   s.platform = :ios, '10.0'
 
   # Flutter.framework does not contain a i386 slice.

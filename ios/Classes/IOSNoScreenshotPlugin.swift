@@ -1,9 +1,9 @@
 import Flutter
 import UIKit
-import ScreenProtectorKit
 
 public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
-    private var screenProtectorKit: ScreenProtectorKit? = nil
+    private var screenPrevent = UITextField()
+    private var screenImage: UIImageView? = nil
     private weak var attachedWindow: UIWindow? = nil
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
@@ -22,8 +22,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
 
-    init(screenProtectorKit: ScreenProtectorKit? = nil) {
-        self.screenProtectorKit = screenProtectorKit
+    override init() {
         super.init()
 
         // Restore the saved state from UserDefaults
@@ -43,6 +42,61 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         registrar.addApplicationDelegate(instance)
     }
 
+    // MARK: - Inline Screenshot Prevention (replaces ScreenProtectorKit)
+
+    private func configurePreventionScreenshot(window: UIWindow) {
+        guard let rootLayer = window.layer.superlayer else { return }
+        guard screenPrevent.layer.superlayer == nil else { return }
+
+        screenPrevent.semanticContentAttribute = .forceLeftToRight  // RTL fix
+        screenPrevent.textAlignment = .left                         // RTL fix
+
+        // Briefly add to the window so UIKit creates the text field's
+        // internal sublayer hierarchy, then force a layout pass and
+        // immediately remove so screenPrevent is NOT a subview of window.
+        // This avoids a circular view-hierarchy that causes EXC_BAD_ACCESS
+        // (stack overflow in _collectExistingTraitCollectionsForTraitTracking)
+        // on iOS 26+.
+        window.addSubview(screenPrevent)
+        screenPrevent.layoutIfNeeded()
+        screenPrevent.removeFromSuperview()
+
+        // Keep the layer at the origin so reparenting window.layer
+        // does not shift the app content.
+        screenPrevent.layer.frame = .zero
+
+        rootLayer.addSublayer(screenPrevent.layer)
+        if #available(iOS 17.0, *) {
+            screenPrevent.layer.sublayers?.last?.addSublayer(window.layer)
+        } else {
+            screenPrevent.layer.sublayers?.first?.addSublayer(window.layer)
+        }
+    }
+
+    private func enablePreventScreenshot() {
+        screenPrevent.isSecureTextEntry = true
+    }
+
+    private func disablePreventScreenshot() {
+        screenPrevent.isSecureTextEntry = false
+    }
+
+    private func enableImageScreen(named: String) {
+        guard let window = attachedWindow else { return }
+        let imageView = UIImageView(frame: UIScreen.main.bounds)
+        imageView.image = UIImage(named: named)
+        imageView.isUserInteractionEnabled = false
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        window.addSubview(imageView)
+        screenImage = imageView
+    }
+
+    private func disableImageScreen() {
+        screenImage?.removeFromSuperview()
+        screenImage = nil
+    }
+
     // MARK: - App Lifecycle
     //
     // Image overlay lifecycle is intentionally handled in exactly two places:
@@ -59,18 +113,17 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
         if isImageOverlayModeEnabled {
             // Temporarily lift screenshot prevention so the overlay image is
-            // visible in the app switcher (otherwise ScreenProtectorKit's
-            // secure text field would show a blank screen).
-            screenProtectorKit?.disablePreventScreenshot()
-            screenProtectorKit?.enabledImageScreen(named: "image")
+            // visible in the app switcher (otherwise the secure text field
+            // would show a blank screen).
+            disablePreventScreenshot()
+            enableImageScreen(named: "image")
         }
     }
 
     public func applicationDidBecomeActive(_ application: UIApplication) {
-        // Remove the image overlay FIRST, while screenProtectorKit still
-        // points to the instance that showed it.
+        // Remove the image overlay FIRST.
         if isImageOverlayModeEnabled {
-            screenProtectorKit?.disableImageScreen()
+            disableImageScreen()
         }
 
         // Now restore screenshot protection (and re-attach the window if it
@@ -136,13 +189,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     private func shotOff() {
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
-        screenProtectorKit?.enabledPreventScreenshot()
+        enablePreventScreenshot()
         persistState()
     }
 
     private func shotOn() {
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
-        screenProtectorKit?.disablePreventScreenshot()
+        disablePreventScreenshot()
         persistState()
     }
 
@@ -153,12 +206,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         if isImageOverlayModeEnabled {
             // Mode is now active (true) - screenshot prevention should be ON (screenshots blocked)
             IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
-            screenProtectorKit?.enabledPreventScreenshot()
+            enablePreventScreenshot()
         } else {
             // Mode is now inactive (false) - screenshot prevention should be OFF (screenshots allowed)
             IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
-            screenProtectorKit?.disablePreventScreenshot()
-            screenProtectorKit?.disableImageScreen()
+            disablePreventScreenshot()
+            disableImageScreen()
         }
 
         persistState()
@@ -183,9 +236,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
         attachWindowIfNeeded()
         if isScreenshotBlocked {
-            screenProtectorKit?.enabledPreventScreenshot()
+            enablePreventScreenshot()
         } else {
-            screenProtectorKit?.disablePreventScreenshot()
+            disablePreventScreenshot()
         }
     }
 
@@ -246,30 +299,33 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
 
         guard let window = activeWindow else {
-            print("❗️No active window found to attach ScreenProtectorKit.")
+            print("❗️No active window found.")
             return
         }
 
-        // Skip re-creation if already attached to this window.
-        if window === attachedWindow && screenProtectorKit != nil {
+        // Skip re-configuration if already attached to this window.
+        if window === attachedWindow {
             return
         }
 
-        // Clean up the old instance: remove its image overlay and screenshot
-        // protection UI before replacing it. A new ScreenProtectorKit instance
-        // cannot remove UI elements added by the previous one.
+        // Clean up old state before re-attaching to a new window.
         if isImageOverlayModeEnabled {
-            screenProtectorKit?.disableImageScreen()
+            disableImageScreen()
         }
-        screenProtectorKit?.disablePreventScreenshot()
+        disablePreventScreenshot()
 
-        let kit = ScreenProtectorKit(window: window)
-        kit.configurePreventionScreenshot()
-        self.screenProtectorKit = kit
+        // Undo previous layer reparenting: move the old window's layer
+        // back to the root layer and detach the text field's layer.
+        if let oldWindow = attachedWindow,
+           let rootLayer = screenPrevent.layer.superlayer {
+            rootLayer.addSublayer(oldWindow.layer)
+            screenPrevent.layer.removeFromSuperlayer()
+        }
+
+        // Use a fresh UITextField to avoid stale layer state.
+        screenPrevent = UITextField()
+
+        configurePreventionScreenshot(window: window)
         self.attachedWindow = window
-    }
-
-    deinit {
-        screenProtectorKit?.removeAllObserver()
     }
 }
