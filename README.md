@@ -8,23 +8,25 @@
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, and **show a custom image overlay** in the app switcher on Android, iOS, and macOS.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, and **show a custom image overlay** in the app switcher on Android, iOS, macOS, and Linux.
 
 ## Features
 
-| Feature | Android | iOS | macOS |
-|---|:---:|:---:|:---:|
-| Disable screenshot & screen recording | ✅ | ✅ | ✅ |
-| Enable screenshot & screen recording | ✅ | ✅ | ✅ |
-| Toggle screenshot protection | ✅ | ✅ | ✅ |
-| Listen for screenshot events (stream) | ✅ | ✅ | ✅ |
-| Screenshot file path | ❌ | ❌ | ✅ |
-| Image overlay in app switcher / recents | ✅ | ✅ | ✅ |
-| LTR & RTL language support | ✅ | ✅ | ✅ |
+| Feature | Android | iOS | macOS | Linux |
+|---|:---:|:---:|:---:|:---:|
+| Disable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ |
+| Enable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ |
+| Toggle screenshot protection | ✅ | ✅ | ✅ | ⚠️ |
+| Listen for screenshot events (stream) | ✅ | ✅ | ✅ | ✅ |
+| Screenshot file path | ❌ | ❌ | ✅ | ✅ |
+| Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
+| LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
+
+> **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do not expose a `FLAG_SECURE`-equivalent API, so screenshot prevention and image overlay are **best-effort** — the state is tracked and persisted, but the compositor cannot be instructed to hide the window content. Screenshot **detection** works reliably via `GFileMonitor` (inotify).
 
 > **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
 
-> **Note:** `screenshotPath` is only available on **macOS** (via Spotlight / `NSMetadataQuery`). On Android and iOS the path is not accessible due to platform limitations — the field will contain a placeholder string. Use `wasScreenshotTaken` to detect screenshot events on all platforms.
+> **Note:** `screenshotPath` is only available on **macOS** (via Spotlight / `NSMetadataQuery`) and **Linux** (via `GFileMonitor` / inotify). On Android and iOS the path is not accessible due to platform limitations — the field will contain a placeholder string. Use `wasScreenshotTaken` to detect screenshot events on all platforms.
 
 ## Installation
 
@@ -32,7 +34,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.3.5
+  no_screenshot: ^0.3.6
 ```
 
 Then run:
@@ -119,9 +121,9 @@ The stream emits a `ScreenshotSnapshot` object:
 |---|---|---|
 | `isScreenshotProtectionOn` | `bool` | Whether screenshot protection is currently active |
 | `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
-| `screenshotPath` | `String` | File path of the screenshot (**macOS only** — see note below) |
+| `screenshotPath` | `String` | File path of the screenshot (**macOS & Linux only** — see note below) |
 
-> **Screenshot path availability:** The actual file path of a captured screenshot is only available on **macOS**, where it is retrieved via Spotlight (`NSMetadataQuery`). On **Android** and **iOS**, the operating system does not expose the screenshot file path to apps — the field will contain a placeholder string. Always use `wasScreenshotTaken` to detect screenshot events reliably across all platforms.
+> **Screenshot path availability:** The actual file path of a captured screenshot is only available on **macOS** (via Spotlight / `NSMetadataQuery`) and **Linux** (via `GFileMonitor` / inotify). On **Android** and **iOS**, the operating system does not expose the screenshot file path to apps — the field will contain a placeholder string. Always use `wasScreenshotTaken` to detect screenshot events reliably across all platforms.
 
 | Android | iOS |
 |:---:|:---:|
@@ -138,6 +140,18 @@ On macOS, screenshot monitoring uses three complementary detection methods — *
 | Pasteboard polling | Clipboard-only screenshots (Cmd+Ctrl+Shift+3/4) — detected when image data appears on the pasteboard while `screencaptureui` is active or recently exited |
 
 > **Note:** Pasteboard-based detection is scoped to the `screencaptureui` process window (running or terminated < 3 s ago) to avoid false positives from normal copy/paste. When "Show Floating Thumbnail" is disabled in macOS screenshot settings, the `screencaptureui` process does not launch; in that case only file-saved screenshots are detected via `NSMetadataQuery`.
+
+### Linux Screenshot Monitoring
+
+On Linux, screenshot monitoring uses `GFileMonitor` (inotify) to watch common screenshot directories for new files:
+
+| Directory | Why |
+|---|---|
+| `~/Pictures/Screenshots/` | Default location for GNOME Screenshot and many other tools |
+| `~/Pictures/` | Fallback — some tools save directly here |
+| XDG pictures directory | Respects `$XDG_PICTURES_DIR` if it differs from `~/Pictures` |
+
+Detected screenshot tool naming patterns include: **GNOME Screenshot**, **Spectacle** (KDE), **Flameshot**, **scrot**, **Shutter**, **maim**, and any file containing "screenshot" in its name.
 
 ### 3. Image Overlay (App Switcher / Recents)
 
@@ -158,6 +172,7 @@ Future<void> toggleOverlay() async {
 - **Android:** `android/app/src/main/res/drawable/image.png`
 - **iOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
 - **macOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
+- **Linux:** Best-effort — the state is tracked but compositors control task switcher thumbnails
 
 When enabled, the overlay image is shown whenever the app goes to the background or appears in the app switcher. Screenshot protection is also automatically activated.
 
@@ -183,150 +198,6 @@ The example app includes an RTL toggle to verify correct behavior:
 |:---:|
 | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/rtl_support_ios.gif" width="333" alt="RTL support on iOS"> |
 
-## Full Example
-
-Below is a complete example showing all features together. See the full source in [`example/lib/main.dart`](example/lib/main.dart).
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:no_screenshot/no_screenshot.dart';
-import 'package:no_screenshot/screenshot_snapshot.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'No Screenshot Example',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.deepPurple,
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final _noScreenshot = NoScreenshot.instance;
-  bool _isMonitoring = false;
-  bool _isOverlayImageOn = false;
-  ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
-    isScreenshotProtectionOn: false,
-    wasScreenshotTaken: false,
-    screenshotPath: '',
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _noScreenshot.screenshotStream.listen((value) {
-      setState(() => _latestSnapshot = value);
-      if (value.wasScreenshotTaken) {
-        debugPrint('Screenshot taken at path: ${value.screenshotPath}');
-      }
-    });
-  }
-
-  // ── Screenshot Protection ──────────────────────────────────────────
-
-  Future<void> _disableScreenshot() async {
-    final result = await _noScreenshot.screenshotOff();
-    debugPrint('screenshotOff: $result');
-  }
-
-  Future<void> _enableScreenshot() async {
-    final result = await _noScreenshot.screenshotOn();
-    debugPrint('screenshotOn: $result');
-  }
-
-  Future<void> _toggleScreenshot() async {
-    final result = await _noScreenshot.toggleScreenshot();
-    debugPrint('toggleScreenshot: $result');
-  }
-
-  // ── Screenshot Monitoring ──────────────────────────────────────────
-
-  Future<void> _startMonitoring() async {
-    await _noScreenshot.startScreenshotListening();
-    setState(() => _isMonitoring = true);
-  }
-
-  Future<void> _stopMonitoring() async {
-    await _noScreenshot.stopScreenshotListening();
-    setState(() => _isMonitoring = false);
-  }
-
-  // ── Image Overlay ─────────────────────────────────────────────────
-
-  Future<void> _toggleScreenshotWithImage() async {
-    final result = await _noScreenshot.toggleScreenshotWithImage();
-    debugPrint('toggleScreenshotWithImage: $result');
-    setState(() => _isOverlayImageOn = result);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('No Screenshot Example')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Screenshot protection buttons
-          ElevatedButton(
-            onPressed: _disableScreenshot,
-            child: const Text('Disable Screenshot'),
-          ),
-          ElevatedButton(
-            onPressed: _enableScreenshot,
-            child: const Text('Enable Screenshot'),
-          ),
-          ElevatedButton(
-            onPressed: _toggleScreenshot,
-            child: const Text('Toggle Screenshot'),
-          ),
-
-          const Divider(),
-
-          // Monitoring buttons
-          ElevatedButton(
-            onPressed: _startMonitoring,
-            child: const Text('Start Monitoring'),
-          ),
-          ElevatedButton(
-            onPressed: _stopMonitoring,
-            child: const Text('Stop Monitoring'),
-          ),
-          Text('Monitoring: $_isMonitoring'),
-          Text('Last snapshot: $_latestSnapshot'),
-
-          const Divider(),
-
-          // Image overlay toggle
-          ElevatedButton(
-            onPressed: _toggleScreenshotWithImage,
-            child: const Text('Toggle Image Overlay'),
-          ),
-          Text('Overlay active: $_isOverlayImageOn'),
-        ],
-      ),
-    );
-  }
-}
-```
-
 ## API Reference
 
 | Method | Return Type | Description |
@@ -344,15 +215,22 @@ class _HomePageState extends State<HomePage> {
 
 Thanks to everyone who has contributed to this project!
 
-<a href="https://github.com/fonkamloic"><img src="https://github.com/fonkamloic.png" width="60" height="60" style="border-radius:50%" alt="@fonkamloic"></a>
-<a href="https://github.com/zhangyuanyuan-bear"><img src="https://github.com/zhangyuanyuan-bear.png" width="60" height="60" style="border-radius:50%" alt="@zhangyuanyuan-bear"></a>
-<a href="https://github.com/BranislavKljaic96"><img src="https://github.com/BranislavKljaic96.png" width="60" height="60" style="border-radius:50%" alt="@BranislavKljaic96"></a>
-<a href="https://github.com/qk7b"><img src="https://github.com/qk7b.png" width="60" height="60" style="border-radius:50%" alt="@qk7b"></a>
-<a href="https://github.com/T-moz"><img src="https://github.com/T-moz.png" width="60" height="60" style="border-radius:50%" alt="@T-moz"></a>
-<a href="https://github.com/ggiordan"><img src="https://github.com/ggiordan.png" width="60" height="60" style="border-radius:50%" alt="@ggiordan"></a>
-<a href="https://github.com/Musaddiq625"><img src="https://github.com/Musaddiq625.png" width="60" height="60" style="border-radius:50%" alt="@Musaddiq625"></a>
-<a href="https://github.com/albertocappellina-intesys"><img src="https://github.com/albertocappellina-intesys.png" width="60" height="60" style="border-radius:50%" alt="@albertocappellina-intesys"></a>
-<a href="https://github.com/kefeh"><img src="https://github.com/kefeh.png" width="60" height="60" style="border-radius:50%" alt="@kefeh"></a>
+<table>
+<tr>
+<td align="center"><a href="https://github.com/fonkamloic"><img src="https://github.com/fonkamloic.png" width="60" height="60" style="border-radius:50%" alt="@fonkamloic"><br><sub>@fonkamloic</sub></a></td>
+<td align="center"><a href="https://github.com/zhangyuanyuan-bear"><img src="https://github.com/zhangyuanyuan-bear.png" width="60" height="60" style="border-radius:50%" alt="@zhangyuanyuan-bear"><br><sub>@zhangyuanyuan-bear</sub></a></td>
+<td align="center"><a href="https://github.com/BranislavKljaic96"><img src="https://github.com/BranislavKljaic96.png" width="60" height="60" style="border-radius:50%" alt="@BranislavKljaic96"><br><sub>@BranislavKljaic96</sub></a></td>
+<td align="center"><a href="https://github.com/qk7b"><img src="https://github.com/qk7b.png" width="60" height="60" style="border-radius:50%" alt="@qk7b"><br><sub>@qk7b</sub></a></td>
+<td align="center"><a href="https://github.com/T-moz"><img src="https://github.com/T-moz.png" width="60" height="60" style="border-radius:50%" alt="@T-moz"><br><sub>@T-moz</sub></a></td>
+</tr>
+<tr>
+<td align="center"><a href="https://github.com/ggiordan"><img src="https://github.com/ggiordan.png" width="60" height="60" style="border-radius:50%" alt="@ggiordan"><br><sub>@ggiordan</sub></a></td>
+<td align="center"><a href="https://github.com/Musaddiq625"><img src="https://github.com/Musaddiq625.png" width="60" height="60" style="border-radius:50%" alt="@Musaddiq625"><br><sub>@Musaddiq625</sub></a></td>
+<td align="center"><a href="https://github.com/albertocappellina-intesys"><img src="https://github.com/albertocappellina-intesys.png" width="60" height="60" style="border-radius:50%" alt="@albertocappellina-intesys"><br><sub>@albertocappellina-intesys</sub></a></td>
+<td align="center"><a href="https://github.com/kefeh"><img src="https://github.com/kefeh.png" width="60" height="60" style="border-radius:50%" alt="@kefeh"><br><sub>@kefeh</sub></a></td>
+<td></td>
+</tr>
+</table>
 
 ## License
 
