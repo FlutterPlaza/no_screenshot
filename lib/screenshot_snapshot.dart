@@ -1,7 +1,8 @@
 class ScreenshotSnapshot {
   /// File path of the captured screenshot.
   ///
-  /// Only available on **macOS** (via Spotlight / `NSMetadataQuery`).
+  /// Only available on **macOS** (via Spotlight / `NSMetadataQuery`) and
+  /// **Linux** (via GFileMonitor / inotify).
   /// On Android and iOS the OS does not expose the screenshot file path —
   /// this field will contain a placeholder string.
   /// Use [wasScreenshotTaken] to detect screenshot events on all platforms.
