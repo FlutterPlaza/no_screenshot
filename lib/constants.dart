@@ -4,5 +4,7 @@ const screenSetImage = "toggleScreenshotWithImage";
 const toggleScreenShotConst = "toggleScreenshot";
 const startScreenshotListeningConst = 'startScreenshotListening';
 const stopScreenshotListeningConst = 'stopScreenshotListening';
+const startScreenRecordingListeningConst = 'startScreenRecordingListening';
+const stopScreenRecordingListeningConst = 'stopScreenRecordingListening';
 const screenshotMethodChannel = "com.flutterplaza.no_screenshot_methods";
 const screenshotEventChannel = "com.flutterplaza.no_screenshot_streams";

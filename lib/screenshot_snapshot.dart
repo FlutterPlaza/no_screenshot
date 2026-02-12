@@ -10,11 +10,13 @@ class ScreenshotSnapshot {
 
   final bool isScreenshotProtectionOn;
   final bool wasScreenshotTaken;
+  final bool isScreenRecording;
 
   ScreenshotSnapshot({
     required this.screenshotPath,
     required this.isScreenshotProtectionOn,
     required this.wasScreenshotTaken,
+    this.isScreenRecording = false,
   });
 
   factory ScreenshotSnapshot.fromMap(Map<String, dynamic> map) {
@@ -22,6 +24,7 @@ class ScreenshotSnapshot {
       screenshotPath: map['screenshot_path'] as String? ?? '',
       isScreenshotProtectionOn: map['is_screenshot_on'] as bool? ?? false,
       wasScreenshotTaken: map['was_screenshot_taken'] as bool? ?? false,
+      isScreenRecording: map['is_screen_recording'] as bool? ?? false,
     );
   }
 
@@ -30,12 +33,13 @@ class ScreenshotSnapshot {
       'screenshot_path': screenshotPath,
       'is_screenshot_on': isScreenshotProtectionOn,
       'was_screenshot_taken': wasScreenshotTaken,
+      'is_screen_recording': isScreenRecording,
     };
   }
 
   @override
   String toString() {
-    return 'ScreenshotSnapshot(\nscreenshotPath: $screenshotPath, \nisScreenshotProtectionOn: $isScreenshotProtectionOn, \nwasScreenshotTaken: $wasScreenshotTaken\n)';
+    return 'ScreenshotSnapshot(\nscreenshotPath: $screenshotPath, \nisScreenshotProtectionOn: $isScreenshotProtectionOn, \nwasScreenshotTaken: $wasScreenshotTaken, \nisScreenRecording: $isScreenRecording\n)';
   }
 
   @override
@@ -45,13 +49,15 @@ class ScreenshotSnapshot {
     return other is ScreenshotSnapshot &&
         other.screenshotPath == screenshotPath &&
         other.isScreenshotProtectionOn == isScreenshotProtectionOn &&
-        other.wasScreenshotTaken == wasScreenshotTaken;
+        other.wasScreenshotTaken == wasScreenshotTaken &&
+        other.isScreenRecording == isScreenRecording;
   }
 
   @override
   int get hashCode {
     return screenshotPath.hashCode ^
         isScreenshotProtectionOn.hashCode ^
-        wasScreenshotTaken.hashCode;
+        wasScreenshotTaken.hashCode ^
+        isScreenRecording.hashCode;
   }
 }

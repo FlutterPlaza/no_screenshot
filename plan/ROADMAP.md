@@ -1,6 +1,6 @@
 # no_screenshot — Feature Roadmap
 
-## Implemented (v0.3.6)
+## Implemented (v0.4.0)
 
 | # | Feature | Platforms | Key APIs |
 |---|---|---|---|
@@ -13,6 +13,7 @@
 | 7 | Custom image overlay in app switcher | Android, iOS, macOS, Linux ⚠️ | `toggleScreenshotWithImage()` |
 | 8 | LTR & RTL language support | All platforms | `forceLeftToRight` semantics on iOS 26+ (flutter/flutter#175523) |
 | 9 | Linux platform support | Linux | `GFileMonitor` (inotify) for detection; best-effort prevention |
+| 10 | Screen recording start/stop detection | iOS, Android 14+, macOS ⚠️, Linux ⚠️ | `startScreenRecordingListening()`, `stopScreenRecordingListening()`, `isScreenRecording` |
 
 > **⚠️ Linux:** Compositors (Wayland / X11) have no `FLAG_SECURE` equivalent — prevention and overlay are best-effort (state is tracked and persisted). Detection works reliably via `GFileMonitor`.
 
@@ -28,7 +29,7 @@ Core package. Handles screenshot/recording prevention, detection, overlays, and 
 
 | Priority | Feature | Impact |
 |---|---|---|
-| P1 | Detect screen recording start/stop events | High |
+| ~~P1~~ | ~~Detect screen recording start/stop events~~ | ~~High~~ — **SHIPPED v0.4.0** |
 | P2 | Blur/pixelate overlay option for app switcher | High |
 | P3 | Solid color overlay option for app switcher | Medium |
 | P6 | Declarative SecureWidget wrapper | High |
@@ -96,15 +97,15 @@ Camera and sensor-based physical security.
 
 ## Detailed Feature Specs
 
-### P1: Detect screen recording start/stop events
-- **Package:** `no_screenshot`
-- **Impact:** High
-- **Description:** Emit stream events when screen recording begins/ends.
-- **Approach:**
-  - Android: MediaProjection callbacks
-  - iOS: `UIScreen.capturedDidChangeNotification`
-  - macOS: CGDisplayStream or similar
-- **Why:** Users need to react to recording, not just prevent it.
+### ~~P1: Detect screen recording start/stop events~~ — SHIPPED in v0.4.0
+- `isScreenRecording` field added to `ScreenshotSnapshot` (default `false`, backward-compatible)
+- `startScreenRecordingListening()` / `stopScreenRecordingListening()` API methods
+- Recording state changes emit through the same `screenshotStream` — no new EventChannel
+- iOS 11+: `UIScreen.capturedDidChangeNotification` (event-driven, detects start + stop)
+- Android 14+ (API 34): `Activity.ScreenCaptureCallback` (start only; no "stop" callback)
+- Android < 14: Graceful no-op
+- macOS: `NSWorkspace` process polling (2s) for QuickTime Player, OBS, Loom, Kap, ffmpeg, screencapture, simplescreenrecorder
+- Linux: `/proc` process scanning (2s) for ffmpeg, obs, simplescreenrecorder, kazam, peek, recordmydesktop, vokoscreen, gtk-recordmydesktop
 
 ### P2: Blur/pixelate overlay option for app switcher
 - **Package:** `no_screenshot`

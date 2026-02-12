@@ -49,6 +49,13 @@ class AppLocalizations {
       'off': 'OFF',
       'protectionActive': 'Protection active',
       'screenshotTaken': 'Screenshot taken',
+      'recordingMonitoringSectionTitle': 'Recording Monitoring',
+      'recordingMonitoring': 'Recording Monitoring',
+      'enableRecordingMonitoring': 'Enable Recording Monitoring',
+      'startRecordingListening': 'Start listening for screen recording',
+      'disableRecordingMonitoring': 'Disable Recording Monitoring',
+      'stopRecordingListening': 'Stop listening for screen recording',
+      'screenRecording': 'Screen recording',
     },
     'ar': {
       'appTitle': 'مثال بدون لقطة شاشة',
@@ -80,6 +87,13 @@ class AppLocalizations {
       'off': 'مُعطّل',
       'protectionActive': 'الحماية نشطة',
       'screenshotTaken': 'تم أخذ لقطة شاشة',
+      'recordingMonitoringSectionTitle': 'مراقبة التسجيل',
+      'recordingMonitoring': 'مراقبة التسجيل',
+      'enableRecordingMonitoring': 'تفعيل مراقبة التسجيل',
+      'startRecordingListening': 'بدء الاستماع لتسجيل الشاشة',
+      'disableRecordingMonitoring': 'تعطيل مراقبة التسجيل',
+      'stopRecordingListening': 'إيقاف الاستماع لتسجيل الشاشة',
+      'screenRecording': 'تسجيل الشاشة',
     },
   };
 
@@ -132,6 +146,20 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['protectionActive']!;
   String get screenshotTaken =>
       _localizedValues[locale.languageCode]!['screenshotTaken']!;
+  String get recordingMonitoringSectionTitle =>
+      _localizedValues[locale.languageCode]!['recordingMonitoringSectionTitle']!;
+  String get recordingMonitoring =>
+      _localizedValues[locale.languageCode]!['recordingMonitoring']!;
+  String get enableRecordingMonitoring =>
+      _localizedValues[locale.languageCode]!['enableRecordingMonitoring']!;
+  String get startRecordingListening =>
+      _localizedValues[locale.languageCode]!['startRecordingListening']!;
+  String get disableRecordingMonitoring =>
+      _localizedValues[locale.languageCode]!['disableRecordingMonitoring']!;
+  String get stopRecordingListening =>
+      _localizedValues[locale.languageCode]!['stopRecordingListening']!;
+  String get screenRecording =>
+      _localizedValues[locale.languageCode]!['screenRecording']!;
 }
 
 class _AppLocalizationsDelegate

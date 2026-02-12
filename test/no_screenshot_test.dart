@@ -43,6 +43,16 @@ class MockNoScreenshotPlatform
   Future<void> stopScreenshotListening() {
     return Future.value();
   }
+
+  @override
+  Future<void> startScreenRecordingListening() {
+    return Future.value();
+  }
+
+  @override
+  Future<void> stopScreenRecordingListening() {
+    return Future.value();
+  }
 }
 
 void main() {

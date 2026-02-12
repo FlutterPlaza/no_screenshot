@@ -24,14 +24,16 @@ G_DEFINE_TYPE(NoScreenshotPlugin, no_screenshot_plugin, g_object_get_type())
 
 gchar* build_event_json(gboolean is_screenshot_on,
                         const gchar* screenshot_path,
-                        gboolean was_screenshot_taken) {
+                        gboolean was_screenshot_taken,
+                        gboolean is_screen_recording) {
   // Hand-build JSON to avoid extra dependencies.
   return g_strdup_printf(
       "{\"is_screenshot_on\":%s,\"screenshot_path\":\"%s\","
-      "\"was_screenshot_taken\":%s}",
+      "\"was_screenshot_taken\":%s,\"is_screen_recording\":%s}",
       is_screenshot_on ? "true" : "false",
       screenshot_path ? screenshot_path : "",
-      was_screenshot_taken ? "true" : "false");
+      was_screenshot_taken ? "true" : "false",
+      is_screen_recording ? "true" : "false");
 }
 
 static void update_shared_state(NoScreenshotPlugin* self,
@@ -39,7 +41,8 @@ static void update_shared_state(NoScreenshotPlugin* self,
   gboolean was_taken = (screenshot_path != NULL && screenshot_path[0] != '\0');
 
   g_autofree gchar* json =
-      build_event_json(self->prevent_screenshot, screenshot_path, was_taken);
+      build_event_json(self->prevent_screenshot, screenshot_path, was_taken,
+                       self->is_screen_recording);
 
   if (g_strcmp0(json, self->last_event_json) != 0) {
     g_free(self->last_event_json);
@@ -62,6 +65,17 @@ static void on_screenshot_detected(const gchar* file_path,
                                    gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
   update_shared_state(self, file_path);
+}
+
+// ---------------------------------------------------------------------------
+// Recording detection callback
+// ---------------------------------------------------------------------------
+
+static void on_recording_state_changed(gboolean is_recording,
+                                       gpointer user_data) {
+  NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
+  self->is_screen_recording = is_recording;
+  update_shared_state(self, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -138,6 +152,26 @@ static void handle_method_call(FlMethodChannel* channel,
     g_autoptr(FlValue) msg = fl_value_new_string("Listening stopped");
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(msg));
 
+  } else if (g_strcmp0(method, "startScreenRecordingListening") == 0) {
+    if (!self->is_recording_listening) {
+      self->is_recording_listening = TRUE;
+      recording_detection_start(self->recording_detection);
+      update_shared_state(self, "");
+    }
+    g_autoptr(FlValue) msg = fl_value_new_string("Recording listening started");
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(msg));
+
+  } else if (g_strcmp0(method, "stopScreenRecordingListening") == 0) {
+    if (self->is_recording_listening) {
+      self->is_recording_listening = FALSE;
+      recording_detection_stop(self->recording_detection);
+      self->is_screen_recording = FALSE;
+      update_shared_state(self, "");
+    }
+    g_autoptr(FlValue) msg =
+        fl_value_new_string("Recording listening stopped");
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(msg));
+
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
@@ -207,6 +241,9 @@ static void no_screenshot_plugin_dispose(GObject* object) {
   screenshot_detection_free(self->detection);
   self->detection = NULL;
 
+  recording_detection_free(self->recording_detection);
+  self->recording_detection = NULL;
+
   state_persistence_free(self->persistence);
   self->persistence = NULL;
 
@@ -224,11 +261,14 @@ static void no_screenshot_plugin_init(NoScreenshotPlugin* self) {
   self->prevent_screenshot = FALSE;
   self->is_image_overlay_mode = FALSE;
   self->is_listening = FALSE;
+  self->is_recording_listening = FALSE;
+  self->is_screen_recording = FALSE;
   self->last_event_json = NULL;
   self->has_pending_event = FALSE;
   self->stream_timer_id = 0;
   self->event_sink = NULL;
   self->detection = NULL;
+  self->recording_detection = NULL;
   self->persistence = NULL;
 }
 
@@ -247,6 +287,8 @@ void no_screenshot_plugin_register_with_registrar(
   self->persistence = state_persistence_new();
   self->detection =
       screenshot_detection_new(on_screenshot_detected, self);
+  self->recording_detection =
+      recording_detection_new(on_recording_state_changed, self);
 
   // Load persisted state
   PersistedState state = state_persistence_load(self->persistence);

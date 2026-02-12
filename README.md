@@ -8,7 +8,7 @@
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, and **show a custom image overlay** in the app switcher on Android, iOS, macOS, and Linux.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image overlay** in the app switcher on Android, iOS, macOS, and Linux.
 
 ## Features
 
@@ -18,11 +18,16 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Enable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ |
 | Toggle screenshot protection | ✅ | ✅ | ✅ | ⚠️ |
 | Listen for screenshot events (stream) | ✅ | ✅ | ✅ | ✅ |
+| Detect screen recording start/stop | ✅\* | ✅ | ⚠️ | ⚠️ |
 | Screenshot file path | ❌ | ❌ | ✅ | ✅ |
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
 
-> **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do not expose a `FLAG_SECURE`-equivalent API, so screenshot prevention and image overlay are **best-effort** — the state is tracked and persisted, but the compositor cannot be instructed to hide the window content. Screenshot **detection** works reliably via `GFileMonitor` (inotify).
+> **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
+
+> **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do not expose a `FLAG_SECURE`-equivalent API, so screenshot prevention and image overlay are **best-effort** — the state is tracked and persisted, but the compositor cannot be instructed to hide the window content. Screenshot **detection** works reliably via `GFileMonitor` (inotify). Screen recording detection is best-effort via `/proc` process scanning.
+
+> **⚠️ macOS recording detection:** Best-effort via `NSWorkspace` process monitoring for known recording apps (QuickTime Player, OBS, Loom, Kap, ffmpeg, etc.).
 
 > **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
 
@@ -34,7 +39,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.3.6
+  no_screenshot: ^0.4.0
 ```
 
 Then run:
@@ -122,6 +127,7 @@ The stream emits a `ScreenshotSnapshot` object:
 | `isScreenshotProtectionOn` | `bool` | Whether screenshot protection is currently active |
 | `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
 | `screenshotPath` | `String` | File path of the screenshot (**macOS & Linux only** — see note below) |
+| `isScreenRecording` | `bool` | Whether screen recording is currently active (requires recording monitoring) |
 
 > **Screenshot path availability:** The actual file path of a captured screenshot is only available on **macOS** (via Spotlight / `NSMetadataQuery`) and **Linux** (via `GFileMonitor` / inotify). On **Android** and **iOS**, the operating system does not expose the screenshot file path to apps — the field will contain a placeholder string. Always use `wasScreenshotTaken` to detect screenshot events reliably across all platforms.
 
@@ -153,7 +159,42 @@ On Linux, screenshot monitoring uses `GFileMonitor` (inotify) to watch common sc
 
 Detected screenshot tool naming patterns include: **GNOME Screenshot**, **Spectacle** (KDE), **Flameshot**, **scrot**, **Shutter**, **maim**, and any file containing "screenshot" in its name.
 
-### 3. Image Overlay (App Switcher / Recents)
+### 3. Screen Recording Monitoring
+
+Detect when the screen is being recorded. Recording monitoring is **off by default** and independent of screenshot monitoring — you must explicitly start it.
+
+```dart
+final _noScreenshot = NoScreenshot.instance;
+
+// 1. Subscribe to the stream (same stream as screenshot events)
+_noScreenshot.screenshotStream.listen((snapshot) {
+  if (snapshot.isScreenRecording) {
+    debugPrint('Screen is being recorded!');
+  }
+});
+
+// 2. Start recording monitoring
+await _noScreenshot.startScreenRecordingListening();
+
+// 3. Stop recording monitoring when no longer needed
+await _noScreenshot.stopScreenRecordingListening();
+```
+
+#### Platform-specific behavior
+
+| Platform | Mechanism | Start | Stop |
+|---|---|:---:|:---:|
+| **iOS 11+** | `UIScreen.capturedDidChangeNotification` | ✅ | ✅ |
+| **Android 14+** (API 34) | `Activity.ScreenCaptureCallback` | ✅ | ❌\* |
+| **Android < 14** | No reliable API (no-op) | — | — |
+| **macOS** | `NSWorkspace` process polling (2s) | ✅ | ✅ |
+| **Linux** | `/proc` process scanning (2s) | ✅ | ✅ |
+
+> **\* Android limitation:** `ScreenCaptureCallback.onScreenCaptured()` fires when recording starts but there is no "stop" callback. `isScreenRecording` becomes `true` and stays `true` until `stopScreenRecordingListening()` + `startScreenRecordingListening()` is called to reset.
+
+> **macOS & Linux:** Recording detection is best-effort — it polls for known recording application processes. Detected apps include QuickTime Player, OBS, Loom, Kap, ffmpeg, screencapture, simplescreenrecorder, kazam, peek, recordmydesktop, and vokoscreen.
+
+### 4. Image Overlay (App Switcher / Recents)
 
 Show a custom image when the app appears in the app switcher or recents screen. This prevents sensitive content from being visible in thumbnails.
 
@@ -209,7 +250,9 @@ The example app includes an RTL toggle to verify correct behavior:
 | `toggleScreenshotWithImage()` | `Future<bool>` | Toggle image overlay mode (returns new state) |
 | `startScreenshotListening()` | `Future<void>` | Start monitoring for screenshot events |
 | `stopScreenshotListening()` | `Future<void>` | Stop monitoring for screenshot events |
-| `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot activity events |
+| `startScreenRecordingListening()` | `Future<void>` | Start monitoring for screen recording events |
+| `stopScreenRecordingListening()` | `Future<void>` | Stop monitoring for screen recording events |
+| `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
 
 ## Contributors
 

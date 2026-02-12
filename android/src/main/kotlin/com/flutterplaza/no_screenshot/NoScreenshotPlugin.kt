@@ -36,6 +36,9 @@ const val PREF_KEY_SCREENSHOT = "is_screenshot_on"
 const val SCREENSHOT_TAKEN = "was_screenshot_taken"
 const val SET_IMAGE_CONST = "toggleScreenshotWithImage"
 const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
+const val IS_SCREEN_RECORDING = "is_screen_recording"
+const val START_SCREEN_RECORDING_LISTENING_CONST = "startScreenRecordingListening"
+const val STOP_SCREEN_RECORDING_LISTENING_CONST = "stopScreenRecordingListening"
 const val SCREENSHOT_METHOD_CHANNEL = "com.flutterplaza.no_screenshot_methods"
 const val SCREENSHOT_EVENT_CHANNEL = "com.flutterplaza.no_screenshot_streams"
 
@@ -56,6 +59,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     private var isImageOverlayModeEnabled: Boolean = false
     private var overlayImageView: ImageView? = null
     private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
+    private var isScreenRecording: Boolean = false
+    private var isRecordingListening: Boolean = false
+    private var screenCaptureCallback: Any? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -80,9 +86,13 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         restoreScreenshotState()
+        if (isRecordingListening) {
+            registerScreenCaptureCallback()
+        }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        unregisterScreenCaptureCallback()
         removeImageOverlay()
         activity = null
     }
@@ -90,9 +100,13 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
         restoreScreenshotState()
+        if (isRecordingListening) {
+            registerScreenCaptureCallback()
+        }
     }
 
     override fun onDetachedFromActivity() {
+        unregisterScreenCaptureCallback()
         removeImageOverlay()
         activity = null
     }
@@ -124,6 +138,16 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
             SET_IMAGE_CONST -> {
                 result.success(toggleScreenshotWithImage())
+            }
+
+            START_SCREEN_RECORDING_LISTENING_CONST -> {
+                startRecordingListening()
+                result.success("Recording listening started")
+            }
+
+            STOP_SCREEN_RECORDING_LISTENING_CONST -> {
+                stopRecordingListening()
+                result.success("Recording listening stopped".also { updateSharedPreferencesState("") })
             }
 
             else -> result.notImplemented()
@@ -223,6 +247,46 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         return isImageOverlayModeEnabled
     }
 
+    // ── Screen Recording Detection ─────────────────────────────────────
+
+    private fun startRecordingListening() {
+        if (isRecordingListening) return
+        isRecordingListening = true
+        registerScreenCaptureCallback()
+        updateSharedPreferencesState("")
+    }
+
+    private fun stopRecordingListening() {
+        if (!isRecordingListening) return
+        isRecordingListening = false
+        unregisterScreenCaptureCallback()
+        isScreenRecording = false
+        updateSharedPreferencesState("")
+    }
+
+    private fun registerScreenCaptureCallback() {
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            val act = activity ?: return
+            if (screenCaptureCallback != null) return
+
+            val callback = Activity.ScreenCaptureCallback {
+                isScreenRecording = true
+                updateSharedPreferencesState("")
+            }
+            act.registerScreenCaptureCallback(act.mainExecutor, callback)
+            screenCaptureCallback = callback
+        }
+    }
+
+    private fun unregisterScreenCaptureCallback() {
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            val act = activity ?: return
+            val callback = screenCaptureCallback as? Activity.ScreenCaptureCallback ?: return
+            act.unregisterScreenCaptureCallback(callback)
+            screenCaptureCallback = null
+        }
+    }
+
     private fun initScreenshotObserver() {
         screenshotObserver = object : ContentObserver(Handler()) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -315,7 +379,8 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                 mapOf(
                     PREF_KEY_SCREENSHOT to isSecure,
                     SCREENSHOT_PATH to screenshotData,
-                    SCREENSHOT_TAKEN to screenshotData.isNotEmpty()
+                    SCREENSHOT_TAKEN to screenshotData.isNotEmpty(),
+                    IS_SCREEN_RECORDING to isScreenRecording
                 )
             )
             if (lastSharedPreferencesState != jsonString) {

@@ -55,4 +55,16 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   Future<void> stopScreenshotListening() {
     return methodChannel.invokeMethod<void>(stopScreenshotListeningConst);
   }
+
+  @override
+  Future<void> startScreenRecordingListening() {
+    return methodChannel
+        .invokeMethod<void>(startScreenRecordingListeningConst);
+  }
+
+  @override
+  Future<void> stopScreenRecordingListening() {
+    return methodChannel
+        .invokeMethod<void>(stopScreenRecordingListeningConst);
+  }
 }

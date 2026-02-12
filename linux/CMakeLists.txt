@@ -8,6 +8,7 @@ add_library(${PLUGIN_NAME} SHARED
   "no_screenshot_plugin.cc"
   "screenshot_prevention.cc"
   "screenshot_detection.cc"
+  "recording_detection.cc"
   "state_persistence.cc"
 )
 
