@@ -42,6 +42,16 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   Future<void> stopScreenshotListening() async {
     return;
   }
+
+  @override
+  Future<void> startScreenRecordingListening() async {
+    return;
+  }
+
+  @override
+  Future<void> stopScreenRecordingListening() async {
+    return;
+  }
 }
 
 void main() {
@@ -131,6 +141,34 @@ void main() {
         () {
       final basePlatform = BaseNoScreenshotPlatform();
       expect(() => basePlatform.stopScreenshotListening(),
+          throwsUnimplementedError);
+    });
+
+    test(
+        'startScreenRecordingListening should not throw UnimplementedError when called',
+        () async {
+      expect(platform.startScreenRecordingListening(), completes);
+    });
+
+    test(
+        'stopScreenRecordingListening should not throw UnimplementedError when called',
+        () async {
+      expect(platform.stopScreenRecordingListening(), completes);
+    });
+
+    test(
+        'base NoScreenshotPlatform.startScreenRecordingListening() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(() => basePlatform.startScreenRecordingListening(),
+          throwsUnimplementedError);
+    });
+
+    test(
+        'base NoScreenshotPlatform.stopScreenRecordingListening() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(() => basePlatform.stopScreenRecordingListening(),
           throwsUnimplementedError);
     });
   });

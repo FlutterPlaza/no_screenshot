@@ -138,6 +138,32 @@ void main() {
       final result = await platform.toggleScreenshot();
       expect(result, false);
     });
+
+    test('startScreenRecordingListening', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == startScreenRecordingListeningConst) {
+          return null;
+        }
+        return null;
+      });
+
+      await platform.startScreenRecordingListening();
+      expect(true, true);
+    });
+
+    test('stopScreenRecordingListening', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == stopScreenRecordingListeningConst) {
+          return null;
+        }
+        return null;
+      });
+
+      await platform.stopScreenRecordingListening();
+      expect(true, true);
+    });
   });
 
   group('ScreenshotSnapshot', () {
@@ -151,6 +177,31 @@ void main() {
       expect(snapshot.screenshotPath, '/example/path');
       expect(snapshot.isScreenshotProtectionOn, true);
       expect(snapshot.wasScreenshotTaken, true);
+      expect(snapshot.isScreenRecording, false);
+    });
+
+    test('fromMap with is_screen_recording', () {
+      final map = {
+        'screenshot_path': '/example/path',
+        'is_screenshot_on': true,
+        'was_screenshot_taken': false,
+        'is_screen_recording': true,
+      };
+      final snapshot = ScreenshotSnapshot.fromMap(map);
+      expect(snapshot.screenshotPath, '/example/path');
+      expect(snapshot.isScreenshotProtectionOn, true);
+      expect(snapshot.wasScreenshotTaken, false);
+      expect(snapshot.isScreenRecording, true);
+    });
+
+    test('fromMap without is_screen_recording defaults to false', () {
+      final map = {
+        'screenshot_path': '/example/path',
+        'is_screenshot_on': true,
+        'was_screenshot_taken': true,
+      };
+      final snapshot = ScreenshotSnapshot.fromMap(map);
+      expect(snapshot.isScreenRecording, false);
     });
 
     test('toMap', () {
@@ -158,11 +209,23 @@ void main() {
         screenshotPath: '/example/path',
         isScreenshotProtectionOn: true,
         wasScreenshotTaken: true,
+        isScreenRecording: true,
       );
       final map = snapshot.toMap();
       expect(map['screenshot_path'], '/example/path');
       expect(map['is_screenshot_on'], true);
       expect(map['was_screenshot_taken'], true);
+      expect(map['is_screen_recording'], true);
+    });
+
+    test('toMap with default isScreenRecording', () {
+      final snapshot = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+      );
+      final map = snapshot.toMap();
+      expect(map['is_screen_recording'], false);
     });
 
     test('equality operator', () {
@@ -181,9 +244,16 @@ void main() {
         isScreenshotProtectionOn: false,
         wasScreenshotTaken: false,
       );
+      final snapshot4 = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        isScreenRecording: true,
+      );
 
       expect(snapshot1 == snapshot2, true);
       expect(snapshot1 == snapshot3, false);
+      expect(snapshot1 == snapshot4, false);
     });
 
     test('hashCode', () {
@@ -212,6 +282,7 @@ void main() {
       expect(snapshot.screenshotPath, '');
       expect(snapshot.isScreenshotProtectionOn, false);
       expect(snapshot.wasScreenshotTaken, false);
+      expect(snapshot.isScreenRecording, false);
     });
 
     test('fromMap with null values uses defaults', () {
@@ -219,11 +290,13 @@ void main() {
         'screenshot_path': null,
         'is_screenshot_on': null,
         'was_screenshot_taken': null,
+        'is_screen_recording': null,
       };
       final snapshot = ScreenshotSnapshot.fromMap(map);
       expect(snapshot.screenshotPath, '');
       expect(snapshot.isScreenshotProtectionOn, false);
       expect(snapshot.wasScreenshotTaken, false);
+      expect(snapshot.isScreenRecording, false);
     });
 
     test('toString', () {
@@ -234,7 +307,19 @@ void main() {
       );
       final string = snapshot.toString();
       expect(string,
-          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true\n)');
+          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: false\n)');
+    });
+
+    test('toString with isScreenRecording true', () {
+      final snapshot = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        isScreenRecording: true,
+      );
+      final string = snapshot.toString();
+      expect(string,
+          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: true\n)');
     });
   });
 }

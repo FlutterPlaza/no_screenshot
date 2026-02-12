@@ -12,6 +12,8 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
     private var isImageOverlayModeEnabled: Bool = false
+    private var isScreenRecording: Bool = false
+    private var isRecordingListening: Bool = false
 
     private static let ENABLESCREENSHOT = false
     private static let DISABLESCREENSHOT = true
@@ -182,6 +184,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         case "stopScreenshotListening":
             stopListening()
             result("Listening stopped")
+        case "startScreenRecordingListening":
+            startRecordingListening()
+            result("Recording listening started")
+        case "stopScreenRecordingListening":
+            stopRecordingListening()
+            result("Recording listening stopped")
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -228,6 +236,49 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         persistState()
     }
 
+    // MARK: - Screen Recording Detection
+
+    private func startRecordingListening() {
+        guard !isRecordingListening else { return }
+        isRecordingListening = true
+
+        if #available(iOS 11.0, *) {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(screenCapturedDidChange),
+                name: UIScreen.capturedDidChangeNotification,
+                object: nil
+            )
+            // Check initial state
+            isScreenRecording = UIScreen.main.isCaptured
+        }
+
+        updateSharedPreferencesState("")
+    }
+
+    private func stopRecordingListening() {
+        guard isRecordingListening else { return }
+        isRecordingListening = false
+
+        if #available(iOS 11.0, *) {
+            NotificationCenter.default.removeObserver(
+                self,
+                name: UIScreen.capturedDidChangeNotification,
+                object: nil
+            )
+        }
+
+        isScreenRecording = false
+        updateSharedPreferencesState("")
+    }
+
+    @objc private func screenCapturedDidChange() {
+        if #available(iOS 11.0, *) {
+            isScreenRecording = UIScreen.main.isCaptured
+        }
+        updateSharedPreferencesState("")
+    }
+
     @objc private func screenshotDetected() {
         print("Screenshot detected")
         updateSharedPreferencesState(IOSNoScreenshotPlugin.screenshotPathPlaceholder)
@@ -246,7 +297,8 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         let map: [String: Any] = [
             "is_screenshot_on": IOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
-            "was_screenshot_taken": !screenshotData.isEmpty
+            "was_screenshot_taken": !screenshotData.isEmpty,
+            "is_screen_recording": isScreenRecording
         ]
         let jsonString = convertMapToJsonString(map)
         if lastSharedPreferencesState != jsonString {

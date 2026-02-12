@@ -1,3 +1,16 @@
+## 0.4.0
+
+- feat: detect screen recording start/stop events across all platforms (P1) by @fonkamloic.
+- feat(ios): event-driven screen recording detection via `UIScreen.capturedDidChangeNotification` (iOS 11+) — detects both start and stop by @fonkamloic.
+- feat(android): screen recording detection via `Activity.ScreenCaptureCallback` (API 34+) — detects recording start; graceful no-op on pre-34 devices by @fonkamloic.
+- feat(macos): best-effort screen recording detection via `NSWorkspace` process monitoring — polls for known recording apps (QuickTime Player, OBS, Loom, Kap, ffmpeg, screencapture, simplescreenrecorder) by @fonkamloic.
+- feat(linux): best-effort screen recording detection via `/proc` process scanning — polls for known recording tools (ffmpeg, obs, simplescreenrecorder, kazam, peek, recordmydesktop, vokoscreen) by @fonkamloic.
+- feat: added `isScreenRecording` field to `ScreenshotSnapshot` — backward-compatible, defaults to `false` when omitted by native code by @fonkamloic.
+- feat: added `startScreenRecordingListening()` and `stopScreenRecordingListening()` API methods — recording detection is independent of screenshot detection by @fonkamloic.
+- feat(example): added Recording Monitoring section with enable/disable buttons and real-time `isScreenRecording` status display by @fonkamloic.
+- test: added method channel, platform interface, and `ScreenshotSnapshot` tests for screen recording detection by @fonkamloic.
+- docs: updated README, CHANGELOG, roadmap, and example app to reflect screen recording detection support by @fonkamloic.
+
 ## 0.3.6
 
 - feat(linux): added Linux support with screenshot detection via `GFileMonitor` (inotify), monitoring `~/Pictures/Screenshots/`, `~/Pictures/`, and XDG pictures directory by @fonkamloic.

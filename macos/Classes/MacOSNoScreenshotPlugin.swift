@@ -18,6 +18,23 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     private var lastPasteboardChangeCount: Int = NSPasteboard.general.changeCount
     private var pasteboardPollTimer: Timer? = nil
     private var lastDetectionTime: Date = Date.distantPast
+    private var isScreenRecording: Bool = false
+    private var isRecordingListening: Bool = false
+    private var recordingPollTimer: Timer? = nil
+
+    private static let knownRecordingBundleIDs: Set<String> = [
+        "com.apple.QuickTimePlayerX",
+        "com.obsproject.obs-studio",
+        "com.loom.desktop",
+        "com.kap.Kap"
+    ]
+
+    private static let knownRecordingProcessNames: Set<String> = [
+        "ffmpeg",
+        "screencapture",
+        "obs",
+        "simplescreenrecorder"
+    ]
 
     private static let ENABLESCREENSHOT = false
     private static let DISABLESCREENSHOT = true
@@ -101,6 +118,12 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         case "stopScreenshotListening":
             stopListening()
             result("Listening stopped")
+        case "startScreenRecordingListening":
+            startRecordingListening()
+            result("Recording listening started")
+        case "stopScreenRecordingListening":
+            stopRecordingListening()
+            result("Recording listening stopped")
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -347,6 +370,60 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         persistState()
     }
 
+    // MARK: - Screen Recording Detection
+
+    private func startRecordingListening() {
+        guard !isRecordingListening else { return }
+        isRecordingListening = true
+
+        checkForRecordingProcesses()
+
+        recordingPollTimer = Timer.scheduledTimer(
+            timeInterval: 2.0,
+            target: self,
+            selector: #selector(checkForRecordingProcesses),
+            userInfo: nil,
+            repeats: true
+        )
+        print("Recording detection started (2s polling).")
+    }
+
+    @objc private func checkForRecordingProcesses() {
+        let apps = NSWorkspace.shared.runningApplications
+        let detected = apps.contains { app in
+            if let bundleID = app.bundleIdentifier,
+               MacOSNoScreenshotPlugin.knownRecordingBundleIDs.contains(bundleID) {
+                return true
+            }
+            if let name = app.localizedName?.lowercased(),
+               MacOSNoScreenshotPlugin.knownRecordingProcessNames.contains(name) {
+                return true
+            }
+            if let execName = app.executableURL?.lastPathComponent.lowercased(),
+               MacOSNoScreenshotPlugin.knownRecordingProcessNames.contains(execName) {
+                return true
+            }
+            return false
+        }
+
+        if detected != isScreenRecording {
+            isScreenRecording = detected
+            updateSharedPreferencesState("")
+        }
+    }
+
+    private func stopRecordingListening() {
+        guard isRecordingListening else { return }
+        isRecordingListening = false
+
+        recordingPollTimer?.invalidate()
+        recordingPollTimer = nil
+
+        isScreenRecording = false
+        updateSharedPreferencesState("")
+        print("Recording detection stopped.")
+    }
+
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
@@ -372,7 +449,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         let map: [String: Any] = [
             "is_screenshot_on": MacOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
-            "was_screenshot_taken": !screenshotData.isEmpty
+            "was_screenshot_taken": !screenshotData.isEmpty,
+            "is_screen_recording": isScreenRecording
         ]
         let jsonString = convertMapToJsonString(map)
         if lastSharedPreferencesState != jsonString {

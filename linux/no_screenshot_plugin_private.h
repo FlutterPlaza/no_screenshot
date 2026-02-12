@@ -3,6 +3,7 @@
 
 #include <flutter_linux/flutter_linux.h>
 
+#include "recording_detection.h"
 #include "screenshot_detection.h"
 #include "screenshot_prevention.h"
 #include "state_persistence.h"
@@ -28,15 +29,21 @@ struct _NoScreenshotPlugin {
   guint stream_timer_id;
   FlEventSink* event_sink;
 
+  // Recording detection
+  gboolean is_recording_listening;
+  gboolean is_screen_recording;
+
   // Subsystems
   ScreenshotDetection* detection;
+  RecordingDetection* recording_detection;
   StatePersistence* persistence;
 };
 
 // Build a JSON string matching the Dart ScreenshotSnapshot format.
 gchar* build_event_json(gboolean is_screenshot_on,
                         const gchar* screenshot_path,
-                        gboolean was_screenshot_taken);
+                        gboolean was_screenshot_taken,
+                        gboolean is_screen_recording);
 
 G_END_DECLS
 

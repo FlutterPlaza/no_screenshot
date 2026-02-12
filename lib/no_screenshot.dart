@@ -66,6 +66,18 @@ class NoScreenshot implements NoScreenshotPlatform {
     return _instancePlatform.stopScreenshotListening();
   }
 
+  /// Start listening to screen recording activities
+  @override
+  Future<void> startScreenRecordingListening() {
+    return _instancePlatform.startScreenRecordingListening();
+  }
+
+  /// Stop listening to screen recording activities
+  @override
+  Future<void> stopScreenRecordingListening() {
+    return _instancePlatform.stopScreenRecordingListening();
+  }
+
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
