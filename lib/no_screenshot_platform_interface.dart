@@ -73,4 +73,16 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
     throw UnimplementedError(
         'stopScreenshotListening has not been implemented.');
   }
+
+  /// Start listening to screen recording activities
+  Future<void> startScreenRecordingListening() {
+    throw UnimplementedError(
+        'startScreenRecordingListening has not been implemented.');
+  }
+
+  /// Stop listening to screen recording activities
+  Future<void> stopScreenRecordingListening() {
+    throw UnimplementedError(
+        'stopScreenRecordingListening has not been implemented.');
+  }
 }

@@ -57,6 +57,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _noScreenshot = NoScreenshot.instance;
   bool _isMonitoring = false;
+  bool _isRecordingMonitoring = false;
   bool _isOverlayImageOn = false;
   ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
     isScreenshotProtectionOn: false,
@@ -103,6 +104,18 @@ class _HomePageState extends State<HomePage> {
   Future<void> _stopMonitoring() async {
     await _noScreenshot.stopScreenshotListening();
     setState(() => _isMonitoring = false);
+  }
+
+  // ── Recording Monitoring ───────────────────────────────────────────
+
+  Future<void> _startRecordingMonitoring() async {
+    await _noScreenshot.startScreenRecordingListening();
+    setState(() => _isRecordingMonitoring = true);
+  }
+
+  Future<void> _stopRecordingMonitoring() async {
+    await _noScreenshot.stopScreenRecordingListening();
+    setState(() => _isRecordingMonitoring = false);
   }
 
   // ── Set Overlay Image ──────────────────────────────────────────────
@@ -195,6 +208,42 @@ class _HomePageState extends State<HomePage> {
                       label: l.disableMonitoring,
                       subtitle: l.stopListening,
                       onPressed: _stopMonitoring,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            title: l.recordingMonitoringSectionTitle,
+            subtitle: l.platformSubtitle,
+            children: [
+              _StatusRow(
+                label: l.recordingMonitoring,
+                isOn: _isRecordingMonitoring,
+              ),
+              const SizedBox(height: 8),
+              _StatusRow(
+                label: l.screenRecording,
+                isOn: _latestSnapshot.isScreenRecording,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _FeatureButton(
+                      label: l.enableRecordingMonitoring,
+                      subtitle: l.startRecordingListening,
+                      onPressed: _startRecordingMonitoring,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _FeatureButton(
+                      label: l.disableRecordingMonitoring,
+                      subtitle: l.stopRecordingListening,
+                      onPressed: _stopRecordingMonitoring,
                     ),
                   ),
                 ],
@@ -370,6 +419,11 @@ class _SnapshotInfo extends StatelessWidget {
                       : Colors.red)),
           Text('${l.screenshotTaken}: ${snapshot.wasScreenshotTaken}',
               style: style),
+          Text('${l.screenRecording}: ${snapshot.isScreenRecording}',
+              style: style?.copyWith(
+                  color: snapshot.isScreenRecording
+                      ? Colors.red
+                      : null)),
           Text('${l.path}: ${snapshot.screenshotPath}', style: style),
         ],
       ),
