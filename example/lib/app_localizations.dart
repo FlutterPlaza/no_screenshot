@@ -146,8 +146,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['protectionActive']!;
   String get screenshotTaken =>
       _localizedValues[locale.languageCode]!['screenshotTaken']!;
-  String get recordingMonitoringSectionTitle =>
-      _localizedValues[locale.languageCode]!['recordingMonitoringSectionTitle']!;
+  String get recordingMonitoringSectionTitle => _localizedValues[
+      locale.languageCode]!['recordingMonitoringSectionTitle']!;
   String get recordingMonitoring =>
       _localizedValues[locale.languageCode]!['recordingMonitoring']!;
   String get enableRecordingMonitoring =>

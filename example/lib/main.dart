@@ -421,9 +421,7 @@ class _SnapshotInfo extends StatelessWidget {
               style: style),
           Text('${l.screenRecording}: ${snapshot.isScreenRecording}',
               style: style?.copyWith(
-                  color: snapshot.isScreenRecording
-                      ? Colors.red
-                      : null)),
+                  color: snapshot.isScreenRecording ? Colors.red : null)),
           Text('${l.path}: ${snapshot.screenshotPath}', style: style),
         ],
       ),
