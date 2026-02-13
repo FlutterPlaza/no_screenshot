@@ -222,6 +222,114 @@ void main() {
       expect(result, false);
     });
 
+    test('screenshotWithImage', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenEnableImage) {
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.screenshotWithImage();
+      expect(result, expected);
+    });
+
+    test('screenshotWithImage returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.screenshotWithImage();
+      expect(result, false);
+    });
+
+    test('screenshotWithBlur', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenEnableBlur) {
+          expect(methodCall.arguments, {'radius': 30.0});
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.screenshotWithBlur();
+      expect(result, expected);
+    });
+
+    test('screenshotWithBlur with custom radius', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenEnableBlur) {
+          expect(methodCall.arguments, {'radius': 50.0});
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.screenshotWithBlur(blurRadius: 50.0);
+      expect(result, expected);
+    });
+
+    test('screenshotWithBlur returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.screenshotWithBlur();
+      expect(result, false);
+    });
+
+    test('screenshotWithColor', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenEnableColor) {
+          expect(methodCall.arguments, {'color': 0xFF000000});
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.screenshotWithColor();
+      expect(result, expected);
+    });
+
+    test('screenshotWithColor with custom color', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenEnableColor) {
+          expect(methodCall.arguments, {'color': 0xFFFF0000});
+          return expected;
+        }
+        return null;
+      });
+
+      final result =
+          await platform.screenshotWithColor(color: 0xFFFF0000);
+      expect(result, expected);
+    });
+
+    test('screenshotWithColor returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.screenshotWithColor();
+      expect(result, false);
+    });
+
     test('startScreenRecordingListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {

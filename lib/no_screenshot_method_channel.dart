@@ -61,6 +61,26 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> screenshotWithImage() async {
+    final result = await methodChannel.invokeMethod<bool>(screenEnableImage);
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
+    final result = await methodChannel
+        .invokeMethod<bool>(screenEnableBlur, {'radius': blurRadius});
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
+    final result = await methodChannel
+        .invokeMethod<bool>(screenEnableColor, {'color': color});
+    return result ?? false;
+  }
+
+  @override
   Future<void> startScreenshotListening() {
     return methodChannel.invokeMethod<void>(startScreenshotListeningConst);
   }

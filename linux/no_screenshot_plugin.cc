@@ -211,6 +211,64 @@ static void handle_method_call(FlMethodChannel* channel,
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(
         fl_value_new_bool(self->is_color_overlay_mode)));
 
+  } else if (g_strcmp0(method, "screenshotWithImage") == 0) {
+    self->is_image_overlay_mode = TRUE;
+    if (self->is_blur_overlay_mode) {
+      self->is_blur_overlay_mode = FALSE;
+    }
+    if (self->is_color_overlay_mode) {
+      self->is_color_overlay_mode = FALSE;
+    }
+    self->prevent_screenshot = TRUE;
+    prevention_activate();
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_bool(TRUE)));
+
+  } else if (g_strcmp0(method, "screenshotWithBlur") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != NULL && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* radius_val = fl_value_lookup_string(args, "radius");
+      if (radius_val != NULL &&
+          fl_value_get_type(radius_val) == FL_VALUE_TYPE_FLOAT) {
+        self->blur_radius = fl_value_get_float(radius_val);
+      }
+    }
+    self->is_blur_overlay_mode = TRUE;
+    if (self->is_image_overlay_mode) {
+      self->is_image_overlay_mode = FALSE;
+    }
+    if (self->is_color_overlay_mode) {
+      self->is_color_overlay_mode = FALSE;
+    }
+    self->prevent_screenshot = TRUE;
+    prevention_activate();
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_bool(TRUE)));
+
+  } else if (g_strcmp0(method, "screenshotWithColor") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != NULL && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* color_val = fl_value_lookup_string(args, "color");
+      if (color_val != NULL &&
+          fl_value_get_type(color_val) == FL_VALUE_TYPE_INT) {
+        self->color_value = (gint)fl_value_get_int(color_val);
+      }
+    }
+    self->is_color_overlay_mode = TRUE;
+    if (self->is_image_overlay_mode) {
+      self->is_image_overlay_mode = FALSE;
+    }
+    if (self->is_blur_overlay_mode) {
+      self->is_blur_overlay_mode = FALSE;
+    }
+    self->prevent_screenshot = TRUE;
+    prevention_activate();
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_bool(TRUE)));
+
   } else if (g_strcmp0(method, "startScreenshotListening") == 0) {
     if (!self->is_listening) {
       self->is_listening = TRUE;

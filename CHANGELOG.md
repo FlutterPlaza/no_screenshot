@@ -1,3 +1,17 @@
+## 0.7.0
+
+- feat: added `SecureWidget` — a declarative Flutter widget that auto-enables screenshot protection on mount and disables on unmount (P6) by @fonkamloic.
+- feat: added `SecureNavigatorObserver` — a `NavigatorObserver` that applies different protection levels per named route (P7) by @fonkamloic.
+- feat: added `SecureRouteConfig` class for configuring per-route protection policies with `OverlayMode`, `blurRadius`, and `color` by @fonkamloic.
+- feat: added `OverlayMode` enum (`none`, `secure`, `blur`, `color`, `image`) and `applyOverlayMode()` helper for declarative protection by @fonkamloic.
+- feat: added idempotent `screenshotWithImage()`, `screenshotWithBlur()`, and `screenshotWithColor()` API methods — always enable the overlay (no toggle), safe to call repeatedly by @fonkamloic.
+- feat: added idempotent native handlers on Android, iOS, macOS, and Linux for the new always-enable methods by @fonkamloic.
+- feat(example): added SecureWidget demo page and per-route protection demo with payment, profile, and public pages by @fonkamloic.
+- test: added widget tests for `SecureWidget` (initState, dispose, didUpdateWidget, all overlay modes) by @fonkamloic.
+- test: added unit tests for `SecureNavigatorObserver` (didPush, didPop, didReplace, didRemove, defaultConfig, custom params) by @fonkamloic.
+- test: added method channel, platform interface, and `NoScreenshot` tests for new idempotent methods by @fonkamloic.
+- docs: updated README with SecureWidget and per-route protection sections, updated API reference table by @fonkamloic.
+
 ## 0.6.0
 
 - feat: added configurable `blurRadius` parameter to `toggleScreenshotWithBlur({double blurRadius})` — defaults to 30.0, customizable per platform by @fonkamloic.
