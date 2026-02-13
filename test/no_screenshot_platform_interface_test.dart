@@ -39,6 +39,11 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> toggleScreenshotWithBlur() async {
+    return true;
+  }
+
+  @override
   Future<void> stopScreenshotListening() async {
     return;
   }
@@ -100,6 +105,18 @@ void main() {
         () {
       final basePlatform = BaseNoScreenshotPlatform();
       expect(() => basePlatform.toggleScreenshotWithImage(),
+          throwsUnimplementedError);
+    });
+
+    test('toggleScreenshotWithBlur should return true when called', () async {
+      expect(await platform.toggleScreenshotWithBlur(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.toggleScreenshotWithBlur() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(() => basePlatform.toggleScreenshotWithBlur(),
           throwsUnimplementedError);
     });
 

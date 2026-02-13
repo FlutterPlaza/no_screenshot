@@ -25,17 +25,20 @@ void state_persistence_free(StatePersistence* self) {
 
 void state_persistence_save(StatePersistence* self,
                             gboolean prevent_screenshot,
-                            gboolean is_image_overlay_mode) {
+                            gboolean is_image_overlay_mode,
+                            gboolean is_blur_overlay_mode) {
   g_autofree gchar* dir = g_path_get_dirname(self->file_path);
   g_mkdir_with_parents(dir, 0700);
 
   g_autofree gchar* json = g_strdup_printf(
       "{\n"
       "  \"prevent_screenshot\": %s,\n"
-      "  \"is_image_overlay_mode\": %s\n"
+      "  \"is_image_overlay_mode\": %s,\n"
+      "  \"is_blur_overlay_mode\": %s\n"
       "}\n",
       prevent_screenshot ? "true" : "false",
-      is_image_overlay_mode ? "true" : "false");
+      is_image_overlay_mode ? "true" : "false",
+      is_blur_overlay_mode ? "true" : "false");
 
   g_autoptr(GError) error = NULL;
   if (!g_file_set_contents(self->file_path, json, -1, &error)) {
@@ -44,7 +47,7 @@ void state_persistence_save(StatePersistence* self,
 }
 
 PersistedState state_persistence_load(StatePersistence* self) {
-  PersistedState state = {FALSE, FALSE};
+  PersistedState state = {FALSE, FALSE, FALSE};
 
   g_autofree gchar* contents = NULL;
   g_autoptr(GError) error = NULL;
@@ -60,6 +63,9 @@ PersistedState state_persistence_load(StatePersistence* self) {
   }
   if (g_strstr_len(contents, -1, "\"is_image_overlay_mode\": true") != NULL) {
     state.is_image_overlay_mode = TRUE;
+  }
+  if (g_strstr_len(contents, -1, "\"is_blur_overlay_mode\": true") != NULL) {
+    state.is_blur_overlay_mode = TRUE;
   }
 
   return state;

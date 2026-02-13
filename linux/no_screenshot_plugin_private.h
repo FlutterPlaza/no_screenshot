@@ -21,6 +21,7 @@ struct _NoScreenshotPlugin {
   // State
   gboolean prevent_screenshot;
   gboolean is_image_overlay_mode;
+  gboolean is_blur_overlay_mode;
   gboolean is_listening;
 
   // Event stream

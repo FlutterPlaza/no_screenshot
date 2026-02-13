@@ -9,7 +9,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
     private var isImageOverlayModeEnabled: Bool = false
+    private var isBlurOverlayModeEnabled: Bool = false
     private var overlayImageView: NSImageView? = nil
+    private var blurEffectView: NSVisualEffectView? = nil
     private var metadataQuery: NSMetadataQuery? = nil
     private var isListening: Bool = false
     private var lastScreenshotDate: Date = Date()
@@ -41,6 +43,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
     private static let preventScreenShotKey = "preventScreenShot"
     private static let imageOverlayModeKey = "imageOverlayMode"
+    private static let blurOverlayModeKey = "blurOverlayMode"
     private static let methodChannelName = "com.flutterplaza.no_screenshot_methods"
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
@@ -54,6 +57,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         eventChannel?.setStreamHandler(instance)
 
         instance.isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: imageOverlayModeKey)
+        instance.isBlurOverlayModeEnabled = UserDefaults.standard.bool(forKey: blurOverlayModeKey)
 
         // Observe when the application goes to background or foreground
         NotificationCenter.default.addObserver(instance, selector: #selector(appWillResignActive), name: NSApplication.didResignActiveNotification, object: nil)
@@ -73,13 +77,22 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                 }
             }
             showImageOverlay()
+        } else if isBlurOverlayModeEnabled {
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .readOnly
+                }
+            }
+            showBlurOverlay()
         }
     }
 
     @objc func appDidBecomeActive() {
-        // Remove the image overlay first, then restore screenshot protection.
+        // Remove overlays first, then restore screenshot protection.
         if isImageOverlayModeEnabled {
             removeImageOverlay()
+        } else if isBlurOverlayModeEnabled {
+            removeBlurOverlay()
         }
         fetchPersistedState()
     }
@@ -87,15 +100,17 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     func persistState() {
         UserDefaults.standard.set(MacOSNoScreenshotPlugin.preventScreenShot, forKey: MacOSNoScreenshotPlugin.preventScreenShotKey)
         UserDefaults.standard.set(isImageOverlayModeEnabled, forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
-        print("Persisted state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
+        UserDefaults.standard.set(isBlurOverlayModeEnabled, forKey: MacOSNoScreenshotPlugin.blurOverlayModeKey)
+        print("Persisted state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled)")
         updateSharedPreferencesState("")
     }
 
     func fetchPersistedState() {
         let fetchVal = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.preventScreenShotKey) ? MacOSNoScreenshotPlugin.DISABLESCREENSHOT : MacOSNoScreenshotPlugin.ENABLESCREENSHOT
         isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
+        isBlurOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.blurOverlayModeKey)
         updateScreenshotState(isScreenshotBlocked: fetchVal)
-        print("Fetched state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled)")
+        print("Fetched state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled)")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -111,6 +126,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             result(true)
         case "toggleScreenshotWithImage":
             let isActive = toggleScreenshotWithImage()
+            result(isActive)
+        case "toggleScreenshotWithBlur":
+            let isActive = toggleScreenshotWithBlur()
             result(isActive)
         case "startScreenshotListening":
             startListening()
@@ -157,6 +175,11 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         isImageOverlayModeEnabled.toggle()
 
         if isImageOverlayModeEnabled {
+            // Deactivate blur mode if active (mutual exclusivity)
+            if isBlurOverlayModeEnabled {
+                isBlurOverlayModeEnabled = false
+                removeBlurOverlay()
+            }
             // Enable screenshot prevention
             MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
             DispatchQueue.main.async {
@@ -177,6 +200,59 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
         persistState()
         return isImageOverlayModeEnabled
+    }
+
+    private func toggleScreenshotWithBlur() -> Bool {
+        isBlurOverlayModeEnabled.toggle()
+
+        if isBlurOverlayModeEnabled {
+            // Deactivate image mode if active (mutual exclusivity)
+            if isImageOverlayModeEnabled {
+                isImageOverlayModeEnabled = false
+                removeImageOverlay()
+            }
+            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .none
+                }
+            }
+        } else {
+            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+            DispatchQueue.main.async {
+                if let window = NSApplication.shared.windows.first {
+                    window.sharingType = .readOnly
+                }
+            }
+            removeBlurOverlay()
+        }
+
+        persistState()
+        return isBlurOverlayModeEnabled
+    }
+
+    private func showBlurOverlay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.blurEffectView == nil else { return }
+            guard let window = NSApplication.shared.windows.first,
+                  let contentView = window.contentView else { return }
+
+            let blurView = NSVisualEffectView(frame: contentView.bounds)
+            blurView.material = .hudWindow
+            blurView.blendingMode = .behindWindow
+            blurView.state = .active
+            blurView.autoresizingMask = [.width, .height]
+            contentView.addSubview(blurView, positioned: .above, relativeTo: contentView.subviews.last)
+            self.blurEffectView = blurView
+        }
+    }
+
+    private func removeBlurOverlay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.blurEffectView?.removeFromSuperview()
+            self.blurEffectView = nil
+        }
     }
 
     private func showImageOverlay() {

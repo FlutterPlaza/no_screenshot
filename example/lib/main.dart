@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:no_screenshot/no_screenshot.dart';
@@ -56,9 +58,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _noScreenshot = NoScreenshot.instance;
+  StreamSubscription<ScreenshotSnapshot>? _streamSubscription;
   bool _isMonitoring = false;
   bool _isRecordingMonitoring = false;
   bool _isOverlayImageOn = false;
+  bool _isOverlayBlurOn = false;
   ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
     isScreenshotProtectionOn: false,
     wasScreenshotTaken: false,
@@ -68,13 +72,20 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _noScreenshot.screenshotStream.listen((value) {
+    _streamSubscription = _noScreenshot.screenshotStream.listen((value) {
+      if (!mounted) return;
       setState(() => _latestSnapshot = value);
       if (value.wasScreenshotTaken) {
         debugPrint('Screenshot taken at path: ${value.screenshotPath}');
         _showScreenshotAlert(value.screenshotPath);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _streamSubscription?.cancel();
+    super.dispose();
   }
 
   // ── Screenshot Protection ──────────────────────────────────────────
@@ -123,7 +134,19 @@ class _HomePageState extends State<HomePage> {
   Future<void> _toggleScreenshotWithImage() async {
     final result = await _noScreenshot.toggleScreenshotWithImage();
     debugPrint('toggleScreenshotWithImage: $result');
-    setState(() => _isOverlayImageOn = result);
+    setState(() {
+      _isOverlayImageOn = result;
+      if (result) _isOverlayBlurOn = false;
+    });
+  }
+
+  Future<void> _toggleScreenshotWithBlur() async {
+    final result = await _noScreenshot.toggleScreenshotWithBlur();
+    debugPrint('toggleScreenshotWithBlur: $result');
+    setState(() {
+      _isOverlayBlurOn = result;
+      if (result) _isOverlayImageOn = false;
+    });
   }
 
   // ── UI ─────────────────────────────────────────────────────────────
@@ -264,6 +287,23 @@ class _HomePageState extends State<HomePage> {
                 label: l.toggleScreenshotWithImage,
                 subtitle: l.overlaySubtitle,
                 onPressed: _toggleScreenshotWithImage,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            title: l.blurOverlaySectionTitle,
+            subtitle: l.platformSubtitle,
+            children: [
+              _StatusRow(
+                label: l.blurOverlay,
+                isOn: _isOverlayBlurOn,
+              ),
+              const SizedBox(height: 12),
+              _FeatureButton(
+                label: l.toggleScreenshotWithBlur,
+                subtitle: l.blurOverlaySubtitle,
+                onPressed: _toggleScreenshotWithBlur,
               ),
             ],
           ),

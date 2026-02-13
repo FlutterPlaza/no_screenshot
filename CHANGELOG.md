@@ -1,3 +1,17 @@
+## 0.5.0
+
+- feat: added `toggleScreenshotWithBlur()` API — Gaussian blur overlay for app switcher / recents screen (P2) by @fonkamloic.
+- feat(android): blur overlay via `RenderEffect.createBlurEffect()` on API 31+ (zero-copy GPU blur) and `RenderScript.ScriptIntrinsicBlur` on API 17–30 by @fonkamloic.
+- feat(ios): blur overlay via `UIVisualEffectView` with `UIBlurEffect(style: .regular)` by @fonkamloic.
+- feat(macos): blur overlay via `NSVisualEffectView` with `.hudWindow` material by @fonkamloic.
+- feat(linux): blur overlay state tracked and persisted (best-effort — compositors control task switcher thumbnails) by @fonkamloic.
+- feat: blur and image overlay are mutually exclusive — activating one deactivates the other, enforced at native level on all platforms by @fonkamloic.
+- feat: blur overlay state persists across app restarts via SharedPreferences / UserDefaults / JSON on all platforms by @fonkamloic.
+- feat(example): added Overlay Blur section with toggle button and status indicator by @fonkamloic.
+- fix(example): fixed stream subscription leak causing `setState` on unmounted widget — added proper `dispose()` and `mounted` check by @fonkamloic.
+- test: added method channel, platform interface, and `NoScreenshot` tests for `toggleScreenshotWithBlur` by @fonkamloic.
+- docs: updated README, CHANGELOG, roadmap, and example app to reflect blur overlay support by @fonkamloic.
+
 ## 0.4.0
 
 - feat: detect screen recording start/stop events across all platforms (P1) by @fonkamloic.

@@ -98,6 +98,31 @@ void main() {
       expect(result, expected);
     });
 
+    test('toggleScreenshotWithBlur', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenSetBlur) {
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithBlur();
+      expect(result, expected);
+    });
+
+    test('toggleScreenshotWithBlur returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithBlur();
+      expect(result, false);
+    });
+
     test('toggleScreenshotWithImage returns false when channel returns null',
         () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

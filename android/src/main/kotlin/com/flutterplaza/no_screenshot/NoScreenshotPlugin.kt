@@ -5,12 +5,22 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.database.ContentObserver
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager.LayoutParams
 import android.widget.FrameLayout
@@ -35,7 +45,9 @@ const val SCREENSHOT_PATH = "screenshot_path"
 const val PREF_KEY_SCREENSHOT = "is_screenshot_on"
 const val SCREENSHOT_TAKEN = "was_screenshot_taken"
 const val SET_IMAGE_CONST = "toggleScreenshotWithImage"
+const val SET_BLUR_CONST = "toggleScreenshotWithBlur"
 const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
+const val PREF_KEY_BLUR_OVERLAY = "is_blur_overlay_mode_enabled"
 const val IS_SCREEN_RECORDING = "is_screen_recording"
 const val START_SCREEN_RECORDING_LISTENING_CONST = "startScreenRecordingListening"
 const val STOP_SCREEN_RECORDING_LISTENING_CONST = "stopScreenRecordingListening"
@@ -57,7 +69,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Boolean = false
     private var isImageOverlayModeEnabled: Boolean = false
+    private var isBlurOverlayModeEnabled: Boolean = false
     private var overlayImageView: ImageView? = null
+    private var overlayBlurView: View? = null
     private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
     private var isScreenRecording: Boolean = false
     private var isRecordingListening: Boolean = false
@@ -94,6 +108,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     override fun onDetachedFromActivityForConfigChanges() {
         unregisterScreenCaptureCallback()
         removeImageOverlay()
+        removeBlurOverlay()
         activity = null
     }
 
@@ -108,6 +123,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     override fun onDetachedFromActivity() {
         unregisterScreenCaptureCallback()
         removeImageOverlay()
+        removeBlurOverlay()
         activity = null
     }
 
@@ -138,6 +154,10 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
             SET_IMAGE_CONST -> {
                 result.success(toggleScreenshotWithImage())
+            }
+
+            SET_BLUR_CONST -> {
+                result.success(toggleScreenshotWithBlur())
             }
 
             START_SCREEN_RECORDING_LISTENING_CONST -> {
@@ -171,13 +191,18 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                 if (act == activity && isImageOverlayModeEnabled) {
                     act.window?.clearFlags(LayoutParams.FLAG_SECURE)
                     showImageOverlay(act)
-
+                } else if (act == activity && isBlurOverlayModeEnabled) {
+                    act.window?.clearFlags(LayoutParams.FLAG_SECURE)
+                    showBlurOverlay(act)
                 }
             }
 
             override fun onActivityResumed(act: Activity) {
                 if (act == activity && isImageOverlayModeEnabled) {
                     removeImageOverlay()
+                    act.window?.addFlags(LayoutParams.FLAG_SECURE)
+                } else if (act == activity && isBlurOverlayModeEnabled) {
+                    removeBlurOverlay()
                     act.window?.addFlags(LayoutParams.FLAG_SECURE)
                 }
             }
@@ -188,6 +213,8 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             override fun onActivitySaveInstanceState(act: Activity, outState: Bundle) {
                 if (act == activity && isImageOverlayModeEnabled) {
                     showImageOverlay(act)
+                } else if (act == activity && isBlurOverlayModeEnabled) {
+                    showBlurOverlay(act)
                 }
             }
             override fun onActivityDestroyed(act: Activity) {}
@@ -238,6 +265,12 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         saveImageOverlayState(isImageOverlayModeEnabled)
 
         if (isImageOverlayModeEnabled) {
+            // Deactivate blur mode if active (mutual exclusivity)
+            if (isBlurOverlayModeEnabled) {
+                isBlurOverlayModeEnabled = false
+                saveBlurOverlayState(false)
+                removeBlurOverlay()
+            }
             screenshotOff()
         } else {
             screenshotOn()
@@ -245,6 +278,100 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         }
         updateSharedPreferencesState("")
         return isImageOverlayModeEnabled
+    }
+
+    private fun toggleScreenshotWithBlur(): Boolean {
+        isBlurOverlayModeEnabled = !preferences.getBoolean(PREF_KEY_BLUR_OVERLAY, false)
+        saveBlurOverlayState(isBlurOverlayModeEnabled)
+
+        if (isBlurOverlayModeEnabled) {
+            // Deactivate image mode if active (mutual exclusivity)
+            if (isImageOverlayModeEnabled) {
+                isImageOverlayModeEnabled = false
+                saveImageOverlayState(false)
+                removeImageOverlay()
+            }
+            screenshotOff()
+        } else {
+            screenshotOn()
+            removeBlurOverlay()
+        }
+        updateSharedPreferencesState("")
+        return isBlurOverlayModeEnabled
+    }
+
+    @Suppress("DEPRECATION")
+    private fun showBlurOverlay(activity: Activity) {
+        if (overlayBlurView != null) return
+        val decorView = activity.window?.decorView ?: return
+
+        if (Build.VERSION.SDK_INT >= 31) {
+            // API 31+: GPU blur via RenderEffect on decorView
+            activity.runOnUiThread {
+                decorView.setRenderEffect(
+                    RenderEffect.createBlurEffect(30f, 30f, Shader.TileMode.CLAMP)
+                )
+                overlayBlurView = decorView
+            }
+        } else if (Build.VERSION.SDK_INT >= 17) {
+            // API 17–30: Capture bitmap, blur with RenderScript, show as ImageView
+            activity.runOnUiThread {
+                val width = decorView.width
+                val height = decorView.height
+                if (width <= 0 || height <= 0) return@runOnUiThread
+
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                decorView.draw(canvas)
+
+                val rs = RenderScript.create(activity)
+                val input = Allocation.createFromBitmap(rs, bitmap)
+                val output = Allocation.createTyped(rs, input.type)
+                val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
+                script.setRadius(25f)
+                script.setInput(input)
+                script.forEach(output)
+                output.copyTo(bitmap)
+                script.destroy()
+                input.destroy()
+                output.destroy()
+                rs.destroy()
+
+                val imageView = ImageView(activity).apply {
+                    setImageBitmap(bitmap)
+                    scaleType = ImageView.ScaleType.FIT_XY
+                    layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                }
+                (decorView as? ViewGroup)?.addView(imageView)
+                overlayBlurView = imageView
+            }
+        }
+        // API <17: FLAG_SECURE alone prevents app switcher preview; no blur needed.
+    }
+
+    private fun removeBlurOverlay() {
+        val blurView = overlayBlurView ?: return
+        val act = activity
+        if (act != null) {
+            act.runOnUiThread {
+                if (Build.VERSION.SDK_INT >= 31 && blurView === act.window?.decorView) {
+                    blurView.setRenderEffect(null)
+                } else {
+                    (blurView.parent as? ViewGroup)?.removeView(blurView)
+                }
+                overlayBlurView = null
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= 31) {
+                blurView.setRenderEffect(null)
+            } else {
+                (blurView.parent as? ViewGroup)?.removeView(blurView)
+            }
+            overlayBlurView = null
+        }
     }
 
     // ── Screen Recording Detection ─────────────────────────────────────
@@ -355,14 +482,22 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         }
     }
 
+    private fun saveBlurOverlayState(enabled: Boolean) {
+        Executors.newSingleThreadExecutor().execute {
+            preferences.edit().putBoolean(PREF_KEY_BLUR_OVERLAY, enabled).apply()
+        }
+    }
+
     private fun restoreScreenshotState() {
         Executors.newSingleThreadExecutor().execute {
             val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
             val overlayEnabled = preferences.getBoolean(PREF_KEY_IMAGE_OVERLAY, false)
+            val blurEnabled = preferences.getBoolean(PREF_KEY_BLUR_OVERLAY, false)
             isImageOverlayModeEnabled = overlayEnabled
+            isBlurOverlayModeEnabled = blurEnabled
 
             activity?.runOnUiThread {
-                if (isImageOverlayModeEnabled || isSecure) {
+                if (isImageOverlayModeEnabled || isBlurOverlayModeEnabled || isSecure) {
                     screenshotOff()
                 } else {
                     screenshotOn()

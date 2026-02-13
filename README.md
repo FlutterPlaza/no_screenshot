@@ -8,7 +8,7 @@
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image overlay** in the app switcher on Android, iOS, macOS, and Linux.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image or blur overlay** in the app switcher on Android, iOS, macOS, and Linux.
 
 ## Features
 
@@ -21,6 +21,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Detect screen recording start/stop | ✅\* | ✅ | ⚠️ | ⚠️ |
 | Screenshot file path | ❌ | ❌ | ✅ | ✅ |
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
+| Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
 
 > **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
@@ -39,7 +40,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.4.0
+  no_screenshot: ^0.5.0
 ```
 
 Then run:
@@ -221,6 +222,33 @@ When enabled, the overlay image is shown whenever the app goes to the background
 |:---:|:---:|
 | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_android.gif" width="350" alt="Image overlay on Android"> | <img src="https://raw.githubusercontent.com/FlutterPlaza/no_screenshot/development/doc/gifs/image_overlay_ios.gif" width="333" alt="Image overlay on iOS"> |
 
+### 5. Blur Overlay (App Switcher / Recents)
+
+Show a Gaussian blur of the current screen content when the app appears in the app switcher. Provides a more natural UX than a static image while still protecting sensitive content. **No asset required.**
+
+```dart
+final _noScreenshot = NoScreenshot.instance;
+
+// Toggle the blur overlay on/off (returns the new state)
+Future<void> toggleBlur() async {
+  final isActive = await _noScreenshot.toggleScreenshotWithBlur();
+  debugPrint('Blur overlay active: $isActive');
+}
+```
+
+> **Mutual exclusivity:** Blur and image overlay modes are mutually exclusive — activating one automatically deactivates the other. This is enforced at the native level on all platforms.
+
+#### Platform-specific blur implementation
+
+| Platform | Mechanism |
+|---|---|
+| **Android API 31+** | `RenderEffect.createBlurEffect(30f, 30f, CLAMP)` — zero-copy GPU blur on `decorView` |
+| **Android API 17–30** | `RenderScript.ScriptIntrinsicBlur(radius=25f)` — bitmap capture + blur + `ImageView` overlay |
+| **Android API <17** | `FLAG_SECURE` alone (no blur, but app switcher preview is hidden) |
+| **iOS** | `UIVisualEffectView` with `UIBlurEffect(style: .regular)` |
+| **macOS** | `NSVisualEffectView` with `.hudWindow` material, `.behindWindow` blending |
+| **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
+
 ### macOS Demo
 
 All features (screenshot protection, monitoring, and image overlay) on macOS:
@@ -248,6 +276,7 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotOn()` | `Future<bool>` | Enable screenshots & screen recording |
 | `toggleScreenshot()` | `Future<bool>` | Toggle screenshot protection on/off |
 | `toggleScreenshotWithImage()` | `Future<bool>` | Toggle image overlay mode (returns new state) |
+| `toggleScreenshotWithBlur()` | `Future<bool>` | Toggle blur overlay mode (returns new state) |
 | `startScreenshotListening()` | `Future<void>` | Start monitoring for screenshot events |
 | `stopScreenshotListening()` | `Future<void>` | Stop monitoring for screenshot events |
 | `startScreenRecordingListening()` | `Future<void>` | Start monitoring for screen recording events |
