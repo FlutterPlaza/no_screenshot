@@ -1,6 +1,6 @@
 # no_screenshot — Feature Roadmap
 
-## Implemented (v0.5.0)
+## Implemented (v0.6.0)
 
 | # | Feature | Platforms | Key APIs |
 |---|---|---|---|
@@ -15,6 +15,8 @@
 | 9 | Linux platform support | Linux | `GFileMonitor` (inotify) for detection; best-effort prevention |
 | 10 | Screen recording start/stop detection | iOS, Android 14+, macOS ⚠️, Linux ⚠️ | `startScreenRecordingListening()`, `stopScreenRecordingListening()`, `isScreenRecording` |
 | 11 | Blur overlay in app switcher | Android, iOS, macOS, Linux ⚠️ | `toggleScreenshotWithBlur()` |
+| 12 | Configurable blur radius | Android, iOS, macOS, Linux | `toggleScreenshotWithBlur(blurRadius: 50.0)` |
+| 13 | Solid color overlay in app switcher | Android, iOS, macOS, Linux ⚠️ | `toggleScreenshotWithColor(color: 0xFFFF0000)` |
 
 > **⚠️ Linux:** Compositors (Wayland / X11) have no `FLAG_SECURE` equivalent — prevention and overlay are best-effort (state is tracked and persisted). Detection works reliably via `GFileMonitor`.
 
@@ -29,18 +31,17 @@ Features are split across focused packages. All `no_*` names confirmed **availab
 Core package. Handles screenshot/recording prevention, detection, overlays, and DX widgets.
 
 | Priority | Feature | Impact |
-|---|---|---|
-| ~~P1~~ | ~~Detect screen recording start/stop events~~ | ~~High~~ — **SHIPPED v0.4.0** |
-| ~~P2~~ | ~~Blur overlay option for app switcher~~ | ~~High~~ — **SHIPPED v0.5.0** |
-| P2.1 | Configurable blur radius | Medium |
-| P2.2 | Enhanced macOS screen recording detection (Cmd+Shift+5) | Medium |
-| P3 | Solid color overlay option for app switcher | Medium |
-| P6 | Declarative SecureWidget wrapper | High |
-| P7 | Per-route / per-screen protection policies | High |
-| P8 | Screenshot metadata (timestamp, source app) | Medium |
-| P11 | Windows platform support | Medium |
-| P15 | Granular callbacks (onScreenshotAttempt, etc.) | Low |
-| P17 | Web platform support (limited) | Low |
+|----------|---|---|
+| ~~P1~~   | ~~Detect screen recording start/stop events~~ | ~~High~~ — **SHIPPED v0.4.0** |
+| ~~P2~~   | ~~Blur overlay option for app switcher~~ | ~~High~~ — **SHIPPED v0.5.0** |
+| ~~P2.1~~ | ~~Configurable blur radius~~ | ~~Medium~~ — **SHIPPED v0.6.0** |
+| ~~P3~~   | ~~Solid color overlay option for app switcher~~ | ~~Medium~~ — **SHIPPED v0.6.0** |
+| P6       | Declarative SecureWidget wrapper | High |
+| P7       | Per-route / per-screen protection policies | High |
+| P8       | Screenshot metadata (timestamp, source app) | Medium |
+| P11      | Windows platform support | Medium |
+| P15      | Granular callbacks (onScreenshotAttempt, etc.) | Low |
+| P17      | Web platform support (limited) | Low |
 
 ### `no_screen_mirror` (new package) — Display Mirroring & Casting Detection
 
@@ -122,29 +123,25 @@ Camera and sensor-based physical security.
 - Linux: Best-effort — state tracked and persisted, compositors control task switcher thumbnails
 - State persisted across app restarts on all platforms
 
-### P2.1: Configurable blur radius
-- **Package:** `no_screenshot`
-- **Impact:** Medium
-- **Description:** Allow developers to pass a custom blur radius to `toggleScreenshotWithBlur()`. Currently hardcoded to sensible defaults (30f Android RenderEffect, 25f RenderScript, `.regular` iOS, `.hudWindow` macOS).
-- **Approach:** Add optional `double radius` parameter to `toggleScreenshotWithBlur()`. Pass through method channel. Map to platform-specific ranges.
-- **Why deferred from v1:** Sensible defaults cover most use cases. Configurable radius adds API surface + cross-platform mapping complexity.
+### ~~P2.1: Configurable blur radius~~ — SHIPPED in v0.6.0
+- `toggleScreenshotWithBlur({double blurRadius = 30.0})` — optional named parameter, defaults to 30.0
+- Radius passed through method channel as `radius` argument
+- Android API 31+: `RenderEffect.createBlurEffect(radius, radius, CLAMP)`
+- Android API 17–30: `RenderScript.ScriptIntrinsicBlur` with mapped radius (clamped to 1–25 range)
+- iOS: Maps radius to `UIBlurEffect.Style` (≤15 → `.light`, ≤30 → `.regular`, >30 → `.prominent`)
+- macOS: Maps radius to `NSVisualEffectView.Material` (≤15 → `.light`, ≤30 → `.hudWindow`, >30 → `.fullScreenUI`)
+- Linux: Best-effort — radius value persisted in state, compositors control actual blur
+- State (including radius) persisted across app restarts on all platforms
 
-### P2.2: Enhanced macOS screen recording detection (Cmd+Shift+5)
-- **Package:** `no_screenshot`
-- **Impact:** Medium
-- **Description:** Improve macOS screen recording detection to specifically track the native `Cmd+Shift+5` recording flow via `screencaptureui` and `screencapture` process lifecycle, in addition to the existing third-party app polling.
-- **Approach:**
-  - Track `screencaptureui` launch/termination via `NSWorkspace.didLaunchApplicationNotification` / `NSWorkspace.didTerminateApplicationNotification` (already used for screenshot detection)
-  - Detect `screencapture` CLI process (used by macOS for the actual recording) via process polling or `NSWorkspace`
-  - Distinguish between screenshot and recording modes by monitoring process arguments or duration
-  - Emit `isScreenRecording = true` when a `screencapture` recording process is detected, `false` when it terminates
-- **Why:** macOS `Cmd+Shift+5` starts a recording via the native `screencapture` tool, which is not currently in the known recording process list. This is the most common way users record on macOS.
-
-### P3: Solid color overlay option for app switcher
-- **Package:** `no_screenshot`
-- **Impact:** Medium
-- **Description:** Simple configurable solid color overlay. Lightweight, no asset required.
-- **Approach:** New method like `screenshotOffWithColor(Color)`.
+### ~~P3: Solid color overlay option for app switcher~~ — SHIPPED in v0.6.0
+- `toggleScreenshotWithColor({int color = 0xFF000000})` — ARGB color integer, defaults to opaque black
+- Returns `true` when color overlay is activated, `false` when deactivated
+- Color, blur, and image overlays are **mutually exclusive** — activating one deactivates the others
+- Android: `View` with solid background color added as overlay on `decorView`
+- iOS: `UIView` with `backgroundColor` set from ARGB color
+- macOS: `NSView` with `CALayer.backgroundColor` from ARGB color
+- Linux: Best-effort — state tracked and persisted, compositors control task switcher thumbnails
+- State (including color value) persisted across app restarts on all platforms
 
 ### P4: Detect AirPlay / Miracast / screen mirroring
 - **Package:** `no_screen_mirror`

@@ -9,6 +9,9 @@ typedef struct {
   gboolean prevent_screenshot;
   gboolean is_image_overlay_mode;
   gboolean is_blur_overlay_mode;
+  gboolean is_color_overlay_mode;
+  gdouble blur_radius;
+  gint color_value;
 } PersistedState;
 
 typedef struct _StatePersistence StatePersistence;
@@ -19,7 +22,10 @@ void state_persistence_free(StatePersistence* self);
 void state_persistence_save(StatePersistence* self,
                             gboolean prevent_screenshot,
                             gboolean is_image_overlay_mode,
-                            gboolean is_blur_overlay_mode);
+                            gboolean is_blur_overlay_mode,
+                            gboolean is_color_overlay_mode,
+                            gdouble blur_radius,
+                            gint color_value);
 
 PersistedState state_persistence_load(StatePersistence* self);
 
