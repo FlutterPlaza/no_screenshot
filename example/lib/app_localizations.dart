@@ -61,6 +61,11 @@ class AppLocalizations {
       'disableRecordingMonitoring': 'Disable Recording Monitoring',
       'stopRecordingListening': 'Stop listening for screen recording',
       'screenRecording': 'Screen recording',
+      'colorOverlaySectionTitle': 'Overlay Color',
+      'colorOverlay': 'Color Overlay',
+      'toggleScreenshotWithColor': 'Toggle Screenshot With Color',
+      'colorOverlaySubtitle':
+          'Show solid color overlay when app is in recents / app switcher',
     },
     'ar': {
       'appTitle': 'مثال بدون لقطة شاشة',
@@ -104,6 +109,11 @@ class AppLocalizations {
       'disableRecordingMonitoring': 'تعطيل مراقبة التسجيل',
       'stopRecordingListening': 'إيقاف الاستماع لتسجيل الشاشة',
       'screenRecording': 'تسجيل الشاشة',
+      'colorOverlaySectionTitle': 'تراكب لوني',
+      'colorOverlay': 'تراكب لوني',
+      'toggleScreenshotWithColor': 'تبديل لقطة الشاشة مع لون',
+      'colorOverlaySubtitle':
+          'عرض تراكب لوني عند ظهور التطبيق في التطبيقات الأخيرة',
     },
   };
 
@@ -178,6 +188,14 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['stopRecordingListening']!;
   String get screenRecording =>
       _localizedValues[locale.languageCode]!['screenRecording']!;
+  String get colorOverlaySectionTitle =>
+      _localizedValues[locale.languageCode]!['colorOverlaySectionTitle']!;
+  String get colorOverlay =>
+      _localizedValues[locale.languageCode]!['colorOverlay']!;
+  String get toggleScreenshotWithColor =>
+      _localizedValues[locale.languageCode]!['toggleScreenshotWithColor']!;
+  String get colorOverlaySubtitle =>
+      _localizedValues[locale.languageCode]!['colorOverlaySubtitle']!;
 }
 
 class _AppLocalizationsDelegate
