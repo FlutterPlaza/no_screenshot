@@ -54,7 +54,10 @@ static void update_shared_state(NoScreenshotPlugin* self,
 static void persist_state(NoScreenshotPlugin* self) {
   state_persistence_save(self->persistence, self->prevent_screenshot,
                          self->is_image_overlay_mode,
-                         self->is_blur_overlay_mode);
+                         self->is_blur_overlay_mode,
+                         self->is_color_overlay_mode,
+                         self->blur_radius,
+                         self->color_value);
   update_shared_state(self, "");
 }
 
@@ -120,9 +123,12 @@ static void handle_method_call(FlMethodChannel* channel,
   } else if (g_strcmp0(method, "toggleScreenshotWithImage") == 0) {
     self->is_image_overlay_mode = !self->is_image_overlay_mode;
     if (self->is_image_overlay_mode) {
-      // Deactivate blur mode if active (mutual exclusivity)
+      // Deactivate blur and color modes if active (mutual exclusivity)
       if (self->is_blur_overlay_mode) {
         self->is_blur_overlay_mode = FALSE;
+      }
+      if (self->is_color_overlay_mode) {
+        self->is_color_overlay_mode = FALSE;
       }
       self->prevent_screenshot = TRUE;
       prevention_activate();
@@ -140,11 +146,22 @@ static void handle_method_call(FlMethodChannel* channel,
         fl_value_new_bool(self->is_image_overlay_mode)));
 
   } else if (g_strcmp0(method, "toggleScreenshotWithBlur") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != NULL && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* radius_val = fl_value_lookup_string(args, "radius");
+      if (radius_val != NULL &&
+          fl_value_get_type(radius_val) == FL_VALUE_TYPE_FLOAT) {
+        self->blur_radius = fl_value_get_float(radius_val);
+      }
+    }
     self->is_blur_overlay_mode = !self->is_blur_overlay_mode;
     if (self->is_blur_overlay_mode) {
-      // Deactivate image mode if active (mutual exclusivity)
+      // Deactivate image and color modes if active (mutual exclusivity)
       if (self->is_image_overlay_mode) {
         self->is_image_overlay_mode = FALSE;
+      }
+      if (self->is_color_overlay_mode) {
+        self->is_color_overlay_mode = FALSE;
       }
       self->prevent_screenshot = TRUE;
       prevention_activate();
@@ -153,13 +170,46 @@ static void handle_method_call(FlMethodChannel* channel,
       prevention_deactivate();
     }
     g_message(
-        "no_screenshot: toggleScreenshotWithBlur → %s (blur is "
+        "no_screenshot: toggleScreenshotWithBlur → %s (radius=%.1f, blur is "
         "best-effort on Linux — compositors control task switcher "
         "thumbnails).",
-        self->is_blur_overlay_mode ? "ON" : "OFF");
+        self->is_blur_overlay_mode ? "ON" : "OFF", self->blur_radius);
     persist_state(self);
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(
         fl_value_new_bool(self->is_blur_overlay_mode)));
+
+  } else if (g_strcmp0(method, "toggleScreenshotWithColor") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != NULL && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* color_val = fl_value_lookup_string(args, "color");
+      if (color_val != NULL &&
+          fl_value_get_type(color_val) == FL_VALUE_TYPE_INT) {
+        self->color_value = (gint)fl_value_get_int(color_val);
+      }
+    }
+    self->is_color_overlay_mode = !self->is_color_overlay_mode;
+    if (self->is_color_overlay_mode) {
+      // Deactivate image and blur modes if active (mutual exclusivity)
+      if (self->is_image_overlay_mode) {
+        self->is_image_overlay_mode = FALSE;
+      }
+      if (self->is_blur_overlay_mode) {
+        self->is_blur_overlay_mode = FALSE;
+      }
+      self->prevent_screenshot = TRUE;
+      prevention_activate();
+    } else {
+      self->prevent_screenshot = FALSE;
+      prevention_deactivate();
+    }
+    g_message(
+        "no_screenshot: toggleScreenshotWithColor → %s (color=0x%08X, "
+        "color overlay is best-effort on Linux — compositors control task "
+        "switcher thumbnails).",
+        self->is_color_overlay_mode ? "ON" : "OFF", self->color_value);
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(
+        fl_value_new_bool(self->is_color_overlay_mode)));
 
   } else if (g_strcmp0(method, "startScreenshotListening") == 0) {
     if (!self->is_listening) {
@@ -288,6 +338,9 @@ static void no_screenshot_plugin_init(NoScreenshotPlugin* self) {
   self->prevent_screenshot = FALSE;
   self->is_image_overlay_mode = FALSE;
   self->is_blur_overlay_mode = FALSE;
+  self->is_color_overlay_mode = FALSE;
+  self->blur_radius = 30.0;
+  self->color_value = (gint)0xFF000000;
   self->is_listening = FALSE;
   self->is_recording_listening = FALSE;
   self->is_screen_recording = FALSE;
@@ -323,6 +376,9 @@ void no_screenshot_plugin_register_with_registrar(
   self->prevent_screenshot = state.prevent_screenshot;
   self->is_image_overlay_mode = state.is_image_overlay_mode;
   self->is_blur_overlay_mode = state.is_blur_overlay_mode;
+  self->is_color_overlay_mode = state.is_color_overlay_mode;
+  self->blur_radius = state.blur_radius;
+  self->color_value = state.color_value;
 
   if (self->prevent_screenshot) {
     prevention_activate();

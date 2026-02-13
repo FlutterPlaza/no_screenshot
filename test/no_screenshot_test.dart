@@ -26,7 +26,12 @@ class MockNoScreenshotPlatform
   }
 
   @override
-  Future<bool> toggleScreenshotWithBlur() async {
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
+    return Future.value(true);
+  }
+
+  @override
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
     return Future.value(true);
   }
 
@@ -112,6 +117,23 @@ void main() {
 
   test('toggleScreenshotWithBlur', () async {
     expect(await NoScreenshot.instance.toggleScreenshotWithBlur(), true);
+  });
+
+  test('toggleScreenshotWithBlur with custom radius', () async {
+    expect(
+        await NoScreenshot.instance.toggleScreenshotWithBlur(blurRadius: 50.0),
+        true);
+  });
+
+  test('toggleScreenshotWithColor', () async {
+    expect(await NoScreenshot.instance.toggleScreenshotWithColor(), true);
+  });
+
+  test('toggleScreenshotWithColor with custom color', () async {
+    expect(
+        await NoScreenshot.instance
+            .toggleScreenshotWithColor(color: 0xFFFF0000),
+        true);
   });
 
   test('NoScreenshot equality operator', () {

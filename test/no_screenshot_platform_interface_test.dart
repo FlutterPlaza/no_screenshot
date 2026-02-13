@@ -39,7 +39,12 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   }
 
   @override
-  Future<bool> toggleScreenshotWithBlur() async {
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
+    return true;
+  }
+
+  @override
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
     return true;
   }
 
@@ -117,6 +122,18 @@ void main() {
         () {
       final basePlatform = BaseNoScreenshotPlatform();
       expect(() => basePlatform.toggleScreenshotWithBlur(),
+          throwsUnimplementedError);
+    });
+
+    test('toggleScreenshotWithColor should return true when called', () async {
+      expect(await platform.toggleScreenshotWithColor(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.toggleScreenshotWithColor() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(() => basePlatform.toggleScreenshotWithColor(),
           throwsUnimplementedError);
     });
 

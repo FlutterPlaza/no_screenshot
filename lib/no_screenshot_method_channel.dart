@@ -47,8 +47,16 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   }
 
   @override
-  Future<bool> toggleScreenshotWithBlur() async {
-    final result = await methodChannel.invokeMethod<bool>(screenSetBlur);
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
+    final result = await methodChannel
+        .invokeMethod<bool>(screenSetBlur, {'radius': blurRadius});
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
+    final result = await methodChannel
+        .invokeMethod<bool>(screenSetColor, {'color': color});
     return result ?? false;
   }
 

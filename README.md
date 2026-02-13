@@ -8,7 +8,7 @@
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image or blur overlay** in the app switcher on Android, iOS, macOS, and Linux.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image, blur, or solid color overlay** in the app switcher on Android, iOS, macOS, and Linux.
 
 ## Features
 
@@ -22,6 +22,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Screenshot file path | ❌ | ❌ | ✅ | ✅ |
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
+| Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
 
 > **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
@@ -40,7 +41,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.5.0
+  no_screenshot: ^0.6.0
 ```
 
 Then run:
@@ -229,24 +230,61 @@ Show a Gaussian blur of the current screen content when the app appears in the a
 ```dart
 final _noScreenshot = NoScreenshot.instance;
 
-// Toggle the blur overlay on/off (returns the new state)
+// Toggle the blur overlay on/off with default radius (30.0)
 Future<void> toggleBlur() async {
   final isActive = await _noScreenshot.toggleScreenshotWithBlur();
   debugPrint('Blur overlay active: $isActive');
 }
+
+// Toggle with a custom blur radius
+Future<void> toggleBlurCustom() async {
+  final isActive = await _noScreenshot.toggleScreenshotWithBlur(blurRadius: 50.0);
+  debugPrint('Blur overlay active: $isActive');
+}
 ```
 
-> **Mutual exclusivity:** Blur and image overlay modes are mutually exclusive — activating one automatically deactivates the other. This is enforced at the native level on all platforms.
+> **Mutual exclusivity:** Blur, image, and color overlay modes are mutually exclusive — activating one automatically deactivates the others. This is enforced at the native level on all platforms.
 
 #### Platform-specific blur implementation
 
 | Platform | Mechanism |
 |---|---|
-| **Android API 31+** | `RenderEffect.createBlurEffect(30f, 30f, CLAMP)` — zero-copy GPU blur on `decorView` |
-| **Android API 17–30** | `RenderScript.ScriptIntrinsicBlur(radius=25f)` — bitmap capture + blur + `ImageView` overlay |
+| **Android API 31+** | `RenderEffect.createBlurEffect()` — zero-copy GPU blur on `decorView` (configurable radius) |
+| **Android API 17–30** | `RenderScript.ScriptIntrinsicBlur` — bitmap capture + blur + `ImageView` overlay (configurable radius, max 25f) |
 | **Android API <17** | `FLAG_SECURE` alone (no blur, but app switcher preview is hidden) |
 | **iOS** | `UIVisualEffectView` with `UIBlurEffect(style: .regular)` |
 | **macOS** | `NSVisualEffectView` with `.hudWindow` material, `.behindWindow` blending |
+| **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
+
+### 6. Color Overlay (App Switcher / Recents)
+
+Show a solid color when the app appears in the app switcher or recents screen. Useful when you want a branded or themed overlay instead of a blurred or image-based one. **No asset required.**
+
+```dart
+final _noScreenshot = NoScreenshot.instance;
+
+// Toggle with default color (opaque black)
+Future<void> toggleColor() async {
+  final isActive = await _noScreenshot.toggleScreenshotWithColor();
+  debugPrint('Color overlay active: $isActive');
+}
+
+// Toggle with a custom ARGB color (e.g. opaque blue)
+Future<void> toggleColorCustom() async {
+  final isActive = await _noScreenshot.toggleScreenshotWithColor(color: 0xFF2196F3);
+  debugPrint('Color overlay active: $isActive');
+}
+```
+
+> **Mutual exclusivity:** Color, blur, and image overlay modes are mutually exclusive — activating one automatically deactivates the others. This is enforced at the native level on all platforms.
+
+#### Platform-specific color overlay implementation
+
+| Platform | Mechanism |
+|---|---|
+| **Android** | Solid `View` overlay with the specified ARGB color |
+| **iOS** | `UIView` with the specified background color |
+| **macOS** | `NSView` with the specified background color |
 | **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
 
 ### macOS Demo
@@ -276,7 +314,8 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotOn()` | `Future<bool>` | Enable screenshots & screen recording |
 | `toggleScreenshot()` | `Future<bool>` | Toggle screenshot protection on/off |
 | `toggleScreenshotWithImage()` | `Future<bool>` | Toggle image overlay mode (returns new state) |
-| `toggleScreenshotWithBlur()` | `Future<bool>` | Toggle blur overlay mode (returns new state) |
+| `toggleScreenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Toggle blur overlay mode with optional radius (returns new state) |
+| `toggleScreenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Toggle solid color overlay mode with optional ARGB color (returns new state) |
 | `startScreenshotListening()` | `Future<void>` | Start monitoring for screenshot events |
 | `stopScreenshotListening()` | `Future<void>` | Stop monitoring for screenshot events |
 | `startScreenRecordingListening()` | `Future<void>` | Start monitoring for screen recording events |
