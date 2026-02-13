@@ -54,6 +54,21 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> screenshotWithImage() async {
+    return true;
+  }
+
+  @override
+  Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
+    return true;
+  }
+
+  @override
+  Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
+    return true;
+  }
+
+  @override
   Future<void> startScreenRecordingListening() async {
     return;
   }
@@ -135,6 +150,42 @@ void main() {
       final basePlatform = BaseNoScreenshotPlatform();
       expect(() => basePlatform.toggleScreenshotWithColor(),
           throwsUnimplementedError);
+    });
+
+    test('screenshotWithImage should return true when called', () async {
+      expect(await platform.screenshotWithImage(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotWithImage() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotWithImage(), throwsUnimplementedError);
+    });
+
+    test('screenshotWithBlur should return true when called', () async {
+      expect(await platform.screenshotWithBlur(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotWithBlur() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotWithBlur(), throwsUnimplementedError);
+    });
+
+    test('screenshotWithColor should return true when called', () async {
+      expect(await platform.screenshotWithColor(), isTrue);
+    });
+
+    test(
+        'base NoScreenshotPlatform.screenshotWithColor() throws UnimplementedError',
+        () {
+      final basePlatform = BaseNoScreenshotPlatform();
+      expect(
+          () => basePlatform.screenshotWithColor(), throwsUnimplementedError);
     });
 
     test('base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',

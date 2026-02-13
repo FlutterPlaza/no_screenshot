@@ -47,6 +47,24 @@ class NoScreenshot implements NoScreenshotPlatform {
     return _instancePlatform.toggleScreenshotWithColor(color: color);
   }
 
+  /// Always enables image overlay mode (idempotent — safe to call repeatedly).
+  @override
+  Future<bool> screenshotWithImage() {
+    return _instancePlatform.screenshotWithImage();
+  }
+
+  /// Always enables blur overlay mode (idempotent — safe to call repeatedly).
+  @override
+  Future<bool> screenshotWithBlur({double blurRadius = 30.0}) {
+    return _instancePlatform.screenshotWithBlur(blurRadius: blurRadius);
+  }
+
+  /// Always enables color overlay mode (idempotent — safe to call repeatedly).
+  @override
+  Future<bool> screenshotWithColor({int color = 0xFF000000}) {
+    return _instancePlatform.screenshotWithColor(color: color);
+  }
+
   /// Return `true` if screenshot capabilities has been
   /// successfully toggle from it previous state and `false` if the attempt
   /// to toggle failed.

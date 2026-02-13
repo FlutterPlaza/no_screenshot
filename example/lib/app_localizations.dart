@@ -66,6 +66,29 @@ class AppLocalizations {
       'toggleScreenshotWithColor': 'Toggle Screenshot With Color',
       'colorOverlaySubtitle':
           'Show solid color overlay when app is in recents / app switcher',
+      'secureWidgetSectionTitle': 'SecureWidget Demo',
+      'secureWidgetSubtitle': 'Declarative protection via widget wrapper',
+      'openSecureWidgetDemo': 'Open SecureWidget Demo',
+      'secureWidgetDemoSubtitle':
+          'Opens a page wrapped in SecureWidget (blur mode)',
+      'perRouteSectionTitle': 'Per-Route Protection Demo',
+      'perRouteSubtitle': 'Different protection per named route',
+      'openPerRouteDemo': 'Open Per-Route Demo',
+      'perRouteDemoSubtitle':
+          'Navigate between routes with different protection policies',
+      'secureWidgetDemoTitle': 'SecureWidget Demo',
+      'secureWidgetDemoBody':
+          'This page is wrapped in a SecureWidget with blur mode.\nScreenshot protection is active while this page is visible.',
+      'paymentPage': 'Payment Page',
+      'paymentPageBody': 'Route: /payment — Full screenshot block (secure)',
+      'profilePage': 'Profile Page',
+      'profilePageBody': 'Route: /profile — Blur overlay (blurRadius: 50)',
+      'publicPage': 'Public Page',
+      'publicPageBody': 'Route: /public — No protection (none)',
+      'goToPayment': 'Go to Payment',
+      'goToProfile': 'Go to Profile',
+      'goToPublic': 'Go to Public',
+      'back': 'Back',
     },
     'ar': {
       'appTitle': 'مثال بدون لقطة شاشة',
@@ -114,6 +137,29 @@ class AppLocalizations {
       'toggleScreenshotWithColor': 'تبديل لقطة الشاشة مع لون',
       'colorOverlaySubtitle':
           'عرض تراكب لوني عند ظهور التطبيق في التطبيقات الأخيرة',
+      'secureWidgetSectionTitle': 'عرض SecureWidget',
+      'secureWidgetSubtitle': 'حماية تصريحية عبر غلاف الودجت',
+      'openSecureWidgetDemo': 'فتح عرض SecureWidget',
+      'secureWidgetDemoSubtitle':
+          'يفتح صفحة مغلفة بـ SecureWidget (وضع الضبابية)',
+      'perRouteSectionTitle': 'عرض الحماية حسب المسار',
+      'perRouteSubtitle': 'حماية مختلفة لكل مسار مسمى',
+      'openPerRouteDemo': 'فتح عرض حسب المسار',
+      'perRouteDemoSubtitle':
+          'التنقل بين مسارات بسياسات حماية مختلفة',
+      'secureWidgetDemoTitle': 'عرض SecureWidget',
+      'secureWidgetDemoBody':
+          'هذه الصفحة مغلفة بـ SecureWidget مع وضع الضبابية.\nحماية لقطة الشاشة نشطة أثناء عرض هذه الصفحة.',
+      'paymentPage': 'صفحة الدفع',
+      'paymentPageBody': 'المسار: /payment — حظر لقطة الشاشة الكامل (آمن)',
+      'profilePage': 'صفحة الملف الشخصي',
+      'profilePageBody': 'المسار: /profile — تراكب ضبابي (نصف القطر: 50)',
+      'publicPage': 'صفحة عامة',
+      'publicPageBody': 'المسار: /public — بدون حماية',
+      'goToPayment': 'الذهاب إلى الدفع',
+      'goToProfile': 'الذهاب إلى الملف الشخصي',
+      'goToPublic': 'الذهاب إلى العامة',
+      'back': 'رجوع',
     },
   };
 
@@ -196,6 +242,45 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['toggleScreenshotWithColor']!;
   String get colorOverlaySubtitle =>
       _localizedValues[locale.languageCode]!['colorOverlaySubtitle']!;
+  String get secureWidgetSectionTitle =>
+      _localizedValues[locale.languageCode]!['secureWidgetSectionTitle']!;
+  String get secureWidgetSubtitle =>
+      _localizedValues[locale.languageCode]!['secureWidgetSubtitle']!;
+  String get openSecureWidgetDemo =>
+      _localizedValues[locale.languageCode]!['openSecureWidgetDemo']!;
+  String get secureWidgetDemoSubtitle =>
+      _localizedValues[locale.languageCode]!['secureWidgetDemoSubtitle']!;
+  String get perRouteSectionTitle =>
+      _localizedValues[locale.languageCode]!['perRouteSectionTitle']!;
+  String get perRouteSubtitle =>
+      _localizedValues[locale.languageCode]!['perRouteSubtitle']!;
+  String get openPerRouteDemo =>
+      _localizedValues[locale.languageCode]!['openPerRouteDemo']!;
+  String get perRouteDemoSubtitle =>
+      _localizedValues[locale.languageCode]!['perRouteDemoSubtitle']!;
+  String get secureWidgetDemoTitle =>
+      _localizedValues[locale.languageCode]!['secureWidgetDemoTitle']!;
+  String get secureWidgetDemoBody =>
+      _localizedValues[locale.languageCode]!['secureWidgetDemoBody']!;
+  String get paymentPage =>
+      _localizedValues[locale.languageCode]!['paymentPage']!;
+  String get paymentPageBody =>
+      _localizedValues[locale.languageCode]!['paymentPageBody']!;
+  String get profilePage =>
+      _localizedValues[locale.languageCode]!['profilePage']!;
+  String get profilePageBody =>
+      _localizedValues[locale.languageCode]!['profilePageBody']!;
+  String get publicPage =>
+      _localizedValues[locale.languageCode]!['publicPage']!;
+  String get publicPageBody =>
+      _localizedValues[locale.languageCode]!['publicPageBody']!;
+  String get goToPayment =>
+      _localizedValues[locale.languageCode]!['goToPayment']!;
+  String get goToProfile =>
+      _localizedValues[locale.languageCode]!['goToProfile']!;
+  String get goToPublic =>
+      _localizedValues[locale.languageCode]!['goToPublic']!;
+  String get back => _localizedValues[locale.languageCode]!['back']!;
 }
 
 class _AppLocalizationsDelegate
