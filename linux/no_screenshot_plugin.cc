@@ -53,7 +53,8 @@ static void update_shared_state(NoScreenshotPlugin* self,
 
 static void persist_state(NoScreenshotPlugin* self) {
   state_persistence_save(self->persistence, self->prevent_screenshot,
-                         self->is_image_overlay_mode);
+                         self->is_image_overlay_mode,
+                         self->is_blur_overlay_mode);
   update_shared_state(self, "");
 }
 
@@ -119,6 +120,10 @@ static void handle_method_call(FlMethodChannel* channel,
   } else if (g_strcmp0(method, "toggleScreenshotWithImage") == 0) {
     self->is_image_overlay_mode = !self->is_image_overlay_mode;
     if (self->is_image_overlay_mode) {
+      // Deactivate blur mode if active (mutual exclusivity)
+      if (self->is_blur_overlay_mode) {
+        self->is_blur_overlay_mode = FALSE;
+      }
       self->prevent_screenshot = TRUE;
       prevention_activate();
     } else {
@@ -133,6 +138,28 @@ static void handle_method_call(FlMethodChannel* channel,
     persist_state(self);
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(
         fl_value_new_bool(self->is_image_overlay_mode)));
+
+  } else if (g_strcmp0(method, "toggleScreenshotWithBlur") == 0) {
+    self->is_blur_overlay_mode = !self->is_blur_overlay_mode;
+    if (self->is_blur_overlay_mode) {
+      // Deactivate image mode if active (mutual exclusivity)
+      if (self->is_image_overlay_mode) {
+        self->is_image_overlay_mode = FALSE;
+      }
+      self->prevent_screenshot = TRUE;
+      prevention_activate();
+    } else {
+      self->prevent_screenshot = FALSE;
+      prevention_deactivate();
+    }
+    g_message(
+        "no_screenshot: toggleScreenshotWithBlur → %s (blur is "
+        "best-effort on Linux — compositors control task switcher "
+        "thumbnails).",
+        self->is_blur_overlay_mode ? "ON" : "OFF");
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(
+        fl_value_new_bool(self->is_blur_overlay_mode)));
 
   } else if (g_strcmp0(method, "startScreenshotListening") == 0) {
     if (!self->is_listening) {
@@ -260,6 +287,7 @@ static void no_screenshot_plugin_class_init(NoScreenshotPluginClass* klass) {
 static void no_screenshot_plugin_init(NoScreenshotPlugin* self) {
   self->prevent_screenshot = FALSE;
   self->is_image_overlay_mode = FALSE;
+  self->is_blur_overlay_mode = FALSE;
   self->is_listening = FALSE;
   self->is_recording_listening = FALSE;
   self->is_screen_recording = FALSE;
@@ -294,6 +322,7 @@ void no_screenshot_plugin_register_with_registrar(
   PersistedState state = state_persistence_load(self->persistence);
   self->prevent_screenshot = state.prevent_screenshot;
   self->is_image_overlay_mode = state.is_image_overlay_mode;
+  self->is_blur_overlay_mode = state.is_blur_overlay_mode;
 
   if (self->prevent_screenshot) {
     prevention_activate();

@@ -1,6 +1,6 @@
 # no_screenshot — Feature Roadmap
 
-## Implemented (v0.4.0)
+## Implemented (v0.5.0)
 
 | # | Feature | Platforms | Key APIs |
 |---|---|---|---|
@@ -14,6 +14,7 @@
 | 8 | LTR & RTL language support | All platforms | `forceLeftToRight` semantics on iOS 26+ (flutter/flutter#175523) |
 | 9 | Linux platform support | Linux | `GFileMonitor` (inotify) for detection; best-effort prevention |
 | 10 | Screen recording start/stop detection | iOS, Android 14+, macOS ⚠️, Linux ⚠️ | `startScreenRecordingListening()`, `stopScreenRecordingListening()`, `isScreenRecording` |
+| 11 | Blur overlay in app switcher | Android, iOS, macOS, Linux ⚠️ | `toggleScreenshotWithBlur()` |
 
 > **⚠️ Linux:** Compositors (Wayland / X11) have no `FLAG_SECURE` equivalent — prevention and overlay are best-effort (state is tracked and persisted). Detection works reliably via `GFileMonitor`.
 
@@ -30,7 +31,9 @@ Core package. Handles screenshot/recording prevention, detection, overlays, and 
 | Priority | Feature | Impact |
 |---|---|---|
 | ~~P1~~ | ~~Detect screen recording start/stop events~~ | ~~High~~ — **SHIPPED v0.4.0** |
-| P2 | Blur/pixelate overlay option for app switcher | High |
+| ~~P2~~ | ~~Blur overlay option for app switcher~~ | ~~High~~ — **SHIPPED v0.5.0** |
+| P2.1 | Configurable blur radius | Medium |
+| P2.2 | Enhanced macOS screen recording detection (Cmd+Shift+5) | Medium |
 | P3 | Solid color overlay option for app switcher | Medium |
 | P6 | Declarative SecureWidget wrapper | High |
 | P7 | Per-route / per-screen protection policies | High |
@@ -107,14 +110,35 @@ Camera and sensor-based physical security.
 - macOS: `NSWorkspace` process polling (2s) for QuickTime Player, OBS, Loom, Kap, ffmpeg, screencapture, simplescreenrecorder
 - Linux: `/proc` process scanning (2s) for ffmpeg, obs, simplescreenrecorder, kazam, peek, recordmydesktop, vokoscreen, gtk-recordmydesktop
 
-### P2: Blur/pixelate overlay option for app switcher
+### ~~P2: Blur overlay option for app switcher~~ — SHIPPED in v0.5.0
+- `toggleScreenshotWithBlur()` API — mirrors `toggleScreenshotWithImage()` exactly
+- Returns `true` when blur mode is activated, `false` when deactivated
+- Blur and image overlay are **mutually exclusive** — activating one deactivates the other (enforced at native level)
+- Android API 31+: `RenderEffect.createBlurEffect(30f, 30f, CLAMP)` — zero-copy GPU blur on `decorView`
+- Android API 17–30: `RenderScript.ScriptIntrinsicBlur(radius=25f)` — bitmap capture + blur + `ImageView` overlay
+- Android API <17: `FLAG_SECURE` alone (no blur, but app switcher content is hidden)
+- iOS: `UIVisualEffectView(effect: UIBlurEffect(style: .regular))`
+- macOS: `NSVisualEffectView` with `.hudWindow` material, `.behindWindow` blending, `.active` state
+- Linux: Best-effort — state tracked and persisted, compositors control task switcher thumbnails
+- State persisted across app restarts on all platforms
+
+### P2.1: Configurable blur radius
 - **Package:** `no_screenshot`
-- **Impact:** High
-- **Description:** Apply Gaussian blur or pixelation to current screen content when app goes to background. More natural UX than static image.
+- **Impact:** Medium
+- **Description:** Allow developers to pass a custom blur radius to `toggleScreenshotWithBlur()`. Currently hardcoded to sensible defaults (30f Android RenderEffect, 25f RenderScript, `.regular` iOS, `.hudWindow` macOS).
+- **Approach:** Add optional `double radius` parameter to `toggleScreenshotWithBlur()`. Pass through method channel. Map to platform-specific ranges.
+- **Why deferred from v1:** Sensible defaults cover most use cases. Configurable radius adds API surface + cross-platform mapping complexity.
+
+### P2.2: Enhanced macOS screen recording detection (Cmd+Shift+5)
+- **Package:** `no_screenshot`
+- **Impact:** Medium
+- **Description:** Improve macOS screen recording detection to specifically track the native `Cmd+Shift+5` recording flow via `screencaptureui` and `screencapture` process lifecycle, in addition to the existing third-party app polling.
 - **Approach:**
-  - Android: RenderScript / Vulkan
-  - iOS: `UIVisualEffectView`
-  - macOS: `NSVisualEffectView`
+  - Track `screencaptureui` launch/termination via `NSWorkspace.didLaunchApplicationNotification` / `NSWorkspace.didTerminateApplicationNotification` (already used for screenshot detection)
+  - Detect `screencapture` CLI process (used by macOS for the actual recording) via process polling or `NSWorkspace`
+  - Distinguish between screenshot and recording modes by monitoring process arguments or duration
+  - Emit `isScreenRecording = true` when a `screencapture` recording process is detected, `false` when it terminates
+- **Why:** macOS `Cmd+Shift+5` starts a recording via the native `screencapture` tool, which is not currently in the known recording process list. This is the most common way users record on macOS.
 
 ### P3: Solid color overlay option for app switcher
 - **Package:** `no_screenshot`

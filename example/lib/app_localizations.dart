@@ -42,6 +42,11 @@ class AppLocalizations {
       'toggleScreenshotWithImage': 'Toggle Screenshot With Image',
       'overlaySubtitle':
           'Show overlay image when app is in recents / app switcher',
+      'blurOverlaySectionTitle': 'Overlay Blur',
+      'blurOverlay': 'Blur Overlay',
+      'toggleScreenshotWithBlur': 'Toggle Screenshot With Blur',
+      'blurOverlaySubtitle':
+          'Show blurred overlay when app is in recents / app switcher',
       'screenshotDetected': 'Screenshot Detected',
       'path': 'Path',
       'ok': 'OK',
@@ -80,6 +85,11 @@ class AppLocalizations {
       'toggleScreenshotWithImage': 'تبديل لقطة الشاشة مع صورة',
       'overlaySubtitle':
           'عرض صورة التراكب عند ظهور التطبيق في التطبيقات الأخيرة',
+      'blurOverlaySectionTitle': 'تراكب ضبابي',
+      'blurOverlay': 'تراكب ضبابي',
+      'toggleScreenshotWithBlur': 'تبديل لقطة الشاشة مع ضبابية',
+      'blurOverlaySubtitle':
+          'عرض تراكب ضبابي عند ظهور التطبيق في التطبيقات الأخيرة',
       'screenshotDetected': 'تم اكتشاف لقطة شاشة',
       'path': 'المسار',
       'ok': 'حسناً',
@@ -136,6 +146,14 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['toggleScreenshotWithImage']!;
   String get overlaySubtitle =>
       _localizedValues[locale.languageCode]!['overlaySubtitle']!;
+  String get blurOverlaySectionTitle =>
+      _localizedValues[locale.languageCode]!['blurOverlaySectionTitle']!;
+  String get blurOverlay =>
+      _localizedValues[locale.languageCode]!['blurOverlay']!;
+  String get toggleScreenshotWithBlur =>
+      _localizedValues[locale.languageCode]!['toggleScreenshotWithBlur']!;
+  String get blurOverlaySubtitle =>
+      _localizedValues[locale.languageCode]!['blurOverlaySubtitle']!;
   String get screenshotDetected =>
       _localizedValues[locale.languageCode]!['screenshotDetected']!;
   String get path => _localizedValues[locale.languageCode]!['path']!;

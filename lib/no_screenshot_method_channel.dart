@@ -47,6 +47,12 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> toggleScreenshotWithBlur() async {
+    final result = await methodChannel.invokeMethod<bool>(screenSetBlur);
+    return result ?? false;
+  }
+
+  @override
   Future<void> startScreenshotListening() {
     return methodChannel.invokeMethod<void>(startScreenshotListeningConst);
   }
