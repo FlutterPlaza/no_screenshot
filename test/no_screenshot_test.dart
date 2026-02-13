@@ -26,6 +26,11 @@ class MockNoScreenshotPlatform
   }
 
   @override
+  Future<bool> toggleScreenshotWithBlur() async {
+    return Future.value(true);
+  }
+
+  @override
   Future<bool> toggleScreenshot() async {
     // Mock implementation or return a fixed value
     return Future.value(true);
@@ -103,6 +108,10 @@ void main() {
 
   test('toggleScreenshotWithImage', () async {
     expect(await NoScreenshot.instance.toggleScreenshotWithImage(), true);
+  });
+
+  test('toggleScreenshotWithBlur', () async {
+    expect(await NoScreenshot.instance.toggleScreenshotWithBlur(), true);
   });
 
   test('NoScreenshot equality operator', () {
