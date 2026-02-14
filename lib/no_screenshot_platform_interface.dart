@@ -46,9 +46,14 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
         'toggleScreenshotWithImage() has not been implemented.');
   }
 
-  Future<bool> toggleScreenshotWithBlur() {
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) {
     throw UnimplementedError(
         'toggleScreenshotWithBlur() has not been implemented.');
+  }
+
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) {
+    throw UnimplementedError(
+        'toggleScreenshotWithColor() has not been implemented.');
   }
 
   /// Return `true` if screenshot capabilities has been
