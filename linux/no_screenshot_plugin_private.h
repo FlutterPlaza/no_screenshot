@@ -10,6 +10,14 @@
 
 G_BEGIN_DECLS
 
+// Forward typedefs required by G_DEFINE_TYPE.
+typedef struct _NoScreenshotPlugin NoScreenshotPlugin;
+typedef struct _NoScreenshotPluginClass NoScreenshotPluginClass;
+
+struct _NoScreenshotPluginClass {
+  GObjectClass parent_class;
+};
+
 // Internal plugin struct — fields accessible from no_screenshot_plugin.cc.
 struct _NoScreenshotPlugin {
   GObject parent_instance;
