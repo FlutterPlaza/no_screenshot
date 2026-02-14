@@ -567,7 +567,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
             val callback = Activity.ScreenCaptureCallback {
                 isScreenRecording = true
-                updateSharedPreferencesState("")
+                updateSharedPreferencesState("", System.currentTimeMillis())
             }
             act.registerScreenCaptureCallback(act.mainExecutor, callback)
             screenCaptureCallback = callback
@@ -592,7 +592,30 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                             .contains(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
                     ) {
                         Log.d("ScreenshotProtection", "Screenshot detected")
-                        updateSharedPreferencesState(it.path ?: "")
+                        var timestampMs = System.currentTimeMillis()
+                        var displayName = ""
+                        try {
+                            val projection = arrayOf(
+                                MediaStore.Images.Media.DATE_ADDED,
+                                MediaStore.Images.Media.DISPLAY_NAME
+                            )
+                            context.contentResolver.query(it, projection, null, null, null)?.use { cursor ->
+                                if (cursor.moveToFirst()) {
+                                    val dateIdx = cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED)
+                                    if (dateIdx >= 0) {
+                                        val dateAdded = cursor.getLong(dateIdx)
+                                        if (dateAdded > 0) timestampMs = dateAdded * 1000
+                                    }
+                                    val nameIdx = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME)
+                                    if (nameIdx >= 0) {
+                                        displayName = cursor.getString(nameIdx) ?: ""
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {
+                            // Query may fail due to permissions; fall back to defaults.
+                        }
+                        updateSharedPreferencesState(it.path ?: "", timestampMs, displayName)
                     }
                 }
             }
@@ -697,7 +720,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         }
     }
 
-    private fun updateSharedPreferencesState(screenshotData: String) {
+    private fun updateSharedPreferencesState(screenshotData: String, timestampMs: Long = 0L, sourceApp: String = "") {
         Handler(Looper.getMainLooper()).postDelayed({
             val isSecure =
                 (activity?.window?.attributes?.flags ?: 0) and LayoutParams.FLAG_SECURE != 0
@@ -706,7 +729,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                     PREF_KEY_SCREENSHOT to isSecure,
                     SCREENSHOT_PATH to screenshotData,
                     SCREENSHOT_TAKEN to screenshotData.isNotEmpty(),
-                    IS_SCREEN_RECORDING to isScreenRecording
+                    IS_SCREEN_RECORDING to isScreenRecording,
+                    "timestamp" to timestampMs,
+                    "source_app" to sourceApp
                 )
             )
             if (lastSharedPreferencesState != jsonString) {
