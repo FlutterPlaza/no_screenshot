@@ -29,7 +29,12 @@ struct _RecordingDetection {
 
 static gboolean is_known_recording_process(const gchar* comm) {
   for (int i = 0; kKnownRecordingProcessNames[i] != NULL; i++) {
-    if (g_strcmp0(comm, kKnownRecordingProcessNames[i]) == 0) return TRUE;
+    // Use prefix match because /proc/PID/comm truncates names to 15 chars
+    // (e.g. "simplescreenrecorder" becomes "simplescreenrec").
+    if (g_str_has_prefix(comm, kKnownRecordingProcessNames[i]) ||
+        g_str_has_prefix(kKnownRecordingProcessNames[i], comm)) {
+      return TRUE;
+    }
   }
   return FALSE;
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 import 'package:no_screenshot/overlay_mode.dart';
@@ -9,6 +11,20 @@ import 'package:no_screenshot/secure_navigator_observer.dart';
 import 'package:no_screenshot/secure_widget.dart';
 
 import 'app_localizations.dart';
+
+// Screenshot prevention (off/on/toggle): works on Android, iOS, macOS,
+// Windows, and Web (best-effort). No-op on Linux.
+bool get _supportsProtection => kIsWeb || !Platform.isLinux;
+
+// Visual overlays (image, blur, color) in app switcher: only Android, iOS,
+// macOS show actual overlays. Windows/Linux/Web just track state or toggle
+// protection without a visual overlay.
+bool get _supportsOverlays =>
+    !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
+
+// Recording monitoring: works on Android, iOS, macOS, Windows, Linux.
+// No-op on Web.
+bool get _supportsRecordingMonitoring => !kIsWeb;
 
 void main() {
   runApp(const MyApp());
@@ -212,43 +228,45 @@ class _HomePageState extends State<HomePage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSection(
-            title: l.protectionSectionTitle,
-            subtitle: l.platformSubtitle,
-            children: [
-              _StatusRow(
-                label: l.protection,
-                isOn: _latestSnapshot.isScreenshotProtectionOn,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _FeatureButton(
-                      label: l.disableScreenshot,
-                      subtitle: l.blocksCapture,
-                      onPressed: _disableScreenshot,
+          if (_supportsProtection) ...[
+            _buildSection(
+              title: l.protectionSectionTitle,
+              subtitle: l.platformSubtitle,
+              children: [
+                _StatusRow(
+                  label: l.protection,
+                  isOn: _latestSnapshot.isScreenshotProtectionOn,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FeatureButton(
+                        label: l.disableScreenshot,
+                        subtitle: l.blocksCapture,
+                        onPressed: _disableScreenshot,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _FeatureButton(
-                      label: l.enableScreenshot,
-                      subtitle: l.allowsCapture,
-                      onPressed: _enableScreenshot,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _FeatureButton(
+                        label: l.enableScreenshot,
+                        subtitle: l.allowsCapture,
+                        onPressed: _enableScreenshot,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _FeatureButton(
-                label: l.toggleScreenshot,
-                subtitle: l.toggleScreenshotSubtitle,
-                onPressed: _toggleScreenshot,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _FeatureButton(
+                  label: l.toggleScreenshot,
+                  subtitle: l.toggleScreenshotSubtitle,
+                  onPressed: _toggleScreenshot,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           _buildSection(
             title: l.monitoringSectionTitle,
             subtitle: l.platformSubtitle,
@@ -281,42 +299,44 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.recordingMonitoringSectionTitle,
-            subtitle: l.platformSubtitle,
-            children: [
-              _StatusRow(
-                label: l.recordingMonitoring,
-                isOn: _isRecordingMonitoring,
-              ),
-              const SizedBox(height: 8),
-              _StatusRow(
-                label: l.screenRecording,
-                isOn: _latestSnapshot.isScreenRecording,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _FeatureButton(
-                      label: l.enableRecordingMonitoring,
-                      subtitle: l.startRecordingListening,
-                      onPressed: _startRecordingMonitoring,
+          if (_supportsRecordingMonitoring) ...[
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.recordingMonitoringSectionTitle,
+              subtitle: l.platformSubtitle,
+              children: [
+                _StatusRow(
+                  label: l.recordingMonitoring,
+                  isOn: _isRecordingMonitoring,
+                ),
+                const SizedBox(height: 8),
+                _StatusRow(
+                  label: l.screenRecording,
+                  isOn: _latestSnapshot.isScreenRecording,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FeatureButton(
+                        label: l.enableRecordingMonitoring,
+                        subtitle: l.startRecordingListening,
+                        onPressed: _startRecordingMonitoring,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _FeatureButton(
-                      label: l.disableRecordingMonitoring,
-                      subtitle: l.stopRecordingListening,
-                      onPressed: _stopRecordingMonitoring,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _FeatureButton(
+                        label: l.disableRecordingMonitoring,
+                        subtitle: l.stopRecordingListening,
+                        onPressed: _stopRecordingMonitoring,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           _buildSection(
             title: l.callbacksSectionTitle,
@@ -341,89 +361,93 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.overlaySectionTitle,
-            subtitle: l.platformSubtitle,
-            children: [
-              _StatusRow(
-                label: l.overlay,
-                isOn: _isOverlayImageOn,
-              ),
-              const SizedBox(height: 12),
-              _FeatureButton(
-                label: l.toggleScreenshotWithImage,
-                subtitle: l.overlaySubtitle,
-                onPressed: _toggleScreenshotWithImage,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.blurOverlaySectionTitle,
-            subtitle: l.platformSubtitle,
-            children: [
-              _StatusRow(
-                label: l.blurOverlay,
-                isOn: _isOverlayBlurOn,
-              ),
-              const SizedBox(height: 12),
-              _FeatureButton(
-                label: l.toggleScreenshotWithBlur,
-                subtitle: l.blurOverlaySubtitle,
-                onPressed: _toggleScreenshotWithBlur,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.colorOverlaySectionTitle,
-            subtitle: l.platformSubtitle,
-            children: [
-              _StatusRow(
-                label: l.colorOverlay,
-                isOn: _isOverlayColorOn,
-              ),
-              const SizedBox(height: 12),
-              _FeatureButton(
-                label: l.toggleScreenshotWithColor,
-                subtitle: l.colorOverlaySubtitle,
-                onPressed: _toggleScreenshotWithColor,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.secureWidgetSectionTitle,
-            subtitle: l.secureWidgetSubtitle,
-            children: [
-              _FeatureButton(
-                label: l.openSecureWidgetDemo,
-                subtitle: l.secureWidgetDemoSubtitle,
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const _SecureWidgetDemoPage(),
-                  ));
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSection(
-            title: l.perRouteSectionTitle,
-            subtitle: l.perRouteSubtitle,
-            children: [
-              _FeatureButton(
-                label: l.openPerRouteDemo,
-                subtitle: l.perRouteDemoSubtitle,
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const _PerRouteDemoHub(),
-                  ));
-                },
-              ),
-            ],
-          ),
+          if (_supportsOverlays) ...[
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.overlaySectionTitle,
+              subtitle: l.platformSubtitle,
+              children: [
+                _StatusRow(
+                  label: l.overlay,
+                  isOn: _isOverlayImageOn,
+                ),
+                const SizedBox(height: 12),
+                _FeatureButton(
+                  label: l.toggleScreenshotWithImage,
+                  subtitle: l.overlaySubtitle,
+                  onPressed: _toggleScreenshotWithImage,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.blurOverlaySectionTitle,
+              subtitle: l.platformSubtitle,
+              children: [
+                _StatusRow(
+                  label: l.blurOverlay,
+                  isOn: _isOverlayBlurOn,
+                ),
+                const SizedBox(height: 12),
+                _FeatureButton(
+                  label: l.toggleScreenshotWithBlur,
+                  subtitle: l.blurOverlaySubtitle,
+                  onPressed: _toggleScreenshotWithBlur,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.colorOverlaySectionTitle,
+              subtitle: l.platformSubtitle,
+              children: [
+                _StatusRow(
+                  label: l.colorOverlay,
+                  isOn: _isOverlayColorOn,
+                ),
+                const SizedBox(height: 12),
+                _FeatureButton(
+                  label: l.toggleScreenshotWithColor,
+                  subtitle: l.colorOverlaySubtitle,
+                  onPressed: _toggleScreenshotWithColor,
+                ),
+              ],
+            ),
+          ],
+          if (_supportsProtection) ...[
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.secureWidgetSectionTitle,
+              subtitle: l.secureWidgetSubtitle,
+              children: [
+                _FeatureButton(
+                  label: l.openSecureWidgetDemo,
+                  subtitle: l.secureWidgetDemoSubtitle,
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const _SecureWidgetDemoPage(),
+                    ));
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
+              title: l.perRouteSectionTitle,
+              subtitle: l.perRouteSubtitle,
+              children: [
+                _FeatureButton(
+                  label: l.openPerRouteDemo,
+                  subtitle: l.perRouteDemoSubtitle,
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const _PerRouteDemoHub(),
+                    ));
+                  },
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
