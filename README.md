@@ -57,7 +57,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.8.0
+  no_screenshot: ^0.9.0
 ```
 
 Then run:
@@ -65,6 +65,19 @@ Then run:
 ```bash
 flutter pub get
 ```
+
+### Swift Package Manager (iOS & macOS)
+
+This plugin supports both **CocoaPods** and **Swift Package Manager**. Flutter automatically uses the correct integration based on your project setup — no extra configuration is needed.
+
+To enable SPM for a new Flutter project:
+
+```bash
+flutter config --enable-swift-package-manager
+flutter create my_app
+```
+
+To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
 
 ## Quick Start
 

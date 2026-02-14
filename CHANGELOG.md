@@ -1,3 +1,11 @@
+## 0.9.0
+
+- feat(ios, macos): added Swift Package Manager support — `Package.swift` for both iOS and macOS, with CocoaPods backward compatibility by @fonkamloic.
+- feat(example): added color picker with 8 preset colors for the color overlay section by @fonkamloic.
+- feat(example): added blur radius slider (1–100) that applies the blur overlay in real time by @fonkamloic.
+- chore: updated podspec `source_files` paths to reference SPM directory structure by @fonkamloic.
+- chore: added `.build/` and `.swiftpm/` to `.gitignore` and `.pubignore` by @fonkamloic.
+
 ## 0.8.0
 
 - feat: added `timestamp` and `sourceApp` metadata fields to `ScreenshotSnapshot` — backward-compatible defaults (P8) by @fonkamloic.

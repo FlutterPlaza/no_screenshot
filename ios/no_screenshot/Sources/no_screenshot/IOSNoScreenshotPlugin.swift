@@ -604,3 +604,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         self.attachedWindow = window
     }
 }
+
+#if SWIFT_PACKAGE
+// When building with Swift Package Manager, expose the plugin class name
+// that matches pluginClass in pubspec.yaml for Flutter's registration.
+public typealias NoScreenshotPlugin = IOSNoScreenshotPlugin
+#endif
