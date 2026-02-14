@@ -15,10 +15,13 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   @visibleForTesting
   final eventChannel = const EventChannel(screenshotEventChannel);
 
+  Stream<ScreenshotSnapshot>? _cachedStream;
+
   @override
   Stream<ScreenshotSnapshot> get screenshotStream {
-    return eventChannel.receiveBroadcastStream().map((event) =>
+    _cachedStream ??= eventChannel.receiveBroadcastStream().map((event) =>
         ScreenshotSnapshot.fromMap(jsonDecode(event) as Map<String, dynamic>));
+    return _cachedStream!;
   }
 
   @override
