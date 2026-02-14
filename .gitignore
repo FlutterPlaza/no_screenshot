@@ -34,3 +34,6 @@ build/
 
 # FVM Version Cache
 .fvm/
+
+# Internal planning docs
+plan/
