@@ -83,6 +83,8 @@ class _HomePageState extends State<HomePage> {
   bool _isOverlayImageOn = false;
   bool _isOverlayBlurOn = false;
   bool _isOverlayColorOn = false;
+  int _selectedColor = 0xFF000000;
+  double _blurRadius = 30.0;
   bool _callbacksActive = false;
   String _lastCallbackEvent = '';
   ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
@@ -186,8 +188,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _toggleScreenshotWithBlur() async {
-    final result = await _noScreenshot.toggleScreenshotWithBlur();
-    debugPrint('toggleScreenshotWithBlur: $result');
+    final result =
+        await _noScreenshot.toggleScreenshotWithBlur(blurRadius: _blurRadius);
+    debugPrint('toggleScreenshotWithBlur: $result (radius: $_blurRadius)');
     setState(() {
       _isOverlayBlurOn = result;
       if (result) {
@@ -198,8 +201,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _toggleScreenshotWithColor() async {
-    final result = await _noScreenshot.toggleScreenshotWithColor();
-    debugPrint('toggleScreenshotWithColor: $result');
+    final result =
+        await _noScreenshot.toggleScreenshotWithColor(color: _selectedColor);
+    debugPrint(
+        'toggleScreenshotWithColor: $result (color: 0x${_selectedColor.toRadixString(16).toUpperCase()})');
     setState(() {
       _isOverlayColorOn = result;
       if (result) {
@@ -389,6 +394,39 @@ class _HomePageState extends State<HomePage> {
                   isOn: _isOverlayBlurOn,
                 ),
                 const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('Radius'),
+                    Expanded(
+                      child: Slider(
+                        value: _blurRadius,
+                        min: 1,
+                        max: 100,
+                        divisions: 99,
+                        label: _blurRadius.round().toString(),
+                        onChanged: (value) {
+                          setState(() => _blurRadius = value);
+                          _noScreenshot.screenshotWithBlur(blurRadius: value);
+                          if (!_isOverlayBlurOn) {
+                            setState(() {
+                              _isOverlayBlurOn = true;
+                              _isOverlayImageOn = false;
+                              _isOverlayColorOn = false;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        _blurRadius.round().toString(),
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 _FeatureButton(
                   label: l.toggleScreenshotWithBlur,
                   subtitle: l.blurOverlaySubtitle,
@@ -404,6 +442,16 @@ class _HomePageState extends State<HomePage> {
                 _StatusRow(
                   label: l.colorOverlay,
                   isOn: _isOverlayColorOn,
+                ),
+                const SizedBox(height: 12),
+                _ColorPicker(
+                  selectedColor: _selectedColor,
+                  onColorSelected: (color) {
+                    setState(() => _selectedColor = color);
+                    if (_isOverlayColorOn) {
+                      _noScreenshot.screenshotWithColor(color: color);
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 _FeatureButton(
@@ -551,6 +599,62 @@ class _FeatureButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ColorPicker extends StatelessWidget {
+  const _ColorPicker({
+    required this.selectedColor,
+    required this.onColorSelected,
+  });
+
+  final int selectedColor;
+  final ValueChanged<int> onColorSelected;
+
+  static const _presetColors = <int>[
+    0xFF000000, // Black
+    0xFFFFFFFF, // White
+    0xFFE53935, // Red
+    0xFF1E88E5, // Blue
+    0xFF43A047, // Green
+    0xFF8E24AA, // Purple
+    0xFFFB8C00, // Orange
+    0xFF00897B, // Teal
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _presetColors.map((color) {
+        final isSelected = color == selectedColor;
+        return GestureDetector(
+          onTap: () => onColorSelected(color),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Color(color),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey.shade400,
+                width: isSelected ? 3 : 1,
+              ),
+            ),
+            child: isSelected
+                ? Icon(
+                    Icons.check,
+                    size: 18,
+                    color: color == 0xFFFFFFFF ? Colors.black : Colors.white,
+                  )
+                : null,
+          ),
+        );
+      }).toList(),
     );
   }
 }
