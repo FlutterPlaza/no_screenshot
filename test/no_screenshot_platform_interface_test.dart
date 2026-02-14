@@ -172,8 +172,7 @@ void main() {
         'base NoScreenshotPlatform.screenshotWithBlur() throws UnimplementedError',
         () {
       final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotWithBlur(), throwsUnimplementedError);
+      expect(() => basePlatform.screenshotWithBlur(), throwsUnimplementedError);
     });
 
     test('screenshotWithColor should return true when called', () async {

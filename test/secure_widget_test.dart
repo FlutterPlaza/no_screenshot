@@ -150,8 +150,7 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotOn'));
   });
 
-  testWidgets('didUpdateWidget re-applies when mode changes',
-      (tester) async {
+  testWidgets('didUpdateWidget re-applies when mode changes', (tester) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
     );
@@ -182,8 +181,7 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithBlur(50.0)'));
   });
 
-  testWidgets('didUpdateWidget re-applies when color changes',
-      (tester) async {
+  testWidgets('didUpdateWidget re-applies when color changes', (tester) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.color, child: SizedBox()),
     );
