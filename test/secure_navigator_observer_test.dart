@@ -231,8 +231,8 @@ void main() {
 
       observer.didPush(_fakeRoute('/branded'), null);
       await Future<void>.delayed(Duration.zero);
-      expect(fakePlatform.calls,
-          contains('screenshotWithColor(${0xFF2196F3})'));
+      expect(
+          fakePlatform.calls, contains('screenshotWithColor(${0xFF2196F3})'));
     });
   });
 }

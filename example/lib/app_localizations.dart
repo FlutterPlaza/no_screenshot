@@ -145,8 +145,7 @@ class AppLocalizations {
       'perRouteSectionTitle': 'عرض الحماية حسب المسار',
       'perRouteSubtitle': 'حماية مختلفة لكل مسار مسمى',
       'openPerRouteDemo': 'فتح عرض حسب المسار',
-      'perRouteDemoSubtitle':
-          'التنقل بين مسارات بسياسات حماية مختلفة',
+      'perRouteDemoSubtitle': 'التنقل بين مسارات بسياسات حماية مختلفة',
       'secureWidgetDemoTitle': 'عرض SecureWidget',
       'secureWidgetDemoBody':
           'هذه الصفحة مغلفة بـ SecureWidget مع وضع الضبابية.\nحماية لقطة الشاشة نشطة أثناء عرض هذه الصفحة.',

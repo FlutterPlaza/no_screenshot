@@ -646,22 +646,19 @@ class _PerRouteMainPage extends StatelessWidget {
           _FeatureButton(
             label: l.goToPayment,
             subtitle: 'OverlayMode.secure',
-            onPressed: () =>
-                Navigator.of(context).pushNamed('/payment'),
+            onPressed: () => Navigator.of(context).pushNamed('/payment'),
           ),
           const SizedBox(height: 8),
           _FeatureButton(
             label: l.goToProfile,
             subtitle: 'OverlayMode.blur (radius: 50)',
-            onPressed: () =>
-                Navigator.of(context).pushNamed('/profile'),
+            onPressed: () => Navigator.of(context).pushNamed('/profile'),
           ),
           const SizedBox(height: 8),
           _FeatureButton(
             label: l.goToPublic,
             subtitle: 'OverlayMode.none',
-            onPressed: () =>
-                Navigator.of(context).pushNamed('/public'),
+            onPressed: () => Navigator.of(context).pushNamed('/public'),
           ),
         ],
       ),
