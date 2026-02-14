@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'no_screenshot'
-  s.version          = '0.7.0'
+  s.version          = '0.9.0'
   s.summary          = 'Flutter plugin to enable, disable or toggle screenshot support in your application.'
   s.description      = <<-DESC
 A new Flutter plugin project.
@@ -13,7 +13,7 @@ A new Flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'FlutterPlaza' => 'dev@flutterplaza.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'no_screenshot/Sources/no_screenshot/**/*.swift'
   s.dependency 'FlutterMacOS'
 
   s.platform = :osx, '10.14'

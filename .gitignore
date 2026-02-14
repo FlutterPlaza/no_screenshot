@@ -32,6 +32,10 @@ migrate_working_dir/
 .packages
 build/
 
+# Swift Package Manager
+.build/
+.swiftpm/
+
 # FVM Version Cache
 .fvm/
 

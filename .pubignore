@@ -5,3 +5,5 @@ coverage/
 .dart_tool/
 .idea/
 *.iml
+.build/
+.swiftpm/
