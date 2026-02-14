@@ -336,9 +336,10 @@ static void handle_method_call(FlMethodChannel* channel,
 static gboolean stream_tick(gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
 
-  if (self->has_pending_event && self->event_sink != NULL) {
+  if (self->has_pending_event && self->stream_active &&
+      self->event_channel != NULL) {
     g_autoptr(FlValue) value = fl_value_new_string(self->last_event_json);
-    fl_event_sink_success(self->event_sink, value, NULL);
+    fl_event_channel_send(self->event_channel, value, NULL, NULL);
     self->has_pending_event = FALSE;
   }
 
@@ -347,10 +348,9 @@ static gboolean stream_tick(gpointer user_data) {
 
 static FlMethodErrorResponse* on_listen(FlEventChannel* channel,
                                         FlValue* args,
-                                        FlEventSink* event_sink,
                                         gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
-  self->event_sink = event_sink;
+  self->stream_active = TRUE;
 
   if (self->stream_timer_id == 0) {
     self->stream_timer_id = g_timeout_add(1000, stream_tick, self);
@@ -363,7 +363,7 @@ static FlMethodErrorResponse* on_cancel(FlEventChannel* channel,
                                         FlValue* args,
                                         gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
-  self->event_sink = NULL;
+  self->stream_active = FALSE;
 
   if (self->stream_timer_id != 0) {
     g_source_remove(self->stream_timer_id);
@@ -423,7 +423,7 @@ static void no_screenshot_plugin_init(NoScreenshotPlugin* self) {
   self->last_event_json = NULL;
   self->has_pending_event = FALSE;
   self->stream_timer_id = 0;
-  self->event_sink = NULL;
+  self->stream_active = FALSE;
   self->detection = NULL;
   self->recording_detection = NULL;
   self->persistence = NULL;
