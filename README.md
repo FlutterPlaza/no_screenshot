@@ -8,24 +8,26 @@
 <a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
 </p>
 
-A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image, blur, or solid color overlay** in the app switcher on Android, iOS, macOS, and Linux.
+A Flutter plugin to **disable screenshots**, **block screen recording**, **detect screenshot events**, **detect screen recording**, and **show a custom image, blur, or solid color overlay** in the app switcher on Android, iOS, macOS, Linux, Windows, and Web.
 
 ## Features
 
-| Feature | Android | iOS | macOS | Linux |
-|---|:---:|:---:|:---:|:---:|
-| Disable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ |
-| Enable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ |
-| Toggle screenshot protection | ✅ | ✅ | ✅ | ⚠️ |
-| Listen for screenshot events (stream) | ✅ | ✅ | ✅ | ✅ |
-| Detect screen recording start/stop | ✅\* | ✅ | ⚠️ | ⚠️ |
-| Screenshot file path | ❌ | ❌ | ✅ | ✅ |
-| Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
-| Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
-| Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
-| Declarative SecureWidget | ✅ | ✅ | ✅ | ✅ |
-| Per-route protection policies | ✅ | ✅ | ✅ | ✅ |
-| LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
+| Feature | Android | iOS | macOS | Linux | Windows | Web |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Disable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
+| Enable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
+| Toggle screenshot protection | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
+| Listen for screenshot events (stream) | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ |
+| Detect screen recording start/stop | ✅\* | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
+| Screenshot file path | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| Screenshot metadata (timestamp, source app) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
+| Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
+| Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
+| Granular callbacks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Declarative SecureWidget | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Per-route protection policies | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| LTR & RTL language support | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 > **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
 
@@ -41,6 +43,10 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 
 > **⚠️ macOS recording detection:** Best-effort via `NSWorkspace` process monitoring for known recording apps (QuickTime Player, OBS, Loom, Kap, ffmpeg, etc.).
 
+> **Windows:** Screenshot prevention uses `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`. Screenshot detection via `AddClipboardFormatListener` + `ReadDirectoryChangesW` monitoring the user's Pictures folder. Screen recording detection via process scanning for known recording apps. Overlay modes (image, blur, color) are not supported — protection is on/off only.
+
+> **⚠️ Web limitations:** Browsers do **not** allow apps to prevent OS-level screenshots or screen recording. Web support is **best-effort** only — it blocks right-click context menus, intercepts the PrintScreen key, applies `user-select: none` CSS, and uses `visibilitychange` events as a proxy for screenshot detection. **Screenshots and screen recordings will still succeed.** Screen recording detection is not available on web.
+
 > **Note:** State is automatically persisted via native SharedPreferences / UserDefaults. You do **not** need to track `didChangeAppLifecycleState`.
 
 > **Note:** `screenshotPath` is only available on **macOS** (via Spotlight / `NSMetadataQuery`) and **Linux** (via `GFileMonitor` / inotify). On Android and iOS the path is not accessible due to platform limitations — the field will contain a placeholder string. Use `wasScreenshotTaken` to detect screenshot events on all platforms.
@@ -51,7 +57,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.7.0
+  no_screenshot: ^0.8.0
 ```
 
 Then run:
@@ -140,6 +146,8 @@ The stream emits a `ScreenshotSnapshot` object:
 | `wasScreenshotTaken` | `bool` | Whether a screenshot was just captured |
 | `screenshotPath` | `String` | File path of the screenshot (**macOS & Linux only** — see note below) |
 | `isScreenRecording` | `bool` | Whether screen recording is currently active (requires recording monitoring) |
+| `timestamp` | `int` | Milliseconds since epoch when the event was detected (`0` = unknown) |
+| `sourceApp` | `String` | Name of the app that triggered the event (empty = unknown) |
 
 > **Screenshot path availability:** The actual file path of a captured screenshot is only available on **macOS** (via Spotlight / `NSMetadataQuery`) and **Linux** (via `GFileMonitor` / inotify). On **Android** and **iOS**, the operating system does not expose the screenshot file path to apps — the field will contain a placeholder string. Always use `wasScreenshotTaken` to detect screenshot events reliably across all platforms.
 
@@ -201,6 +209,8 @@ await _noScreenshot.stopScreenRecordingListening();
 | **Android < 14** | No reliable API (no-op) | — | — |
 | **macOS** | `NSWorkspace` process polling (2s) | ✅ | ✅ |
 | **Linux** | `/proc` process scanning (2s) | ✅ | ✅ |
+| **Windows** | Process scanning for known recording apps | ✅ | ✅ |
+| **Web** | Not available (no-op) | — | — |
 
 > **\* Android limitation:** `ScreenCaptureCallback.onScreenCaptured()` fires when recording starts but there is no "stop" callback. `isScreenRecording` becomes `true` and stays `true` until `stopScreenRecordingListening()` + `startScreenRecordingListening()` is called to reset.
 
@@ -265,6 +275,8 @@ Future<void> toggleBlurCustom() async {
 | **iOS** | `UIVisualEffectView` with `UIBlurEffect(style: .regular)` |
 | **macOS** | `NSVisualEffectView` with `.hudWindow` material, `.behindWindow` blending |
 | **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
+| **Windows** | Not supported — uses `WDA_EXCLUDEFROMCAPTURE` for prevention only |
+| **Web** | Best-effort — enables JS deterrents (right-click block, PrintScreen intercept, `user-select: none`) |
 
 ### 6. Color Overlay (App Switcher / Recents)
 
@@ -296,6 +308,8 @@ Future<void> toggleColorCustom() async {
 | **iOS** | `UIView` with the specified background color |
 | **macOS** | `NSView` with the specified background color |
 | **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
+| **Windows** | Not supported — uses `WDA_EXCLUDEFROMCAPTURE` for prevention only |
+| **Web** | Best-effort — enables JS deterrents (right-click block, PrintScreen intercept, `user-select: none`) |
 
 ### 7. SecureWidget (Declarative Protection)
 
@@ -361,6 +375,46 @@ MaterialApp(
 
 The observer automatically applies the correct policy when routes are pushed, popped, replaced, or removed. Routes not in the `policies` map use the `defaultConfig`.
 
+### 9. Granular Callbacks
+
+Instead of manually filtering the stream, register targeted callbacks for specific events:
+
+```dart
+final _noScreenshot = NoScreenshot.instance;
+
+// Register callbacks
+_noScreenshot.onScreenshotDetected = (snapshot) {
+  debugPrint('Screenshot taken! Path: ${snapshot.screenshotPath}');
+  debugPrint('Timestamp: ${snapshot.timestamp}');
+  debugPrint('Source app: ${snapshot.sourceApp}');
+};
+
+_noScreenshot.onScreenRecordingStarted = (snapshot) {
+  debugPrint('Screen recording started!');
+};
+
+_noScreenshot.onScreenRecordingStopped = (snapshot) {
+  debugPrint('Screen recording stopped.');
+};
+
+// Start dispatching events (requires screenshot/recording listening to be active)
+_noScreenshot.startCallbacks();
+
+// Stop dispatching (keeps callback assignments)
+_noScreenshot.stopCallbacks();
+
+// Remove all callbacks and stop dispatching
+_noScreenshot.removeAllCallbacks();
+```
+
+| Callback | Fires when |
+|---|---|
+| `onScreenshotDetected` | `wasScreenshotTaken` is `true` |
+| `onScreenRecordingStarted` | `isScreenRecording` transitions from `false` to `true` |
+| `onScreenRecordingStopped` | `isScreenRecording` transitions from `true` to `false` |
+
+> **Note:** Granular callbacks listen to `screenshotStream` internally. You still need to call `startScreenshotListening()` and/or `startScreenRecordingListening()` to activate native monitoring.
+
 ### macOS Demo
 
 All features (screenshot protection, monitoring, and image overlay) on macOS:
@@ -398,6 +452,14 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Always enable blur overlay (idempotent) |
 | `screenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Always enable color overlay (idempotent) |
 | `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
+| **Granular Callbacks** | | |
+| `onScreenshotDetected` | `ScreenshotEventCallback?` | Callback fired when a screenshot is detected |
+| `onScreenRecordingStarted` | `ScreenshotEventCallback?` | Callback fired when screen recording starts |
+| `onScreenRecordingStopped` | `ScreenshotEventCallback?` | Callback fired when screen recording stops |
+| `startCallbacks()` | `void` | Start dispatching events to registered callbacks |
+| `stopCallbacks()` | `void` | Stop dispatching events (keeps callback assignments) |
+| `removeAllCallbacks()` | `void` | Clear all callbacks and stop dispatching |
+| `hasActiveCallbacks` | `bool` | Whether callbacks are currently being dispatched |
 | **Widgets** | | |
 | `SecureWidget` | `StatefulWidget` | Declarative protection — enables on mount, disables on unmount |
 | `SecureNavigatorObserver` | `NavigatorObserver` | Per-route protection policies via named route mapping |
