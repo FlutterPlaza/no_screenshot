@@ -294,8 +294,7 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['callbacksSectionTitle']!;
   String get callbacksSubtitle =>
       _localizedValues[locale.languageCode]!['callbacksSubtitle']!;
-  String get callbacks =>
-      _localizedValues[locale.languageCode]!['callbacks']!;
+  String get callbacks => _localizedValues[locale.languageCode]!['callbacks']!;
   String get lastCallbackEvent =>
       _localizedValues[locale.languageCode]!['lastCallbackEvent']!;
   String get noEventsYet =>
