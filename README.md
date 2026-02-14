@@ -29,7 +29,15 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 
 > **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
 
-> **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do not expose a `FLAG_SECURE`-equivalent API, so screenshot prevention and image overlay are **best-effort** — the state is tracked and persisted, but the compositor cannot be instructed to hide the window content. Screenshot **detection** works reliably via `GFileMonitor` (inotify). Screen recording detection is best-effort via `/proc` process scanning.
+> **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do **not** provide any application-level API to block screenshots or screen recording (there is no `FLAG_SECURE` equivalent). Screenshot prevention, overlay modes (image, blur, color), and toggle features are **state-tracked only** — the state is persisted and reported via the stream, but the compositor cannot be instructed to hide window content. **Screenshots and screen recordings will still succeed.** Screenshot **detection** works reliably via `GFileMonitor` (inotify). Screen recording detection is best-effort via `/proc` process scanning.
+
+> **⚠️ Linux rendering (Wayland):** On systems using Wayland, Flutter may render a black screen due to a compositor bug. If you see a black screen when running on Linux, force the X11 backend:
+>
+> ```bash
+> GDK_BACKEND=x11 flutter run -d linux
+> ```
+>
+> For release builds or desktop shortcuts, launch with `GDK_BACKEND=x11 ./your_app`.
 
 > **⚠️ macOS recording detection:** Best-effort via `NSWorkspace` process monitoring for known recording apps (QuickTime Player, OBS, Loom, Kap, ffmpeg, etc.).
 
