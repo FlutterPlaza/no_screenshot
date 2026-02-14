@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -357,6 +358,40 @@ void main() {
 
       await platform.stopScreenRecordingListening();
       expect(true, true);
+    });
+
+    test('screenshotStream returns a stream that emits ScreenshotSnapshot',
+        () async {
+      final snapshotMap = {
+        'screenshot_path': '/test/path',
+        'is_screenshot_on': true,
+        'was_screenshot_taken': true,
+        'is_screen_recording': false,
+        'timestamp': 0,
+        'source_app': '',
+      };
+      final encoded = jsonEncode(snapshotMap);
+
+      // Mock the event channel by handling the underlying method channel
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockStreamHandler(platform.eventChannel, MockStreamHandler.inline(
+        onListen: (arguments, events) {
+          events.success(encoded);
+        },
+      ));
+
+      final stream = platform.screenshotStream;
+      final snapshot = await stream.first;
+
+      expect(snapshot.screenshotPath, '/test/path');
+      expect(snapshot.isScreenshotProtectionOn, true);
+      expect(snapshot.wasScreenshotTaken, true);
+    });
+
+    test('screenshotStream caches and returns the same stream instance', () {
+      final stream1 = platform.screenshotStream;
+      final stream2 = platform.screenshotStream;
+      expect(identical(stream1, stream2), true);
     });
   });
 
