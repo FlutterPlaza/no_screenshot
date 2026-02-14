@@ -103,12 +103,28 @@ void main() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
         if (methodCall.method == screenSetBlur) {
+          expect(methodCall.arguments, {'radius': 30.0});
           return expected;
         }
         return null;
       });
 
       final result = await platform.toggleScreenshotWithBlur();
+      expect(result, expected);
+    });
+
+    test('toggleScreenshotWithBlur with custom radius', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenSetBlur) {
+          expect(methodCall.arguments, {'radius': 50.0});
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithBlur(blurRadius: 50.0);
       expect(result, expected);
     });
 
@@ -120,6 +136,48 @@ void main() {
       });
 
       final result = await platform.toggleScreenshotWithBlur();
+      expect(result, false);
+    });
+
+    test('toggleScreenshotWithColor', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenSetColor) {
+          expect(methodCall.arguments, {'color': 0xFF000000});
+          return expected;
+        }
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithColor();
+      expect(result, expected);
+    });
+
+    test('toggleScreenshotWithColor with custom color', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == screenSetColor) {
+          expect(methodCall.arguments, {'color': 0xFFFF0000});
+          return expected;
+        }
+        return null;
+      });
+
+      final result =
+          await platform.toggleScreenshotWithColor(color: 0xFFFF0000);
+      expect(result, expected);
+    });
+
+    test('toggleScreenshotWithColor returns false when channel returns null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.toggleScreenshotWithColor();
       expect(result, false);
     });
 

@@ -14,6 +14,11 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private var isImageOverlayModeEnabled: Bool = false
     private var isBlurOverlayModeEnabled: Bool = false
     private var blurEffectView: UIVisualEffectView? = nil
+    private var blurRadius: Double = 30.0
+    private var blurAnimator: UIViewPropertyAnimator? = nil
+    private var isColorOverlayModeEnabled: Bool = false
+    private var colorOverlayView: UIView? = nil
+    private var colorValue: Int = 0xFF000000
     private var isScreenRecording: Bool = false
     private var isRecordingListening: Bool = false
 
@@ -23,6 +28,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private static let preventScreenShotKey = "preventScreenShot"
     private static let imageOverlayModeKey = "imageOverlayMode"
     private static let blurOverlayModeKey = "blurOverlayMode"
+    private static let blurRadiusKey = "blurRadius"
+    private static let colorOverlayModeKey = "colorOverlayMode"
+    private static let colorValueKey = "colorValue"
     private static let methodChannelName = "com.flutterplaza.no_screenshot_methods"
     private static let eventChannelName = "com.flutterplaza.no_screenshot_streams"
     private static let screenshotPathPlaceholder = "screenshot_path_placeholder"
@@ -34,6 +42,11 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         let fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
         isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         isBlurOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.blurOverlayModeKey)
+        let savedRadius = UserDefaults.standard.double(forKey: IOSNoScreenshotPlugin.blurRadiusKey)
+        blurRadius = savedRadius > 0 ? savedRadius : 30.0
+        isColorOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.colorOverlayModeKey)
+        colorValue = UserDefaults.standard.integer(forKey: IOSNoScreenshotPlugin.colorValueKey)
+        if colorValue == 0 { colorValue = 0xFF000000 }
         updateScreenshotState(isScreenshotBlocked: fetchVal)
     }
 
@@ -125,7 +138,10 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             enableImageScreen(named: "image")
         } else if isBlurOverlayModeEnabled {
             disablePreventScreenshot()
-            enableBlurScreen()
+            enableBlurScreen(radius: blurRadius)
+        } else if isColorOverlayModeEnabled {
+            disablePreventScreenshot()
+            enableColorScreen(color: colorValue)
         }
     }
 
@@ -135,6 +151,8 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             disableImageScreen()
         } else if isBlurOverlayModeEnabled {
             disableBlurScreen()
+        } else if isColorOverlayModeEnabled {
+            disableColorScreen()
         }
 
         // Now restore screenshot protection (and re-attach the window if it
@@ -162,7 +180,10 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         UserDefaults.standard.set(IOSNoScreenshotPlugin.preventScreenShot, forKey: IOSNoScreenshotPlugin.preventScreenShotKey)
         UserDefaults.standard.set(isImageOverlayModeEnabled, forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         UserDefaults.standard.set(isBlurOverlayModeEnabled, forKey: IOSNoScreenshotPlugin.blurOverlayModeKey)
-        print("Persisted state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled)")
+        UserDefaults.standard.set(blurRadius, forKey: IOSNoScreenshotPlugin.blurRadiusKey)
+        UserDefaults.standard.set(isColorOverlayModeEnabled, forKey: IOSNoScreenshotPlugin.colorOverlayModeKey)
+        UserDefaults.standard.set(colorValue, forKey: IOSNoScreenshotPlugin.colorValueKey)
+        print("Persisted state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled), blurRadius: \(blurRadius), colorOverlay: \(isColorOverlayModeEnabled), colorValue: \(colorValue)")
         updateSharedPreferencesState("")
     }
 
@@ -171,8 +192,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         let fetchVal = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.preventScreenShotKey) ? IOSNoScreenshotPlugin.DISABLESCREENSHOT : IOSNoScreenshotPlugin.ENABLESCREENSHOT
         isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.imageOverlayModeKey)
         isBlurOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.blurOverlayModeKey)
+        let savedRadius = UserDefaults.standard.double(forKey: IOSNoScreenshotPlugin.blurRadiusKey)
+        blurRadius = savedRadius > 0 ? savedRadius : 30.0
+        isColorOverlayModeEnabled = UserDefaults.standard.bool(forKey: IOSNoScreenshotPlugin.colorOverlayModeKey)
+        colorValue = UserDefaults.standard.integer(forKey: IOSNoScreenshotPlugin.colorValueKey)
+        if colorValue == 0 { colorValue = 0xFF000000 }
         updateScreenshotState(isScreenshotBlocked: fetchVal)
-        print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled)")
+        print("Fetched state: \(IOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled), blurRadius: \(blurRadius), colorOverlay: \(isColorOverlayModeEnabled), colorValue: \(colorValue)")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -187,7 +213,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             let isActive = toggleScreenshotWithImage()
             result(isActive)
         case "toggleScreenshotWithBlur":
-            let isActive = toggleScreenshotWithBlur()
+            let radius = (call.arguments as? [String: Any])?["radius"] as? Double ?? 30.0
+            let isActive = toggleScreenshotWithBlur(radius: radius)
+            result(isActive)
+        case "toggleScreenshotWithColor":
+            let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
+            let isActive = toggleScreenshotWithColor(color: color)
             result(isActive)
         case "toggleScreenshot":
             IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
@@ -231,6 +262,11 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
                 isBlurOverlayModeEnabled = false
                 disableBlurScreen()
             }
+            // Deactivate color mode if active (mutual exclusivity)
+            if isColorOverlayModeEnabled {
+                isColorOverlayModeEnabled = false
+                disableColorScreen()
+            }
             // Mode is now active (true) - screenshot prevention should be ON (screenshots blocked)
             IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
             enablePreventScreenshot()
@@ -245,14 +281,20 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         return isImageOverlayModeEnabled
     }
 
-    private func toggleScreenshotWithBlur() -> Bool {
+    private func toggleScreenshotWithBlur(radius: Double) -> Bool {
         isBlurOverlayModeEnabled.toggle()
+        blurRadius = radius
 
         if isBlurOverlayModeEnabled {
             // Deactivate image mode if active (mutual exclusivity)
             if isImageOverlayModeEnabled {
                 isImageOverlayModeEnabled = false
                 disableImageScreen()
+            }
+            // Deactivate color mode if active (mutual exclusivity)
+            if isColorOverlayModeEnabled {
+                isColorOverlayModeEnabled = false
+                disableColorScreen()
             }
             IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
             enablePreventScreenshot()
@@ -266,20 +308,75 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         return isBlurOverlayModeEnabled
     }
 
-    private func enableBlurScreen() {
+    private func enableBlurScreen(radius: Double) {
         guard let window = attachedWindow else { return }
-        let blurEffect = UIBlurEffect(style: .regular)
-        let blurView = UIVisualEffectView(effect: blurEffect)
-        blurView.frame = UIScreen.main.bounds
+        let blurView = UIVisualEffectView(frame: UIScreen.main.bounds)
         blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         blurView.isUserInteractionEnabled = false
         window.addSubview(blurView)
         blurEffectView = blurView
+
+        let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
+            blurView.effect = UIBlurEffect(style: .regular)
+        }
+        animator.fractionComplete = CGFloat(min(max(radius / 100.0, 0.01), 1.0))
+        animator.pausesOnCompletion = true
+        blurAnimator = animator
     }
 
     private func disableBlurScreen() {
+        blurAnimator?.stopAnimation(true)
+        blurAnimator?.finishAnimation(at: .start)
+        blurAnimator = nil
         blurEffectView?.removeFromSuperview()
         blurEffectView = nil
+    }
+
+    private func toggleScreenshotWithColor(color: Int) -> Bool {
+        isColorOverlayModeEnabled.toggle()
+        colorValue = color
+
+        if isColorOverlayModeEnabled {
+            // Deactivate image and blur modes (mutual exclusivity)
+            if isImageOverlayModeEnabled {
+                isImageOverlayModeEnabled = false
+                disableImageScreen()
+            }
+            if isBlurOverlayModeEnabled {
+                isBlurOverlayModeEnabled = false
+                disableBlurScreen()
+            }
+            IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
+            enablePreventScreenshot()
+        } else {
+            IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
+            disablePreventScreenshot()
+            disableColorScreen()
+        }
+
+        persistState()
+        return isColorOverlayModeEnabled
+    }
+
+    private func enableColorScreen(color: Int) {
+        guard let window = attachedWindow else { return }
+        let a = CGFloat((color >> 24) & 0xFF) / 255.0
+        let r = CGFloat((color >> 16) & 0xFF) / 255.0
+        let g = CGFloat((color >> 8) & 0xFF) / 255.0
+        let b = CGFloat(color & 0xFF) / 255.0
+        let uiColor = UIColor(red: r, green: g, blue: b, alpha: a)
+
+        let colorView = UIView(frame: UIScreen.main.bounds)
+        colorView.backgroundColor = uiColor
+        colorView.isUserInteractionEnabled = false
+        colorView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        window.addSubview(colorView)
+        colorOverlayView = colorView
+    }
+
+    private func disableColorScreen() {
+        colorOverlayView?.removeFromSuperview()
+        colorOverlayView = nil
     }
 
     private func startListening() {
@@ -422,6 +519,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
         if isBlurOverlayModeEnabled {
             disableBlurScreen()
+        }
+        if isColorOverlayModeEnabled {
+            disableColorScreen()
         }
         disablePreventScreenshot()
 

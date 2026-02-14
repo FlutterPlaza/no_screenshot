@@ -1,3 +1,17 @@
+## 0.6.0
+
+- feat: added configurable `blurRadius` parameter to `toggleScreenshotWithBlur({double blurRadius})` — defaults to 30.0, customizable per platform by @fonkamloic.
+- feat: added `toggleScreenshotWithColor({int color})` API — solid color overlay for app switcher / recents screen across all platforms by @fonkamloic.
+- feat(android): color overlay via a solid `View` with the specified ARGB color by @fonkamloic.
+- feat(ios): color overlay via `UIView` with the specified background color by @fonkamloic.
+- feat(macos): color overlay via `NSView` with the specified background color by @fonkamloic.
+- feat(linux): color overlay state tracked and persisted (best-effort — compositors control task switcher thumbnails) by @fonkamloic.
+- feat: color, blur, and image overlays are mutually exclusive — activating one deactivates the others, enforced at native level on all platforms by @fonkamloic.
+- feat(example): added Color Overlay section with color picker and toggle button by @fonkamloic.
+- feat(example): added localization strings for color overlay UI by @fonkamloic.
+- test: added method channel, platform interface, and `NoScreenshot` tests for `toggleScreenshotWithBlur` with custom radius and `toggleScreenshotWithColor` by @fonkamloic.
+- docs: updated README, CHANGELOG, roadmap, and example app to reflect configurable blur radius and color overlay support by @fonkamloic.
+
 ## 0.5.0
 
 - feat: added `toggleScreenshotWithBlur()` API — Gaussian blur overlay for app switcher / recents screen (P2) by @fonkamloic.

@@ -63,6 +63,7 @@ class _HomePageState extends State<HomePage> {
   bool _isRecordingMonitoring = false;
   bool _isOverlayImageOn = false;
   bool _isOverlayBlurOn = false;
+  bool _isOverlayColorOn = false;
   ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
     isScreenshotProtectionOn: false,
     wasScreenshotTaken: false,
@@ -136,7 +137,10 @@ class _HomePageState extends State<HomePage> {
     debugPrint('toggleScreenshotWithImage: $result');
     setState(() {
       _isOverlayImageOn = result;
-      if (result) _isOverlayBlurOn = false;
+      if (result) {
+        _isOverlayBlurOn = false;
+        _isOverlayColorOn = false;
+      }
     });
   }
 
@@ -145,7 +149,22 @@ class _HomePageState extends State<HomePage> {
     debugPrint('toggleScreenshotWithBlur: $result');
     setState(() {
       _isOverlayBlurOn = result;
-      if (result) _isOverlayImageOn = false;
+      if (result) {
+        _isOverlayImageOn = false;
+        _isOverlayColorOn = false;
+      }
+    });
+  }
+
+  Future<void> _toggleScreenshotWithColor() async {
+    final result = await _noScreenshot.toggleScreenshotWithColor();
+    debugPrint('toggleScreenshotWithColor: $result');
+    setState(() {
+      _isOverlayColorOn = result;
+      if (result) {
+        _isOverlayImageOn = false;
+        _isOverlayBlurOn = false;
+      }
     });
   }
 
@@ -304,6 +323,23 @@ class _HomePageState extends State<HomePage> {
                 label: l.toggleScreenshotWithBlur,
                 subtitle: l.blurOverlaySubtitle,
                 onPressed: _toggleScreenshotWithBlur,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            title: l.colorOverlaySectionTitle,
+            subtitle: l.platformSubtitle,
+            children: [
+              _StatusRow(
+                label: l.colorOverlay,
+                isOn: _isOverlayColorOn,
+              ),
+              const SizedBox(height: 12),
+              _FeatureButton(
+                label: l.toggleScreenshotWithColor,
+                subtitle: l.colorOverlaySubtitle,
+                onPressed: _toggleScreenshotWithColor,
               ),
             ],
           ),
