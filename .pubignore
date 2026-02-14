@@ -1,2 +1,7 @@
 doc/
 plan/
+build/
+coverage/
+.dart_tool/
+.idea/
+*.iml
