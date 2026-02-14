@@ -1,3 +1,7 @@
+## 0.7.1
+
+- fix(linux): replaced `FlEventSink` with `fl_event_channel_send` for stream event delivery by @fonkamloic.
+
 ## 0.7.0
 
 - feat: added `SecureWidget` — a declarative Flutter widget that auto-enables screenshot protection on mount and disables on unmount (P6) by @fonkamloic.
