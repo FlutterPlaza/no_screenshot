@@ -169,8 +169,7 @@ void main() {
   });
 
   test('screenshotWithColor with custom color', () async {
-    expect(
-        await NoScreenshot.instance.screenshotWithColor(color: 0xFFFF0000),
+    expect(await NoScreenshot.instance.screenshotWithColor(color: 0xFFFF0000),
         true);
   });
 
