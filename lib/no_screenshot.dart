@@ -38,8 +38,13 @@ class NoScreenshot implements NoScreenshotPlatform {
   }
 
   @override
-  Future<bool> toggleScreenshotWithBlur() {
-    return _instancePlatform.toggleScreenshotWithBlur();
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) {
+    return _instancePlatform.toggleScreenshotWithBlur(blurRadius: blurRadius);
+  }
+
+  @override
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) {
+    return _instancePlatform.toggleScreenshotWithColor(color: color);
   }
 
   /// Return `true` if screenshot capabilities has been
