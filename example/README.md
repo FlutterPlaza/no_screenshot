@@ -1,128 +1,66 @@
-# no_screenshot
+# no_screenshot example
 
-The Flutter plugin will enable, disable, or toggle screenshot support in your application.
+Demonstrates how to use the `no_screenshot` plugin.
 
-## Features
+## Supported Platforms
 
-- Disables screenshot and screen recording on Android and iOS.
-- Enables screenshot and screen recording on Android and iOS.
-- Toggles screenshot and screen recording on Android and iOS.
-- Provides a stream to listen for screenshot activities.
+Android, iOS, macOS, Linux, Windows, and Web.
 
-## Update
+## Features Demonstrated
 
-Tracking `didChangeAppLifecycleState` is no longer required. The state will be persisted automatically in the native platform SharedPreferences.
+- **Screenshot Protection** — enable, disable, and toggle screenshot/screen recording blocking.
+- **Screenshot Monitoring** — real-time stream of screenshot events with `ScreenshotSnapshot`.
+- **Screen Recording Monitoring** — detect recording start/stop events.
+- **Image Overlay** — show a custom image in the app switcher / recents screen.
+- **Blur Overlay** — Gaussian blur with configurable radius in the app switcher.
+- **Color Overlay** — solid color overlay with color picker in the app switcher.
+- **Granular Callbacks** — `onScreenshotDetected`, `onScreenRecordingStarted`, `onScreenRecordingStopped` with real-time event display.
+- **SecureWidget** — declarative protection that auto-enables on mount and disables on unmount.
+- **Per-Route Protection** — different protection levels for different named routes.
+- **RTL Support** — EN/AR localization toggle for verifying RTL layout.
 
-## Getting started
-
-Add `no_screenshot` to your `pubspec.yaml` dependencies.
-
-## Usage
-
-Call the singleton `NoScreenshot.instance` anywhere you want to use it. For instance:
+## Quick Start
 
 ```dart
-import 'package:flutter/material.dart';
 import 'package:no_screenshot/no_screenshot.dart';
-import 'package:no_screenshot/screenshot_snapshot.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+final noScreenshot = NoScreenshot.instance;
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+// Disable screenshots & screen recording
+await noScreenshot.screenshotOff();
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
+// Re-enable screenshots & screen recording
+await noScreenshot.screenshotOn();
 
-class _MyAppState extends State<MyApp> {
-  final _noScreenshot = NoScreenshot.instance;
-  bool _isListeningToScreenshotSnapshot = false;
-  ScreenshotSnapshot _latestValue = ScreenshotSnapshot(
-    isScreenshotProtectionOn: false,
-    wasScreenshotTaken: false,
+// Listen for screenshot events
+noScreenshot.screenshotStream.listen((snapshot) {
+  print('Protection: ${snapshot.isScreenshotProtectionOn}');
+  print('Screenshot taken: ${snapshot.wasScreenshotTaken}');
+  print('Recording: ${snapshot.isScreenRecording}');
+  print('Timestamp: ${snapshot.timestamp}');
+  print('Source app: ${snapshot.sourceApp}');
+});
+await noScreenshot.startScreenshotListening();
 
-    /// Returning screenshot path is not yet fully supported. And not function on iOS
-    screenshotPath: '',
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _noScreenshot.screenshotStream.listen((value) {
-      setState(() {
-        _latestValue = value;
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('No Screenshot Plugin Example'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () async {
-                  await _noScreenshot.startScreenshotListening();
-                  setState(() {
-                    _isListeningToScreenshotSnapshot = true;
-                  });
-                },
-                child: const Text('Start Listening'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await _noScreenshot.stopScreenshotListening();
-                  setState(() {
-                    _isListeningToScreenshotSnapshot = false;
-                  });
-                },
-                child: const Text('Stop Listening'),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                    "Screenshot Streaming is ${_isListeningToScreenshotSnapshot ? 'ON' : 'OFF'}\n\nIsScreenshotProtectionOn: ${_latestValue.isScreenshotProtectionOn}\nwasScreenshotTaken: ${_latestValue.wasScreenshotTaken}"),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.screenshotOff();
-                  debugPrint('Screenshot Off: $result');
-                },
-                child: const Text('Disable Screenshot'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.screenshotOn();
-                  debugPrint('Enable Screenshot: $result');
-                },
-                child: const Text('Enable Screenshot'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  bool result = await _noScreenshot.toggleScreenshot();
-                  debugPrint('Toggle Screenshot: $result');
-                },
-                child: const Text('Toggle Screenshot'),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// Granular callbacks
+noScreenshot.onScreenshotDetected = (snapshot) {
+  print('Screenshot detected!');
+};
+noScreenshot.startCallbacks();
 ```
 
-## Additional information
+## Running the Example
 
-Check out our repo for Open-Source contributions. Contributions are welcome!
+```bash
+flutter run
+```
+
+For Linux with Wayland issues, use:
+
+```bash
+GDK_BACKEND=x11 flutter run -d linux
+```
+
+## Additional Information
+
+See the [main README](../README.md) for full documentation and API reference.
