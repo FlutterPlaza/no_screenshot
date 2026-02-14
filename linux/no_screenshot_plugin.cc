@@ -25,15 +25,20 @@ G_DEFINE_TYPE(NoScreenshotPlugin, no_screenshot_plugin, g_object_get_type())
 gchar* build_event_json(gboolean is_screenshot_on,
                         const gchar* screenshot_path,
                         gboolean was_screenshot_taken,
-                        gboolean is_screen_recording) {
+                        gboolean is_screen_recording,
+                        gint64 timestamp_ms,
+                        const gchar* source_app) {
   // Hand-build JSON to avoid extra dependencies.
   return g_strdup_printf(
       "{\"is_screenshot_on\":%s,\"screenshot_path\":\"%s\","
-      "\"was_screenshot_taken\":%s,\"is_screen_recording\":%s}",
+      "\"was_screenshot_taken\":%s,\"is_screen_recording\":%s,"
+      "\"timestamp\":%" G_GINT64_FORMAT ",\"source_app\":\"%s\"}",
       is_screenshot_on ? "true" : "false",
       screenshot_path ? screenshot_path : "",
       was_screenshot_taken ? "true" : "false",
-      is_screen_recording ? "true" : "false");
+      is_screen_recording ? "true" : "false",
+      timestamp_ms,
+      source_app ? source_app : "");
 }
 
 static void update_shared_state(NoScreenshotPlugin* self,
@@ -42,7 +47,8 @@ static void update_shared_state(NoScreenshotPlugin* self,
 
   g_autofree gchar* json =
       build_event_json(self->prevent_screenshot, screenshot_path, was_taken,
-                       self->is_screen_recording);
+                       self->is_screen_recording, self->last_timestamp_ms,
+                       self->last_source_app);
 
   if (g_strcmp0(json, self->last_event_json) != 0) {
     g_free(self->last_event_json);
@@ -66,8 +72,13 @@ static void persist_state(NoScreenshotPlugin* self) {
 // ---------------------------------------------------------------------------
 
 static void on_screenshot_detected(const gchar* file_path,
+                                   gint64 timestamp_ms,
+                                   const gchar* source_app,
                                    gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
+  self->last_timestamp_ms = timestamp_ms;
+  g_free(self->last_source_app);
+  self->last_source_app = g_strdup(source_app ? source_app : "");
   update_shared_state(self, file_path);
 }
 
@@ -76,9 +87,13 @@ static void on_screenshot_detected(const gchar* file_path,
 // ---------------------------------------------------------------------------
 
 static void on_recording_state_changed(gboolean is_recording,
+                                       const gchar* process_name,
                                        gpointer user_data) {
   NoScreenshotPlugin* self = NO_SCREENSHOT_PLUGIN(user_data);
   self->is_screen_recording = is_recording;
+  self->last_timestamp_ms = g_get_real_time() / 1000;
+  g_free(self->last_source_app);
+  self->last_source_app = g_strdup(process_name ? process_name : "");
   update_shared_state(self, "");
 }
 
@@ -385,6 +400,9 @@ static void no_screenshot_plugin_dispose(GObject* object) {
   g_free(self->last_event_json);
   self->last_event_json = NULL;
 
+  g_free(self->last_source_app);
+  self->last_source_app = NULL;
+
   G_OBJECT_CLASS(no_screenshot_plugin_parent_class)->dispose(object);
 }
 
@@ -409,6 +427,8 @@ static void no_screenshot_plugin_init(NoScreenshotPlugin* self) {
   self->detection = NULL;
   self->recording_detection = NULL;
   self->persistence = NULL;
+  self->last_timestamp_ms = 0;
+  self->last_source_app = NULL;
 }
 
 // ---------------------------------------------------------------------------

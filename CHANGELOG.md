@@ -1,3 +1,20 @@
+## 0.8.0
+
+- feat: added `timestamp` and `sourceApp` metadata fields to `ScreenshotSnapshot` — backward-compatible defaults (P8) by @fonkamloic.
+- feat(android): screenshot metadata via `MediaStore.Images.Media.DATE_ADDED` and `DISPLAY_NAME` by @fonkamloic.
+- feat(ios): screenshot metadata via wall clock at detection time by @fonkamloic.
+- feat(macos): screenshot metadata via `kMDItemContentCreationDate` and `kMDItemCreator` / detected recording app name by @fonkamloic.
+- feat(linux): screenshot metadata via `G_FILE_ATTRIBUTE_TIME_MODIFIED` and inferred source app from filename prefix by @fonkamloic.
+- feat(windows): added Windows platform support — `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` for prevention, `AddClipboardFormatListener` + `ReadDirectoryChangesW` for screenshot detection, process scanning for recording detection (P11) by @fonkamloic.
+- feat: added granular callbacks — `onScreenshotDetected`, `onScreenRecordingStarted`, `onScreenRecordingStopped` with `startCallbacks()` / `stopCallbacks()` / `removeAllCallbacks()` API (P15) by @fonkamloic.
+- feat(web): added best-effort web platform support — right-click blocking, PrintScreen interception, `user-select: none` CSS, `visibilitychange` detection (P17) by @fonkamloic.
+- fix: fixed `NoScreenshot.instance` creating a new instance on every access — now a proper cached singleton by @fonkamloic.
+- fix: changed `_instancePlatform` from a captured field to a getter so platform is resolved at call time by @fonkamloic.
+- feat(example): added Granular Callbacks section with real-time event display by @fonkamloic.
+- feat(example): added web platform scaffolding by @fonkamloic.
+- test: added granular callback tests with mock platform class by @fonkamloic.
+- test: added web platform test suite by @fonkamloic.
+
 ## 0.7.0
 
 - feat: added `SecureWidget` — a declarative Flutter widget that auto-enables screenshot protection on mount and disables on unmount (P6) by @fonkamloic.

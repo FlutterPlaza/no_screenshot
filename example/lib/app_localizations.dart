@@ -89,6 +89,11 @@ class AppLocalizations {
       'goToProfile': 'Go to Profile',
       'goToPublic': 'Go to Public',
       'back': 'Back',
+      'callbacksSectionTitle': 'Granular Callbacks',
+      'callbacksSubtitle': 'Named event callbacks (P15)',
+      'callbacks': 'Callbacks',
+      'lastCallbackEvent': 'Last event',
+      'noEventsYet': 'No events yet',
     },
     'ar': {
       'appTitle': 'مثال بدون لقطة شاشة',
@@ -159,6 +164,11 @@ class AppLocalizations {
       'goToProfile': 'الذهاب إلى الملف الشخصي',
       'goToPublic': 'الذهاب إلى العامة',
       'back': 'رجوع',
+      'callbacksSectionTitle': 'ردود الاتصال التفصيلية',
+      'callbacksSubtitle': 'ردود اتصال الأحداث المسماة (P15)',
+      'callbacks': 'ردود الاتصال',
+      'lastCallbackEvent': 'آخر حدث',
+      'noEventsYet': 'لا أحداث بعد',
     },
   };
 
@@ -280,6 +290,16 @@ class AppLocalizations {
   String get goToPublic =>
       _localizedValues[locale.languageCode]!['goToPublic']!;
   String get back => _localizedValues[locale.languageCode]!['back']!;
+  String get callbacksSectionTitle =>
+      _localizedValues[locale.languageCode]!['callbacksSectionTitle']!;
+  String get callbacksSubtitle =>
+      _localizedValues[locale.languageCode]!['callbacksSubtitle']!;
+  String get callbacks =>
+      _localizedValues[locale.languageCode]!['callbacks']!;
+  String get lastCallbackEvent =>
+      _localizedValues[locale.languageCode]!['lastCallbackEvent']!;
+  String get noEventsYet =>
+      _localizedValues[locale.languageCode]!['noEventsYet']!;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,6 @@
 PODS:
   - FlutterMacOS (1.0.0)
-  - no_screenshot (0.3.2-beta.3):
+  - no_screenshot (0.7.0):
     - FlutterMacOS
 
 DEPENDENCIES:
@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  no_screenshot: 6b7ccfe089b21d25fecd43e90bea2f0523c96e3b
+  no_screenshot: 68091b0c8bd5329c926206d39ffa205b306ded24
 
 PODFILE CHECKSUM: 9ebaf0ce3d369aaa26a9ea0e159195ed94724cf3
 

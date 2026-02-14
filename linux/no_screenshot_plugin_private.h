@@ -37,6 +37,10 @@ struct _NoScreenshotPlugin {
   gboolean is_recording_listening;
   gboolean is_screen_recording;
 
+  // P8 metadata
+  gint64 last_timestamp_ms;
+  gchar* last_source_app;
+
   // Subsystems
   ScreenshotDetection* detection;
   RecordingDetection* recording_detection;
@@ -47,7 +51,9 @@ struct _NoScreenshotPlugin {
 gchar* build_event_json(gboolean is_screenshot_on,
                         const gchar* screenshot_path,
                         gboolean was_screenshot_taken,
-                        gboolean is_screen_recording);
+                        gboolean is_screen_recording,
+                        gint64 timestamp_ms,
+                        const gchar* source_app);
 
 G_END_DECLS
 

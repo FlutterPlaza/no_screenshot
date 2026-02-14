@@ -9,6 +9,7 @@ typedef struct _RecordingDetection RecordingDetection;
 
 // Callback invoked when the recording state changes.
 typedef void (*RecordingStateChangedCallback)(gboolean is_recording,
+                                              const gchar* process_name,
                                               gpointer user_data);
 
 RecordingDetection* recording_detection_new(RecordingStateChangedCallback cb,

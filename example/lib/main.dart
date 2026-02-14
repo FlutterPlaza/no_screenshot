@@ -67,6 +67,8 @@ class _HomePageState extends State<HomePage> {
   bool _isOverlayImageOn = false;
   bool _isOverlayBlurOn = false;
   bool _isOverlayColorOn = false;
+  bool _callbacksActive = false;
+  String _lastCallbackEvent = '';
   ScreenshotSnapshot _latestSnapshot = ScreenshotSnapshot(
     isScreenshotProtectionOn: false,
     wasScreenshotTaken: false,
@@ -81,14 +83,34 @@ class _HomePageState extends State<HomePage> {
       setState(() => _latestSnapshot = value);
       if (value.wasScreenshotTaken) {
         debugPrint('Screenshot taken at path: ${value.screenshotPath}');
-        _showScreenshotAlert(value.screenshotPath);
+        _showScreenshotAlert(value);
       }
     });
+
+    // Set up granular callbacks (P15)
+    _noScreenshot.onScreenshotDetected = (snapshot) {
+      debugPrint('Callback: screenshot detected');
+      if (!mounted) return;
+      setState(() => _lastCallbackEvent = 'Screenshot detected');
+    };
+    _noScreenshot.onScreenRecordingStarted = (snapshot) {
+      debugPrint('Callback: recording started');
+      if (!mounted) return;
+      setState(() => _lastCallbackEvent = 'Recording started');
+    };
+    _noScreenshot.onScreenRecordingStopped = (snapshot) {
+      debugPrint('Callback: recording stopped');
+      if (!mounted) return;
+      setState(() => _lastCallbackEvent = 'Recording stopped');
+    };
+    _noScreenshot.startCallbacks();
+    _callbacksActive = true;
   }
 
   @override
   void dispose() {
     _streamSubscription?.cancel();
+    _noScreenshot.removeAllCallbacks();
     super.dispose();
   }
 
@@ -297,6 +319,31 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           _buildSection(
+            title: l.callbacksSectionTitle,
+            subtitle: l.callbacksSubtitle,
+            children: [
+              _StatusRow(
+                label: l.callbacks,
+                isOn: _callbacksActive,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${l.lastCallbackEvent}: ${_lastCallbackEvent.isEmpty ? l.noEventsYet : _lastCallbackEvent}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
             title: l.overlaySectionTitle,
             subtitle: l.platformSubtitle,
             children: [
@@ -416,15 +463,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showScreenshotAlert(String path) {
+  void _showScreenshotAlert(ScreenshotSnapshot snapshot) {
     final l = AppLocalizations.of(context);
+    final details = StringBuffer('${l.path}: ${snapshot.screenshotPath}');
+    if (snapshot.timestamp > 0) {
+      details.write(
+          '\nTime: ${DateTime.fromMillisecondsSinceEpoch(snapshot.timestamp)}');
+    }
+    if (snapshot.sourceApp.isNotEmpty) {
+      details.write('\nSource: ${snapshot.sourceApp}');
+    }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_amber_outlined,
             size: 48, color: Colors.red),
         title: Text(l.screenshotDetected),
-        content: Text('${l.path}: $path'),
+        content: Text(details.toString()),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -534,6 +589,12 @@ class _SnapshotInfo extends StatelessWidget {
               style: style?.copyWith(
                   color: snapshot.isScreenRecording ? Colors.red : null)),
           Text('${l.path}: ${snapshot.screenshotPath}', style: style),
+          if (snapshot.timestamp > 0)
+            Text(
+                'Timestamp: ${DateTime.fromMillisecondsSinceEpoch(snapshot.timestamp)}',
+                style: style),
+          if (snapshot.sourceApp.isNotEmpty)
+            Text('Source app: ${snapshot.sourceApp}', style: style),
         ],
       ),
     );

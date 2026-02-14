@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:no_screenshot/constants.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:no_screenshot/no_screenshot_method_channel.dart';
+import 'package:no_screenshot/no_screenshot_platform_interface.dart';
 import 'package:no_screenshot/screenshot_snapshot.dart';
 
 void main() {
@@ -473,6 +477,8 @@ void main() {
       expect(snapshot.isScreenshotProtectionOn, false);
       expect(snapshot.wasScreenshotTaken, false);
       expect(snapshot.isScreenRecording, false);
+      expect(snapshot.timestamp, 0);
+      expect(snapshot.sourceApp, '');
     });
 
     test('fromMap with null values uses defaults', () {
@@ -481,12 +487,92 @@ void main() {
         'is_screenshot_on': null,
         'was_screenshot_taken': null,
         'is_screen_recording': null,
+        'timestamp': null,
+        'source_app': null,
       };
       final snapshot = ScreenshotSnapshot.fromMap(map);
       expect(snapshot.screenshotPath, '');
       expect(snapshot.isScreenshotProtectionOn, false);
       expect(snapshot.wasScreenshotTaken, false);
       expect(snapshot.isScreenRecording, false);
+      expect(snapshot.timestamp, 0);
+      expect(snapshot.sourceApp, '');
+    });
+
+    test('fromMap with metadata', () {
+      final map = {
+        'screenshot_path': '/example/path',
+        'is_screenshot_on': true,
+        'was_screenshot_taken': true,
+        'is_screen_recording': false,
+        'timestamp': 1700000000000,
+        'source_app': 'screencaptureui',
+      };
+      final snapshot = ScreenshotSnapshot.fromMap(map);
+      expect(snapshot.screenshotPath, '/example/path');
+      expect(snapshot.isScreenshotProtectionOn, true);
+      expect(snapshot.wasScreenshotTaken, true);
+      expect(snapshot.timestamp, 1700000000000);
+      expect(snapshot.sourceApp, 'screencaptureui');
+    });
+
+    test('fromMap without metadata defaults timestamp and sourceApp', () {
+      final map = {
+        'screenshot_path': '/example/path',
+        'is_screenshot_on': true,
+        'was_screenshot_taken': true,
+      };
+      final snapshot = ScreenshotSnapshot.fromMap(map);
+      expect(snapshot.timestamp, 0);
+      expect(snapshot.sourceApp, '');
+    });
+
+    test('toMap includes metadata', () {
+      final snapshot = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000000,
+        sourceApp: 'GNOME Screenshot',
+      );
+      final map = snapshot.toMap();
+      expect(map['timestamp'], 1700000000000);
+      expect(map['source_app'], 'GNOME Screenshot');
+    });
+
+    test('equality with metadata', () {
+      final snapshot1 = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000000,
+        sourceApp: 'screencaptureui',
+      );
+      final snapshot2 = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000000,
+        sourceApp: 'screencaptureui',
+      );
+      final snapshot3 = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000001,
+        sourceApp: 'screencaptureui',
+      );
+      final snapshot4 = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000000,
+        sourceApp: 'different_app',
+      );
+
+      expect(snapshot1 == snapshot2, true);
+      expect(snapshot1 == snapshot3, false);
+      expect(snapshot1 == snapshot4, false);
     });
 
     test('toString', () {
@@ -497,7 +583,7 @@ void main() {
       );
       final string = snapshot.toString();
       expect(string,
-          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: false\n)');
+          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: false, \ntimestamp: 0, \nsourceApp: \n)');
     });
 
     test('toString with isScreenRecording true', () {
@@ -509,7 +595,210 @@ void main() {
       );
       final string = snapshot.toString();
       expect(string,
-          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: true\n)');
+          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: true, \ntimestamp: 0, \nsourceApp: \n)');
+    });
+
+    test('toString with metadata', () {
+      final snapshot = ScreenshotSnapshot(
+        screenshotPath: '/example/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+        timestamp: 1700000000000,
+        sourceApp: 'screencaptureui',
+      );
+      final string = snapshot.toString();
+      expect(string, contains('timestamp: 1700000000000'));
+      expect(string, contains('sourceApp: screencaptureui'));
     });
   });
+
+  group('Granular Callbacks (P15)', () {
+    late StreamController<ScreenshotSnapshot> controller;
+    late _MockNoScreenshotPlatform mockPlatform;
+    late NoScreenshot noScreenshot;
+
+    setUp(() {
+      controller = StreamController<ScreenshotSnapshot>.broadcast();
+      mockPlatform = _MockNoScreenshotPlatform(controller.stream);
+      NoScreenshotPlatform.instance = mockPlatform;
+      // Create a fresh instance for each test to avoid shared state.
+      noScreenshot = NoScreenshot.instance;
+      noScreenshot.removeAllCallbacks();
+    });
+
+    tearDown(() {
+      noScreenshot.removeAllCallbacks();
+      controller.close();
+    });
+
+    test('onScreenshotDetected fires when wasScreenshotTaken is true',
+        () async {
+      final detected = <ScreenshotSnapshot>[];
+      noScreenshot.onScreenshotDetected = detected.add;
+      noScreenshot.startCallbacks();
+
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+      ));
+      await Future.delayed(Duration.zero);
+
+      expect(detected, hasLength(1));
+      expect(detected.first.wasScreenshotTaken, true);
+    });
+
+    test('onScreenshotDetected does NOT fire when wasScreenshotTaken is false',
+        () async {
+      final detected = <ScreenshotSnapshot>[];
+      noScreenshot.onScreenshotDetected = detected.add;
+      noScreenshot.startCallbacks();
+
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: false,
+      ));
+      await Future.delayed(Duration.zero);
+
+      expect(detected, isEmpty);
+    });
+
+    test('onScreenRecordingStarted fires on false→true transition', () async {
+      final started = <ScreenshotSnapshot>[];
+      noScreenshot.onScreenRecordingStarted = started.add;
+      noScreenshot.startCallbacks();
+
+      // Initial state: not recording → recording starts
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: false,
+        isScreenRecording: true,
+      ));
+      await Future.delayed(Duration.zero);
+
+      expect(started, hasLength(1));
+      expect(started.first.isScreenRecording, true);
+    });
+
+    test('onScreenRecordingStopped fires on true→false transition', () async {
+      final stopped = <ScreenshotSnapshot>[];
+      noScreenshot.onScreenRecordingStopped = stopped.add;
+      noScreenshot.startCallbacks();
+
+      // First: recording starts
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: false,
+        isScreenRecording: true,
+      ));
+      await Future.delayed(Duration.zero);
+
+      // Then: recording stops
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: false,
+        isScreenRecording: false,
+      ));
+      await Future.delayed(Duration.zero);
+
+      expect(stopped, hasLength(1));
+      expect(stopped.first.isScreenRecording, false);
+    });
+
+    test('removeAllCallbacks clears all callbacks and stops subscription',
+        () async {
+      final detected = <ScreenshotSnapshot>[];
+      noScreenshot.onScreenshotDetected = detected.add;
+      noScreenshot.startCallbacks();
+      expect(noScreenshot.hasActiveCallbacks, true);
+
+      noScreenshot.removeAllCallbacks();
+      expect(noScreenshot.hasActiveCallbacks, false);
+      expect(noScreenshot.onScreenshotDetected, isNull);
+      expect(noScreenshot.onScreenRecordingStarted, isNull);
+      expect(noScreenshot.onScreenRecordingStopped, isNull);
+
+      // Events after removal should not fire
+      controller.add(ScreenshotSnapshot(
+        screenshotPath: '/path',
+        isScreenshotProtectionOn: true,
+        wasScreenshotTaken: true,
+      ));
+      await Future.delayed(Duration.zero);
+
+      expect(detected, isEmpty);
+    });
+
+    test('hasActiveCallbacks reflects subscription state', () {
+      expect(noScreenshot.hasActiveCallbacks, false);
+
+      noScreenshot.onScreenshotDetected = (_) {};
+      noScreenshot.startCallbacks();
+      expect(noScreenshot.hasActiveCallbacks, true);
+
+      noScreenshot.stopCallbacks();
+      expect(noScreenshot.hasActiveCallbacks, false);
+    });
+
+    test('startCallbacks is idempotent', () {
+      noScreenshot.onScreenshotDetected = (_) {};
+      noScreenshot.startCallbacks();
+      noScreenshot.startCallbacks(); // second call should be no-op
+      expect(noScreenshot.hasActiveCallbacks, true);
+    });
+  });
+}
+
+class _MockNoScreenshotPlatform extends NoScreenshotPlatform {
+  final Stream<ScreenshotSnapshot> _stream;
+
+  _MockNoScreenshotPlatform(this._stream);
+
+  @override
+  Stream<ScreenshotSnapshot> get screenshotStream => _stream;
+
+  @override
+  Future<bool> screenshotOff() async => true;
+
+  @override
+  Future<bool> screenshotOn() async => true;
+
+  @override
+  Future<bool> toggleScreenshot() async => true;
+
+  @override
+  Future<bool> toggleScreenshotWithImage() async => true;
+
+  @override
+  Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async =>
+      true;
+
+  @override
+  Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async =>
+      true;
+
+  @override
+  Future<bool> screenshotWithImage() async => true;
+
+  @override
+  Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async => true;
+
+  @override
+  Future<bool> screenshotWithColor({int color = 0xFF000000}) async => true;
+
+  @override
+  Future<void> startScreenshotListening() async {}
+
+  @override
+  Future<void> stopScreenshotListening() async {}
+
+  @override
+  Future<void> startScreenRecordingListening() async {}
+
+  @override
+  Future<void> stopScreenRecordingListening() async {}
 }

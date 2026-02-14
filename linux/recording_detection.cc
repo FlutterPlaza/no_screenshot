@@ -24,6 +24,7 @@ struct _RecordingDetection {
 
   guint poll_timer_id;
   gboolean is_recording;
+  gchar detected_process[256];
 };
 
 static gboolean is_known_recording_process(const gchar* comm) {
@@ -37,6 +38,7 @@ static gboolean check_recording_processes(gpointer user_data) {
   RecordingDetection* self = (RecordingDetection*)user_data;
 
   gboolean found = FALSE;
+  gchar matched_name[256] = {0};
   DIR* proc_dir = opendir("/proc");
   if (proc_dir == NULL) return G_SOURCE_CONTINUE;
 
@@ -59,6 +61,7 @@ static gboolean check_recording_processes(gpointer user_data) {
 
       if (is_known_recording_process(comm)) {
         found = TRUE;
+        g_strlcpy(matched_name, comm, sizeof(matched_name));
         fclose(fp);
         break;
       }
@@ -70,8 +73,15 @@ static gboolean check_recording_processes(gpointer user_data) {
   // Fire callback only on state transitions.
   if (found != self->is_recording) {
     self->is_recording = found;
+    if (found) {
+      g_strlcpy(self->detected_process, matched_name,
+                 sizeof(self->detected_process));
+    } else {
+      self->detected_process[0] = '\0';
+    }
     if (self->callback != NULL) {
-      self->callback(self->is_recording, self->user_data);
+      self->callback(self->is_recording, self->detected_process,
+                     self->user_data);
     }
   }
 

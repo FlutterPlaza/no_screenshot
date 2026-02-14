@@ -9,6 +9,8 @@ typedef struct _ScreenshotDetection ScreenshotDetection;
 
 // Callback invoked when a new screenshot file is detected.
 typedef void (*ScreenshotDetectedCallback)(const gchar* file_path,
+                                           gint64 timestamp_ms,
+                                           const gchar* source_app,
                                            gpointer user_data);
 
 ScreenshotDetection* screenshot_detection_new(ScreenshotDetectedCallback cb,

@@ -12,11 +12,23 @@ class ScreenshotSnapshot {
   final bool wasScreenshotTaken;
   final bool isScreenRecording;
 
+  /// Milliseconds since epoch when the event was detected.
+  ///
+  /// `0` means unknown (e.g. the native platform did not provide timing data).
+  final int timestamp;
+
+  /// Human-readable name of the application that triggered the event.
+  ///
+  /// Empty string means unknown or not applicable.
+  final String sourceApp;
+
   ScreenshotSnapshot({
     required this.screenshotPath,
     required this.isScreenshotProtectionOn,
     required this.wasScreenshotTaken,
     this.isScreenRecording = false,
+    this.timestamp = 0,
+    this.sourceApp = '',
   });
 
   factory ScreenshotSnapshot.fromMap(Map<String, dynamic> map) {
@@ -25,6 +37,8 @@ class ScreenshotSnapshot {
       isScreenshotProtectionOn: map['is_screenshot_on'] as bool? ?? false,
       wasScreenshotTaken: map['was_screenshot_taken'] as bool? ?? false,
       isScreenRecording: map['is_screen_recording'] as bool? ?? false,
+      timestamp: map['timestamp'] as int? ?? 0,
+      sourceApp: map['source_app'] as String? ?? '',
     );
   }
 
@@ -34,12 +48,14 @@ class ScreenshotSnapshot {
       'is_screenshot_on': isScreenshotProtectionOn,
       'was_screenshot_taken': wasScreenshotTaken,
       'is_screen_recording': isScreenRecording,
+      'timestamp': timestamp,
+      'source_app': sourceApp,
     };
   }
 
   @override
   String toString() {
-    return 'ScreenshotSnapshot(\nscreenshotPath: $screenshotPath, \nisScreenshotProtectionOn: $isScreenshotProtectionOn, \nwasScreenshotTaken: $wasScreenshotTaken, \nisScreenRecording: $isScreenRecording\n)';
+    return 'ScreenshotSnapshot(\nscreenshotPath: $screenshotPath, \nisScreenshotProtectionOn: $isScreenshotProtectionOn, \nwasScreenshotTaken: $wasScreenshotTaken, \nisScreenRecording: $isScreenRecording, \ntimestamp: $timestamp, \nsourceApp: $sourceApp\n)';
   }
 
   @override
@@ -50,7 +66,9 @@ class ScreenshotSnapshot {
         other.screenshotPath == screenshotPath &&
         other.isScreenshotProtectionOn == isScreenshotProtectionOn &&
         other.wasScreenshotTaken == wasScreenshotTaken &&
-        other.isScreenRecording == isScreenRecording;
+        other.isScreenRecording == isScreenRecording &&
+        other.timestamp == timestamp &&
+        other.sourceApp == sourceApp;
   }
 
   @override
@@ -58,6 +76,8 @@ class ScreenshotSnapshot {
     return screenshotPath.hashCode ^
         isScreenshotProtectionOn.hashCode ^
         wasScreenshotTaken.hashCode ^
-        isScreenRecording.hashCode;
+        isScreenRecording.hashCode ^
+        timestamp.hashCode ^
+        sourceApp.hashCode;
   }
 }

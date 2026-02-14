@@ -1,18 +1,80 @@
+import 'dart:async';
+
 import 'package:no_screenshot/screenshot_snapshot.dart';
 
 import 'no_screenshot_platform_interface.dart';
 
+/// Callback type for screenshot and recording events.
+typedef ScreenshotEventCallback = void Function(ScreenshotSnapshot snapshot);
+
 /// A class that provides a platform-agnostic way to disable screenshots.
 ///
 class NoScreenshot implements NoScreenshotPlatform {
-  final _instancePlatform = NoScreenshotPlatform.instance;
+  NoScreenshotPlatform get _instancePlatform => NoScreenshotPlatform.instance;
   NoScreenshot._();
 
   @Deprecated(
       "Using this may cause issue\nUse instance directly\ne.g: 'NoScreenshot.instance.screenshotOff()'")
   NoScreenshot();
 
-  static NoScreenshot get instance => NoScreenshot._();
+  static final NoScreenshot instance = NoScreenshot._();
+
+  // ── Granular Callbacks (P15) ────────────────────────────────────────
+
+  /// Called when a screenshot is detected.
+  ScreenshotEventCallback? onScreenshotDetected;
+
+  /// Called when screen recording starts.
+  ScreenshotEventCallback? onScreenRecordingStarted;
+
+  /// Called when screen recording stops.
+  ScreenshotEventCallback? onScreenRecordingStopped;
+
+  StreamSubscription<ScreenshotSnapshot>? _callbackSubscription;
+  bool _wasRecording = false;
+
+  /// Starts dispatching events to [onScreenshotDetected],
+  /// [onScreenRecordingStarted], and [onScreenRecordingStopped].
+  ///
+  /// Listens to [screenshotStream] internally. Call [stopCallbacks] or
+  /// [removeAllCallbacks] to cancel.
+  void startCallbacks() {
+    if (_callbackSubscription != null) return;
+    _callbackSubscription = screenshotStream.listen(_dispatchCallbacks);
+  }
+
+  /// Stops dispatching events but keeps callback assignments.
+  void stopCallbacks() {
+    _callbackSubscription?.cancel();
+    _callbackSubscription = null;
+  }
+
+  /// Stops dispatching and clears all callback assignments.
+  void removeAllCallbacks() {
+    stopCallbacks();
+    onScreenshotDetected = null;
+    onScreenRecordingStarted = null;
+    onScreenRecordingStopped = null;
+    _wasRecording = false;
+  }
+
+  /// Whether callbacks are currently being dispatched.
+  bool get hasActiveCallbacks => _callbackSubscription != null;
+
+  void _dispatchCallbacks(ScreenshotSnapshot snapshot) {
+    if (snapshot.wasScreenshotTaken) {
+      onScreenshotDetected?.call(snapshot);
+    }
+    if (!_wasRecording && snapshot.isScreenRecording) {
+      onScreenRecordingStarted?.call(snapshot);
+    }
+    if (_wasRecording && !snapshot.isScreenRecording) {
+      onScreenRecordingStopped?.call(snapshot);
+    }
+    _wasRecording = snapshot.isScreenRecording;
+  }
+
+  // ── Platform delegation ─────────────────────────────────────────────
 
   /// Return `true` if screenshot capabilities has been
   /// successfully disabled or is currently disabled and `false` otherwise.
