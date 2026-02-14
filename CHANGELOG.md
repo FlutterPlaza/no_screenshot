@@ -12,8 +12,11 @@
 - fix: changed `_instancePlatform` from a captured field to a getter so platform is resolved at call time by @fonkamloic.
 - feat(example): added Granular Callbacks section with real-time event display by @fonkamloic.
 - feat(example): added web platform scaffolding by @fonkamloic.
+- fix(linux): replaced `FlEventSink` with `fl_event_channel_send` for stream event delivery by @fonkamloic.
+- fix(linux): fixed GObject typedefs, recording detection thread safety, stream caching, and platform-specific UI layout by @fonkamloic.
 - test: added granular callback tests with mock platform class by @fonkamloic.
 - test: added web platform test suite by @fonkamloic.
+- test: added `screenshotStream` coverage for event channel decoding and stream caching by @fonkamloic.
 
 ## 0.7.0
 
@@ -170,6 +173,7 @@
 - kotlin_version = '1.6.10' -> '1.6.21'
 
 ## 0.0.1+7
+
 
 - Set the namespace for android
 - Specify a more current version of ScreenProtectorKit.  This resolves iOS17 issues.
