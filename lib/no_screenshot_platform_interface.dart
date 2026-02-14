@@ -58,20 +58,17 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
 
   /// Always enables image overlay mode (idempotent — safe to call repeatedly).
   Future<bool> screenshotWithImage() {
-    throw UnimplementedError(
-        'screenshotWithImage() has not been implemented.');
+    throw UnimplementedError('screenshotWithImage() has not been implemented.');
   }
 
   /// Always enables blur overlay mode (idempotent — safe to call repeatedly).
   Future<bool> screenshotWithBlur({double blurRadius = 30.0}) {
-    throw UnimplementedError(
-        'screenshotWithBlur() has not been implemented.');
+    throw UnimplementedError('screenshotWithBlur() has not been implemented.');
   }
 
   /// Always enables color overlay mode (idempotent — safe to call repeatedly).
   Future<bool> screenshotWithColor({int color = 0xFF000000}) {
-    throw UnimplementedError(
-        'screenshotWithColor() has not been implemented.');
+    throw UnimplementedError('screenshotWithColor() has not been implemented.');
   }
 
   /// Return `true` if screenshot capabilities has been
