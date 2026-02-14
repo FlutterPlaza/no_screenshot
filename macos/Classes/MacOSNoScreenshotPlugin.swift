@@ -164,6 +164,17 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
             let isActive = toggleScreenshotWithColor(color: color)
             result(isActive)
+        case "screenshotWithImage":
+            enableImageOverlayMode()
+            result(true)
+        case "screenshotWithBlur":
+            let radius = (call.arguments as? [String: Any])?["radius"] as? Double ?? 30.0
+            enableBlurOverlayMode(radius: radius)
+            result(true)
+        case "screenshotWithColor":
+            let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
+            enableColorOverlayMode(color: color)
+            result(true)
         case "startScreenshotListening":
             startListening()
             result("Listening started")
@@ -413,6 +424,67 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             self.colorOverlayView?.removeFromSuperview()
             self.colorOverlayView = nil
         }
+    }
+
+    // MARK: - Idempotent enable methods (always-on, no toggle)
+
+    private func enableImageOverlayMode() {
+        isImageOverlayModeEnabled = true
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            removeBlurOverlay()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            removeColorOverlay()
+        }
+        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
+        DispatchQueue.main.async {
+            if let window = NSApplication.shared.windows.first {
+                window.sharingType = .none
+            }
+        }
+        persistState()
+    }
+
+    private func enableBlurOverlayMode(radius: Double) {
+        isBlurOverlayModeEnabled = true
+        blurRadius = radius
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            removeImageOverlay()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            removeColorOverlay()
+        }
+        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
+        DispatchQueue.main.async {
+            if let window = NSApplication.shared.windows.first {
+                window.sharingType = .none
+            }
+        }
+        persistState()
+    }
+
+    private func enableColorOverlayMode(color: Int) {
+        isColorOverlayModeEnabled = true
+        colorValue = color
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            removeImageOverlay()
+        }
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            removeBlurOverlay()
+        }
+        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
+        DispatchQueue.main.async {
+            if let window = NSApplication.shared.windows.first {
+                window.sharingType = .none
+            }
+        }
+        persistState()
     }
 
     private func startListening() {

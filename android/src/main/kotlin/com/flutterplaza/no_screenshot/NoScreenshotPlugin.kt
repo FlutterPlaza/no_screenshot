@@ -47,6 +47,9 @@ const val SCREENSHOT_TAKEN = "was_screenshot_taken"
 const val SET_IMAGE_CONST = "toggleScreenshotWithImage"
 const val SET_BLUR_CONST = "toggleScreenshotWithBlur"
 const val SET_COLOR_CONST = "toggleScreenshotWithColor"
+const val ENABLE_IMAGE_CONST = "screenshotWithImage"
+const val ENABLE_BLUR_CONST = "screenshotWithBlur"
+const val ENABLE_COLOR_CONST = "screenshotWithColor"
 const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
 const val PREF_KEY_BLUR_OVERLAY = "is_blur_overlay_mode_enabled"
 const val PREF_KEY_COLOR_OVERLAY = "is_color_overlay_mode_enabled"
@@ -174,6 +177,20 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             SET_COLOR_CONST -> {
                 val color = call.argument<Int>("color") ?: 0xFF000000.toInt()
                 result.success(toggleScreenshotWithColor(color))
+            }
+
+            ENABLE_IMAGE_CONST -> {
+                result.success(enableImageOverlay())
+            }
+
+            ENABLE_BLUR_CONST -> {
+                val radius = (call.argument<Double>("radius") ?: 30.0).toFloat()
+                result.success(enableBlurOverlay(radius))
+            }
+
+            ENABLE_COLOR_CONST -> {
+                val color = call.argument<Int>("color") ?: 0xFF000000.toInt()
+                result.success(enableColorOverlay(color))
             }
 
             START_SCREEN_RECORDING_LISTENING_CONST -> {
@@ -436,6 +453,64 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         }
         updateSharedPreferencesState("")
         return isColorOverlayModeEnabled
+    }
+
+    private fun enableImageOverlay(): Boolean {
+        isImageOverlayModeEnabled = true
+        saveImageOverlayState(true)
+        if (isBlurOverlayModeEnabled) {
+            isBlurOverlayModeEnabled = false
+            saveBlurOverlayState(false)
+            removeBlurOverlay()
+        }
+        if (isColorOverlayModeEnabled) {
+            isColorOverlayModeEnabled = false
+            saveColorOverlayState(false)
+            removeColorOverlay()
+        }
+        screenshotOff()
+        updateSharedPreferencesState("")
+        return true
+    }
+
+    private fun enableBlurOverlay(radius: Float): Boolean {
+        isBlurOverlayModeEnabled = true
+        blurRadius = radius
+        saveBlurOverlayState(true)
+        saveBlurRadius(radius)
+        if (isImageOverlayModeEnabled) {
+            isImageOverlayModeEnabled = false
+            saveImageOverlayState(false)
+            removeImageOverlay()
+        }
+        if (isColorOverlayModeEnabled) {
+            isColorOverlayModeEnabled = false
+            saveColorOverlayState(false)
+            removeColorOverlay()
+        }
+        screenshotOff()
+        updateSharedPreferencesState("")
+        return true
+    }
+
+    private fun enableColorOverlay(color: Int): Boolean {
+        isColorOverlayModeEnabled = true
+        colorValue = color
+        saveColorOverlayState(true)
+        saveColorValue(color)
+        if (isImageOverlayModeEnabled) {
+            isImageOverlayModeEnabled = false
+            saveImageOverlayState(false)
+            removeImageOverlay()
+        }
+        if (isBlurOverlayModeEnabled) {
+            isBlurOverlayModeEnabled = false
+            saveBlurOverlayState(false)
+            removeBlurOverlay()
+        }
+        screenshotOff()
+        updateSharedPreferencesState("")
+        return true
     }
 
     private fun showColorOverlay(activity: Activity) {

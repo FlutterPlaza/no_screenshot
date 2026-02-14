@@ -45,6 +45,21 @@ class MockNoScreenshotPlatform
   Stream<ScreenshotSnapshot> get screenshotStream => const Stream.empty();
 
   @override
+  Future<bool> screenshotWithImage() async {
+    return Future.value(true);
+  }
+
+  @override
+  Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
+    return Future.value(true);
+  }
+
+  @override
+  Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
+    return Future.value(true);
+  }
+
+  @override
   Future<void> startScreenshotListening() {
     return Future.value();
   }
@@ -133,6 +148,29 @@ void main() {
     expect(
         await NoScreenshot.instance
             .toggleScreenshotWithColor(color: 0xFFFF0000),
+        true);
+  });
+
+  test('screenshotWithImage', () async {
+    expect(await NoScreenshot.instance.screenshotWithImage(), true);
+  });
+
+  test('screenshotWithBlur', () async {
+    expect(await NoScreenshot.instance.screenshotWithBlur(), true);
+  });
+
+  test('screenshotWithBlur with custom radius', () async {
+    expect(
+        await NoScreenshot.instance.screenshotWithBlur(blurRadius: 50.0), true);
+  });
+
+  test('screenshotWithColor', () async {
+    expect(await NoScreenshot.instance.screenshotWithColor(), true);
+  });
+
+  test('screenshotWithColor with custom color', () async {
+    expect(
+        await NoScreenshot.instance.screenshotWithColor(color: 0xFFFF0000),
         true);
   });
 

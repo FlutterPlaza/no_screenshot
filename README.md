@@ -23,6 +23,8 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
 | Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ |
+| Declarative SecureWidget | ✅ | ✅ | ✅ | ✅ |
+| Per-route protection policies | ✅ | ✅ | ✅ | ✅ |
 | LTR & RTL language support | ✅ | ✅ | ✅ | ✅ |
 
 > **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
@@ -41,7 +43,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.6.0
+  no_screenshot: ^0.7.0
 ```
 
 Then run:
@@ -287,6 +289,70 @@ Future<void> toggleColorCustom() async {
 | **macOS** | `NSView` with the specified background color |
 | **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
 
+### 7. SecureWidget (Declarative Protection)
+
+Wrap any subtree with `SecureWidget` to automatically enable protection on mount and disable on unmount. No imperative calls needed.
+
+```dart
+import 'package:no_screenshot/secure_widget.dart';
+import 'package:no_screenshot/overlay_mode.dart';
+
+// Protect a page with blur overlay
+SecureWidget(
+  mode: OverlayMode.blur,
+  blurRadius: 50.0,
+  child: MySecurePage(),
+)
+
+// Protect with full screenshot block
+SecureWidget(
+  mode: OverlayMode.secure,
+  child: PaymentScreen(),
+)
+
+// Protect with solid color overlay
+SecureWidget(
+  mode: OverlayMode.color,
+  color: 0xFF000000,
+  child: ConfidentialScreen(),
+)
+```
+
+Available modes: `OverlayMode.none` (no protection), `OverlayMode.secure` (default — blocks capture), `OverlayMode.blur`, `OverlayMode.color`, `OverlayMode.image`.
+
+When the widget is removed from the tree, protection is automatically disabled.
+
+### 8. Per-Route Protection Policies
+
+Use `SecureNavigatorObserver` to apply different protection levels for different routes. Add it to your `MaterialApp`'s `navigatorObservers`:
+
+```dart
+import 'package:no_screenshot/secure_navigator_observer.dart';
+import 'package:no_screenshot/overlay_mode.dart';
+
+MaterialApp(
+  navigatorObservers: [
+    SecureNavigatorObserver(
+      policies: {
+        '/payment': SecureRouteConfig(mode: OverlayMode.secure),
+        '/profile': SecureRouteConfig(mode: OverlayMode.blur, blurRadius: 50.0),
+        '/home': SecureRouteConfig(mode: OverlayMode.none),
+        '/branded': SecureRouteConfig(mode: OverlayMode.color, color: 0xFF2196F3),
+      },
+      defaultConfig: SecureRouteConfig(mode: OverlayMode.none), // for unmapped routes
+    ),
+  ],
+  routes: {
+    '/home': (_) => HomePage(),
+    '/payment': (_) => PaymentPage(),
+    '/profile': (_) => ProfilePage(),
+    '/branded': (_) => BrandedPage(),
+  },
+)
+```
+
+The observer automatically applies the correct policy when routes are pushed, popped, replaced, or removed. Routes not in the `policies` map use the `defaultConfig`.
+
 ### macOS Demo
 
 All features (screenshot protection, monitoring, and image overlay) on macOS:
@@ -320,7 +386,15 @@ The example app includes an RTL toggle to verify correct behavior:
 | `stopScreenshotListening()` | `Future<void>` | Stop monitoring for screenshot events |
 | `startScreenRecordingListening()` | `Future<void>` | Start monitoring for screen recording events |
 | `stopScreenRecordingListening()` | `Future<void>` | Stop monitoring for screen recording events |
+| `screenshotWithImage()` | `Future<bool>` | Always enable image overlay (idempotent) |
+| `screenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Always enable blur overlay (idempotent) |
+| `screenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Always enable color overlay (idempotent) |
 | `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
+| **Widgets** | | |
+| `SecureWidget` | `StatefulWidget` | Declarative protection — enables on mount, disables on unmount |
+| `SecureNavigatorObserver` | `NavigatorObserver` | Per-route protection policies via named route mapping |
+| `SecureRouteConfig` | class | Configuration for a route's protection mode, blur radius, and color |
+| `OverlayMode` | enum | `none`, `secure`, `blur`, `color`, `image` |
 
 ## Contributors
 

@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:no_screenshot/no_screenshot.dart';
+import 'package:no_screenshot/overlay_mode.dart';
 import 'package:no_screenshot/screenshot_snapshot.dart';
+import 'package:no_screenshot/secure_navigator_observer.dart';
+import 'package:no_screenshot/secure_widget.dart';
 
 import 'app_localizations.dart';
 
@@ -343,6 +346,38 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          _buildSection(
+            title: l.secureWidgetSectionTitle,
+            subtitle: l.secureWidgetSubtitle,
+            children: [
+              _FeatureButton(
+                label: l.openSecureWidgetDemo,
+                subtitle: l.secureWidgetDemoSubtitle,
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const _SecureWidgetDemoPage(),
+                  ));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            title: l.perRouteSectionTitle,
+            subtitle: l.perRouteSubtitle,
+            children: [
+              _FeatureButton(
+                label: l.openPerRouteDemo,
+                subtitle: l.perRouteDemoSubtitle,
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const _PerRouteDemoHub(),
+                  ));
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -500,6 +535,176 @@ class _SnapshotInfo extends StatelessWidget {
                   color: snapshot.isScreenRecording ? Colors.red : null)),
           Text('${l.path}: ${snapshot.screenshotPath}', style: style),
         ],
+      ),
+    );
+  }
+}
+
+// ── SecureWidget Demo ─────────────────────────────────────────────────
+
+class _SecureWidgetDemoPage extends StatelessWidget {
+  const _SecureWidgetDemoPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return SecureWidget(
+      mode: OverlayMode.blur,
+      blurRadius: 30.0,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.secureWidgetDemoTitle)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l.secureWidgetDemoBody,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Per-Route Demo ────────────────────────────────────────────────────
+
+final _secureNavigatorObserver = SecureNavigatorObserver(
+  policies: {
+    '/payment': const SecureRouteConfig(mode: OverlayMode.secure),
+    '/profile':
+        const SecureRouteConfig(mode: OverlayMode.blur, blurRadius: 50.0),
+    '/public': const SecureRouteConfig(mode: OverlayMode.none),
+  },
+  defaultConfig: const SecureRouteConfig(mode: OverlayMode.none),
+);
+
+class _PerRouteDemoHub extends StatelessWidget {
+  const _PerRouteDemoHub();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Navigator(
+      observers: [_secureNavigatorObserver],
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/payment':
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => _DemoRoutePage(
+                title: l.paymentPage,
+                body: l.paymentPageBody,
+                color: Colors.red.shade50,
+              ),
+            );
+          case '/profile':
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => _DemoRoutePage(
+                title: l.profilePage,
+                body: l.profilePageBody,
+                color: Colors.blue.shade50,
+              ),
+            );
+          case '/public':
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => _DemoRoutePage(
+                title: l.publicPage,
+                body: l.publicPageBody,
+                color: Colors.green.shade50,
+              ),
+            );
+          default:
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => _PerRouteMainPage(),
+            );
+        }
+      },
+    );
+  }
+}
+
+class _PerRouteMainPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l.perRouteSectionTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _FeatureButton(
+            label: l.goToPayment,
+            subtitle: 'OverlayMode.secure',
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/payment'),
+          ),
+          const SizedBox(height: 8),
+          _FeatureButton(
+            label: l.goToProfile,
+            subtitle: 'OverlayMode.blur (radius: 50)',
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/profile'),
+          ),
+          const SizedBox(height: 8),
+          _FeatureButton(
+            label: l.goToPublic,
+            subtitle: 'OverlayMode.none',
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/public'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DemoRoutePage extends StatelessWidget {
+  const _DemoRoutePage({
+    required this.title,
+    required this.body,
+    required this.color,
+  });
+
+  final String title;
+  final String body;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      backgroundColor: color,
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l.back),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

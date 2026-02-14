@@ -223,6 +223,17 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         case "toggleScreenshot":
             IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
             result(true)
+        case "screenshotWithImage":
+            enableImageOverlay()
+            result(true)
+        case "screenshotWithBlur":
+            let radius = (call.arguments as? [String: Any])?["radius"] as? Double ?? 30.0
+            enableBlurOverlay(radius: radius)
+            result(true)
+        case "screenshotWithColor":
+            let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
+            enableColorOverlay(color: color)
+            result(true)
         case "startScreenshotListening":
             startListening()
             result("Listening started")
@@ -356,6 +367,55 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
         persistState()
         return isColorOverlayModeEnabled
+    }
+
+    // MARK: - Idempotent enable methods (always-on, no toggle)
+
+    private func enableImageOverlay() {
+        isImageOverlayModeEnabled = true
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            disableBlurScreen()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            disableColorScreen()
+        }
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
+        enablePreventScreenshot()
+        persistState()
+    }
+
+    private func enableBlurOverlay(radius: Double) {
+        isBlurOverlayModeEnabled = true
+        blurRadius = radius
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            disableImageScreen()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            disableColorScreen()
+        }
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
+        enablePreventScreenshot()
+        persistState()
+    }
+
+    private func enableColorOverlay(color: Int) {
+        isColorOverlayModeEnabled = true
+        colorValue = color
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            disableImageScreen()
+        }
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            disableBlurScreen()
+        }
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
+        enablePreventScreenshot()
+        persistState()
     }
 
     private func enableColorScreen(color: Int) {
