@@ -314,8 +314,7 @@ void main() {
         return null;
       });
 
-      final result =
-          await platform.screenshotWithColor(color: 0xFFFF0000);
+      final result = await platform.screenshotWithColor(color: 0xFFFF0000);
       expect(result, expected);
     });
 
