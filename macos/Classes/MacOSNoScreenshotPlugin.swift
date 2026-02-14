@@ -561,7 +561,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             return
         }
         isScreenCaptureUIRunning = true
-        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder, timestamp: nowMs, sourceApp: "screencaptureui")
     }
 
     @objc private func workspaceDidTerminateApplication(_ notification: Notification) {
@@ -593,7 +594,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         let imageTypes: [NSPasteboard.PasteboardType] = [.tiff, .png]
         guard pasteboard.availableType(from: imageTypes) != nil else { return }
 
-        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        updateSharedPreferencesState(MacOSNoScreenshotPlugin.screenshotPathPlaceholder, timestamp: nowMs, sourceApp: "screencaptureui")
     }
 
     @objc private func metadataQueryDidFinishGathering(_ notification: Notification) {
@@ -614,7 +616,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
             let path = (item.value(forAttribute: kMDItemPath as String) as? String) ?? MacOSNoScreenshotPlugin.screenshotPathPlaceholder
             lastScreenshotDate = creationDate
-            updateSharedPreferencesState(path)
+            let timestampMs = Int64(creationDate.timeIntervalSince1970 * 1000)
+            let creator = (item.value(forAttribute: kMDItemCreator as String) as? String) ?? ""
+            updateSharedPreferencesState(path, timestamp: timestampMs, sourceApp: creator)
         }
     }
 
@@ -671,17 +675,21 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
     @objc private func checkForRecordingProcesses() {
         let apps = NSWorkspace.shared.runningApplications
+        var detectedAppName: String = ""
         let detected = apps.contains { app in
             if let bundleID = app.bundleIdentifier,
                MacOSNoScreenshotPlugin.knownRecordingBundleIDs.contains(bundleID) {
+                detectedAppName = app.localizedName ?? bundleID
                 return true
             }
             if let name = app.localizedName?.lowercased(),
                MacOSNoScreenshotPlugin.knownRecordingProcessNames.contains(name) {
+                detectedAppName = app.localizedName ?? name
                 return true
             }
             if let execName = app.executableURL?.lastPathComponent.lowercased(),
                MacOSNoScreenshotPlugin.knownRecordingProcessNames.contains(execName) {
+                detectedAppName = app.localizedName ?? execName
                 return true
             }
             return false
@@ -689,7 +697,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
         if detected != isScreenRecording {
             isScreenRecording = detected
-            updateSharedPreferencesState("")
+            let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+            updateSharedPreferencesState("", timestamp: nowMs, sourceApp: detected ? detectedAppName : "")
         }
     }
 
@@ -714,7 +723,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         print("Updated screenshot state to \(isScreenshotBlocked ? "Blocked" : "Unblocked")")
     }
 
-    private func updateSharedPreferencesState(_ screenshotData: String) {
+    private func updateSharedPreferencesState(_ screenshotData: String, timestamp: Int64 = 0, sourceApp: String = "") {
         // Debounce: suppress duplicate screenshot detection events within 2 seconds,
         // unless the new event carries a real file path (NSMetadataQuery upgrade).
         // Non-detection calls (empty screenshotData from persistState) are never debounced.
@@ -731,7 +740,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             "is_screenshot_on": MacOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
             "was_screenshot_taken": !screenshotData.isEmpty,
-            "is_screen_recording": isScreenRecording
+            "is_screen_recording": isScreenRecording,
+            "timestamp": timestamp,
+            "source_app": sourceApp
         ]
         let jsonString = convertMapToJsonString(map)
         if lastSharedPreferencesState != jsonString {

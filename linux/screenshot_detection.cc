@@ -43,6 +43,31 @@ static gboolean is_screenshot_filename(const gchar* basename) {
   return FALSE;
 }
 
+static const gchar* infer_source_app(const gchar* basename) {
+  if (g_str_has_prefix(basename, "Screenshot") ||
+      g_str_has_prefix(basename, "screenshot")) {
+    return "GNOME Screenshot";
+  }
+  if (g_str_has_prefix(basename, "Spectacle") ||
+      g_str_has_prefix(basename, "spectacle")) {
+    return "KDE Spectacle";
+  }
+  if (g_str_has_prefix(basename, "flameshot") ||
+      g_str_has_prefix(basename, "Flameshot")) {
+    return "Flameshot";
+  }
+  if (g_str_has_prefix(basename, "scrot")) {
+    return "scrot";
+  }
+  if (g_str_has_prefix(basename, "shutter")) {
+    return "Shutter";
+  }
+  if (g_str_has_prefix(basename, "maim")) {
+    return "maim";
+  }
+  return "";
+}
+
 static void on_file_changed(GFileMonitor* monitor,
                             GFile* file,
                             GFile* other_file,
@@ -63,7 +88,24 @@ static void on_file_changed(GFileMonitor* monitor,
 
   g_autofree gchar* path = g_file_get_path(file);
   if (path != NULL && self->callback != NULL) {
-    self->callback(path, self->user_data);
+    // Get file modification time as best approximation of creation time.
+    gint64 timestamp_ms = 0;
+    g_autoptr(GError) error = NULL;
+    g_autoptr(GFileInfo) info = g_file_query_info(
+        file, G_FILE_ATTRIBUTE_TIME_MODIFIED, G_FILE_QUERY_INFO_NONE, NULL,
+        &error);
+    if (info != NULL) {
+      guint64 mtime = g_file_info_get_attribute_uint64(
+          info, G_FILE_ATTRIBUTE_TIME_MODIFIED);
+      timestamp_ms = (gint64)mtime * 1000;
+    }
+    if (timestamp_ms <= 0) {
+      // Fallback to wall clock.
+      timestamp_ms = g_get_real_time() / 1000;
+    }
+
+    const gchar* source_app = infer_source_app(basename);
+    self->callback(path, timestamp_ms, source_app, self->user_data);
   }
 }
 

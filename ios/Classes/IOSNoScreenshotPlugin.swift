@@ -489,12 +489,14 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         if #available(iOS 11.0, *) {
             isScreenRecording = UIScreen.main.isCaptured
         }
-        updateSharedPreferencesState("")
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        updateSharedPreferencesState("", timestamp: nowMs)
     }
 
     @objc private func screenshotDetected() {
         print("Screenshot detected")
-        updateSharedPreferencesState(IOSNoScreenshotPlugin.screenshotPathPlaceholder)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        updateSharedPreferencesState(IOSNoScreenshotPlugin.screenshotPathPlaceholder, timestamp: nowMs)
     }
 
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
@@ -506,12 +508,14 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
     }
 
-    private func updateSharedPreferencesState(_ screenshotData: String) {
+    private func updateSharedPreferencesState(_ screenshotData: String, timestamp: Int64 = 0, sourceApp: String = "") {
         let map: [String: Any] = [
             "is_screenshot_on": IOSNoScreenshotPlugin.preventScreenShot,
             "screenshot_path": screenshotData,
             "was_screenshot_taken": !screenshotData.isEmpty,
-            "is_screen_recording": isScreenRecording
+            "is_screen_recording": isScreenRecording,
+            "timestamp": timestamp,
+            "source_app": sourceApp
         ]
         let jsonString = convertMapToJsonString(map)
         if lastSharedPreferencesState != jsonString {
