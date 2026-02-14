@@ -31,7 +31,7 @@ struct _NoScreenshotPlugin {
   gchar* last_event_json;
   gboolean has_pending_event;
   guint stream_timer_id;
-  FlEventSink* event_sink;
+  gboolean stream_active;
 
   // Recording detection
   gboolean is_recording_listening;
