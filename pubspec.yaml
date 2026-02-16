@@ -1,8 +1,15 @@
 name: no_screenshot
 description: Flutter plugin to prevent screenshots, detect screen recording, and show blur/color/image overlays in the app switcher on Android, iOS, macOS, Linux, Windows, and Web.
-version: 0.9.0
+version: 0.9.1
 homepage: https://flutterplaza.com
 repository: https://github.com/FlutterPlaza/no_screenshot
+
+topics:
+  - screenshot
+  - security
+  - privacy
+  - screen-capture
+  - app-switcher
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
