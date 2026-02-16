@@ -1,3 +1,7 @@
+## 0.9.1
+
+- chore: add pub.dev topics to pubspec.yaml.
+
 ## 0.9.0
 
 - feat(ios, macos): added Swift Package Manager support — `Package.swift` for both iOS and macOS, with CocoaPods backward compatibility by @fonkamloic.
