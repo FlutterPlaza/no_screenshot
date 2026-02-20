@@ -25,11 +25,11 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenShotOnConst) {
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenShotOnConst) {
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotOn();
       expect(result, expected);
@@ -39,11 +39,11 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenShotOffConst) {
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenShotOffConst) {
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotOff();
       expect(result, expected);
@@ -53,11 +53,11 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == toggleScreenShotConst) {
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == toggleScreenShotConst) {
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.toggleScreenshot();
       expect(result, expected);
@@ -66,11 +66,11 @@ void main() {
     test('startScreenshotListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == startScreenshotListeningConst) {
-          return null;
-        }
-        return null;
-      });
+            if (methodCall.method == startScreenshotListeningConst) {
+              return null;
+            }
+            return null;
+          });
 
       await platform.startScreenshotListening();
       expect(true, true); // Add more specific expectations if needed
@@ -79,11 +79,11 @@ void main() {
     test('stopScreenshotListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == stopScreenshotListeningConst) {
-          return null;
-        }
-        return null;
-      });
+            if (methodCall.method == stopScreenshotListeningConst) {
+              return null;
+            }
+            return null;
+          });
 
       await platform.stopScreenshotListening();
       expect(true, true); // Add more specific expectations if needed
@@ -93,11 +93,11 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenSetImage) {
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenSetImage) {
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.toggleScreenshotWithImage();
       expect(result, expected);
@@ -107,12 +107,12 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenSetBlur) {
-          expect(methodCall.arguments, {'radius': 30.0});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenSetBlur) {
+              expect(methodCall.arguments, {'radius': 30.0});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.toggleScreenshotWithBlur();
       expect(result, expected);
@@ -122,38 +122,40 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenSetBlur) {
-          expect(methodCall.arguments, {'radius': 50.0});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenSetBlur) {
+              expect(methodCall.arguments, {'radius': 50.0});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.toggleScreenshotWithBlur(blurRadius: 50.0);
       expect(result, expected);
     });
 
-    test('toggleScreenshotWithBlur returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'toggleScreenshotWithBlur returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.toggleScreenshotWithBlur();
-      expect(result, false);
-    });
+        final result = await platform.toggleScreenshotWithBlur();
+        expect(result, false);
+      },
+    );
 
     test('toggleScreenshotWithColor', () async {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenSetColor) {
-          expect(methodCall.arguments, {'color': 0xFF000000});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenSetColor) {
+              expect(methodCall.arguments, {'color': 0xFF000000});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.toggleScreenshotWithColor();
       expect(result, expected);
@@ -163,45 +165,50 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenSetColor) {
-          expect(methodCall.arguments, {'color': 0xFFFF0000});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenSetColor) {
+              expect(methodCall.arguments, {'color': 0xFFFF0000});
+              return expected;
+            }
+            return null;
+          });
 
-      final result =
-          await platform.toggleScreenshotWithColor(color: 0xFFFF0000);
+      final result = await platform.toggleScreenshotWithColor(
+        color: 0xFFFF0000,
+      );
       expect(result, expected);
     });
 
-    test('toggleScreenshotWithColor returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'toggleScreenshotWithColor returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.toggleScreenshotWithColor();
-      expect(result, false);
-    });
+        final result = await platform.toggleScreenshotWithColor();
+        expect(result, false);
+      },
+    );
 
-    test('toggleScreenshotWithImage returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'toggleScreenshotWithImage returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.toggleScreenshotWithImage();
-      expect(result, false);
-    });
+        final result = await platform.toggleScreenshotWithImage();
+        expect(result, false);
+      },
+    );
 
     test('screenshotOn returns false when channel returns null', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+            return null;
+          });
 
       final result = await platform.screenshotOn();
       expect(result, false);
@@ -210,8 +217,8 @@ void main() {
     test('screenshotOff returns false when channel returns null', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+            return null;
+          });
 
       final result = await platform.screenshotOff();
       expect(result, false);
@@ -220,8 +227,8 @@ void main() {
     test('toggleScreenshot returns false when channel returns null', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+            return null;
+          });
 
       final result = await platform.toggleScreenshot();
       expect(result, false);
@@ -231,37 +238,39 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenEnableImage) {
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenEnableImage) {
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotWithImage();
       expect(result, expected);
     });
 
-    test('screenshotWithImage returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'screenshotWithImage returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.screenshotWithImage();
-      expect(result, false);
-    });
+        final result = await platform.screenshotWithImage();
+        expect(result, false);
+      },
+    );
 
     test('screenshotWithBlur', () async {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenEnableBlur) {
-          expect(methodCall.arguments, {'radius': 30.0});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenEnableBlur) {
+              expect(methodCall.arguments, {'radius': 30.0});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotWithBlur();
       expect(result, expected);
@@ -271,38 +280,40 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenEnableBlur) {
-          expect(methodCall.arguments, {'radius': 50.0});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenEnableBlur) {
+              expect(methodCall.arguments, {'radius': 50.0});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotWithBlur(blurRadius: 50.0);
       expect(result, expected);
     });
 
-    test('screenshotWithBlur returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'screenshotWithBlur returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.screenshotWithBlur();
-      expect(result, false);
-    });
+        final result = await platform.screenshotWithBlur();
+        expect(result, false);
+      },
+    );
 
     test('screenshotWithColor', () async {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenEnableColor) {
-          expect(methodCall.arguments, {'color': 0xFF000000});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenEnableColor) {
+              expect(methodCall.arguments, {'color': 0xFF000000});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotWithColor();
       expect(result, expected);
@@ -312,36 +323,38 @@ void main() {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == screenEnableColor) {
-          expect(methodCall.arguments, {'color': 0xFFFF0000});
-          return expected;
-        }
-        return null;
-      });
+            if (methodCall.method == screenEnableColor) {
+              expect(methodCall.arguments, {'color': 0xFFFF0000});
+              return expected;
+            }
+            return null;
+          });
 
       final result = await platform.screenshotWithColor(color: 0xFFFF0000);
       expect(result, expected);
     });
 
-    test('screenshotWithColor returns false when channel returns null',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return null;
-      });
+    test(
+      'screenshotWithColor returns false when channel returns null',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              return null;
+            });
 
-      final result = await platform.screenshotWithColor();
-      expect(result, false);
-    });
+        final result = await platform.screenshotWithColor();
+        expect(result, false);
+      },
+    );
 
     test('startScreenRecordingListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == startScreenRecordingListeningConst) {
-          return null;
-        }
-        return null;
-      });
+            if (methodCall.method == startScreenRecordingListeningConst) {
+              return null;
+            }
+            return null;
+          });
 
       await platform.startScreenRecordingListening();
       expect(true, true);
@@ -350,43 +363,48 @@ void main() {
     test('stopScreenRecordingListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == stopScreenRecordingListeningConst) {
-          return null;
-        }
-        return null;
-      });
+            if (methodCall.method == stopScreenRecordingListeningConst) {
+              return null;
+            }
+            return null;
+          });
 
       await platform.stopScreenRecordingListening();
       expect(true, true);
     });
 
-    test('screenshotStream returns a stream that emits ScreenshotSnapshot',
-        () async {
-      final snapshotMap = {
-        'screenshot_path': '/test/path',
-        'is_screenshot_on': true,
-        'was_screenshot_taken': true,
-        'is_screen_recording': false,
-        'timestamp': 0,
-        'source_app': '',
-      };
-      final encoded = jsonEncode(snapshotMap);
+    test(
+      'screenshotStream returns a stream that emits ScreenshotSnapshot',
+      () async {
+        final snapshotMap = {
+          'screenshot_path': '/test/path',
+          'is_screenshot_on': true,
+          'was_screenshot_taken': true,
+          'is_screen_recording': false,
+          'timestamp': 0,
+          'source_app': '',
+        };
+        final encoded = jsonEncode(snapshotMap);
 
-      // Mock the event channel by handling the underlying method channel
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockStreamHandler(platform.eventChannel, MockStreamHandler.inline(
-        onListen: (arguments, events) {
-          events.success(encoded);
-        },
-      ));
+        // Mock the event channel by handling the underlying method channel
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockStreamHandler(
+              platform.eventChannel,
+              MockStreamHandler.inline(
+                onListen: (arguments, events) {
+                  events.success(encoded);
+                },
+              ),
+            );
 
-      final stream = platform.screenshotStream;
-      final snapshot = await stream.first;
+        final stream = platform.screenshotStream;
+        final snapshot = await stream.first;
 
-      expect(snapshot.screenshotPath, '/test/path');
-      expect(snapshot.isScreenshotProtectionOn, true);
-      expect(snapshot.wasScreenshotTaken, true);
-    });
+        expect(snapshot.screenshotPath, '/test/path');
+        expect(snapshot.isScreenshotProtectionOn, true);
+        expect(snapshot.wasScreenshotTaken, true);
+      },
+    );
 
     test('screenshotStream caches and returns the same stream instance', () {
       final stream1 = platform.screenshotStream;
@@ -617,8 +635,10 @@ void main() {
         wasScreenshotTaken: true,
       );
       final string = snapshot.toString();
-      expect(string,
-          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: false, \ntimestamp: 0, \nsourceApp: \n)');
+      expect(
+        string,
+        'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: false, \ntimestamp: 0, \nsourceApp: \n)',
+      );
     });
 
     test('toString with isScreenRecording true', () {
@@ -629,8 +649,10 @@ void main() {
         isScreenRecording: true,
       );
       final string = snapshot.toString();
-      expect(string,
-          'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: true, \ntimestamp: 0, \nsourceApp: \n)');
+      expect(
+        string,
+        'ScreenshotSnapshot(\nscreenshotPath: /example/path, \nisScreenshotProtectionOn: true, \nwasScreenshotTaken: true, \nisScreenRecording: true, \ntimestamp: 0, \nsourceApp: \n)',
+      );
     });
 
     test('toString with metadata', () {
@@ -666,38 +688,46 @@ void main() {
       controller.close();
     });
 
-    test('onScreenshotDetected fires when wasScreenshotTaken is true',
-        () async {
-      final detected = <ScreenshotSnapshot>[];
-      noScreenshot.onScreenshotDetected = detected.add;
-      noScreenshot.startCallbacks();
+    test(
+      'onScreenshotDetected fires when wasScreenshotTaken is true',
+      () async {
+        final detected = <ScreenshotSnapshot>[];
+        noScreenshot.onScreenshotDetected = detected.add;
+        noScreenshot.startCallbacks();
 
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '/path',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: true,
-      ));
-      await Future.delayed(Duration.zero);
+        controller.add(
+          ScreenshotSnapshot(
+            screenshotPath: '/path',
+            isScreenshotProtectionOn: true,
+            wasScreenshotTaken: true,
+          ),
+        );
+        await Future.delayed(Duration.zero);
 
-      expect(detected, hasLength(1));
-      expect(detected.first.wasScreenshotTaken, true);
-    });
+        expect(detected, hasLength(1));
+        expect(detected.first.wasScreenshotTaken, true);
+      },
+    );
 
-    test('onScreenshotDetected does NOT fire when wasScreenshotTaken is false',
-        () async {
-      final detected = <ScreenshotSnapshot>[];
-      noScreenshot.onScreenshotDetected = detected.add;
-      noScreenshot.startCallbacks();
+    test(
+      'onScreenshotDetected does NOT fire when wasScreenshotTaken is false',
+      () async {
+        final detected = <ScreenshotSnapshot>[];
+        noScreenshot.onScreenshotDetected = detected.add;
+        noScreenshot.startCallbacks();
 
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: false,
-      ));
-      await Future.delayed(Duration.zero);
+        controller.add(
+          ScreenshotSnapshot(
+            screenshotPath: '',
+            isScreenshotProtectionOn: true,
+            wasScreenshotTaken: false,
+          ),
+        );
+        await Future.delayed(Duration.zero);
 
-      expect(detected, isEmpty);
-    });
+        expect(detected, isEmpty);
+      },
+    );
 
     test('onScreenRecordingStarted fires on false→true transition', () async {
       final started = <ScreenshotSnapshot>[];
@@ -705,12 +735,14 @@ void main() {
       noScreenshot.startCallbacks();
 
       // Initial state: not recording → recording starts
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: false,
-        isScreenRecording: true,
-      ));
+      controller.add(
+        ScreenshotSnapshot(
+          screenshotPath: '',
+          isScreenshotProtectionOn: true,
+          wasScreenshotTaken: false,
+          isScreenRecording: true,
+        ),
+      );
       await Future.delayed(Duration.zero);
 
       expect(started, hasLength(1));
@@ -723,50 +755,58 @@ void main() {
       noScreenshot.startCallbacks();
 
       // First: recording starts
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: false,
-        isScreenRecording: true,
-      ));
+      controller.add(
+        ScreenshotSnapshot(
+          screenshotPath: '',
+          isScreenshotProtectionOn: true,
+          wasScreenshotTaken: false,
+          isScreenRecording: true,
+        ),
+      );
       await Future.delayed(Duration.zero);
 
       // Then: recording stops
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: false,
-        isScreenRecording: false,
-      ));
+      controller.add(
+        ScreenshotSnapshot(
+          screenshotPath: '',
+          isScreenshotProtectionOn: true,
+          wasScreenshotTaken: false,
+          isScreenRecording: false,
+        ),
+      );
       await Future.delayed(Duration.zero);
 
       expect(stopped, hasLength(1));
       expect(stopped.first.isScreenRecording, false);
     });
 
-    test('removeAllCallbacks clears all callbacks and stops subscription',
-        () async {
-      final detected = <ScreenshotSnapshot>[];
-      noScreenshot.onScreenshotDetected = detected.add;
-      noScreenshot.startCallbacks();
-      expect(noScreenshot.hasActiveCallbacks, true);
+    test(
+      'removeAllCallbacks clears all callbacks and stops subscription',
+      () async {
+        final detected = <ScreenshotSnapshot>[];
+        noScreenshot.onScreenshotDetected = detected.add;
+        noScreenshot.startCallbacks();
+        expect(noScreenshot.hasActiveCallbacks, true);
 
-      noScreenshot.removeAllCallbacks();
-      expect(noScreenshot.hasActiveCallbacks, false);
-      expect(noScreenshot.onScreenshotDetected, isNull);
-      expect(noScreenshot.onScreenRecordingStarted, isNull);
-      expect(noScreenshot.onScreenRecordingStopped, isNull);
+        noScreenshot.removeAllCallbacks();
+        expect(noScreenshot.hasActiveCallbacks, false);
+        expect(noScreenshot.onScreenshotDetected, isNull);
+        expect(noScreenshot.onScreenRecordingStarted, isNull);
+        expect(noScreenshot.onScreenRecordingStopped, isNull);
 
-      // Events after removal should not fire
-      controller.add(ScreenshotSnapshot(
-        screenshotPath: '/path',
-        isScreenshotProtectionOn: true,
-        wasScreenshotTaken: true,
-      ));
-      await Future.delayed(Duration.zero);
+        // Events after removal should not fire
+        controller.add(
+          ScreenshotSnapshot(
+            screenshotPath: '/path',
+            isScreenshotProtectionOn: true,
+            wasScreenshotTaken: true,
+          ),
+        );
+        await Future.delayed(Duration.zero);
 
-      expect(detected, isEmpty);
-    });
+        expect(detected, isEmpty);
+      },
+    );
 
     test('hasActiveCallbacks reflects subscription state', () {
       expect(noScreenshot.hasActiveCallbacks, false);

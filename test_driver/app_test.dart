@@ -16,17 +16,17 @@ void main() {
     // Updated deprecated method usage
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      switch (methodCall.method) {
-        case screenShotOffConst:
-          return true;
-        case screenShotOnConst:
-          return true;
-        case toggleScreenShotConst:
-          return true;
-        default:
-          return false;
-      }
-    });
+          switch (methodCall.method) {
+            case screenShotOffConst:
+              return true;
+            case screenShotOnConst:
+              return true;
+            case toggleScreenShotConst:
+              return true;
+            default:
+              return false;
+          }
+        });
   });
 
   group("Testing screenshot off", () {
