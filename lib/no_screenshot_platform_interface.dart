@@ -43,17 +43,20 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// throw `UnmimplementedError` if not implement
   Future<bool> toggleScreenshotWithImage() {
     throw UnimplementedError(
-        'toggleScreenshotWithImage() has not been implemented.');
+      'toggleScreenshotWithImage() has not been implemented.',
+    );
   }
 
   Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) {
     throw UnimplementedError(
-        'toggleScreenshotWithBlur() has not been implemented.');
+      'toggleScreenshotWithBlur() has not been implemented.',
+    );
   }
 
   Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) {
     throw UnimplementedError(
-        'toggleScreenshotWithColor() has not been implemented.');
+      'toggleScreenshotWithColor() has not been implemented.',
+    );
   }
 
   /// Always enables image overlay mode (idempotent — safe to call repeatedly).
@@ -87,27 +90,31 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
     throw UnimplementedError('incrementStream has not been implemented.');
   }
 
-// Start listening to screenshot activities
+  // Start listening to screenshot activities
   Future<void> startScreenshotListening() {
     throw UnimplementedError(
-        'startScreenshotListening has not been implemented.');
+      'startScreenshotListening has not been implemented.',
+    );
   }
 
   /// Stop listening to screenshot activities
   Future<void> stopScreenshotListening() {
     throw UnimplementedError(
-        'stopScreenshotListening has not been implemented.');
+      'stopScreenshotListening has not been implemented.',
+    );
   }
 
   /// Start listening to screen recording activities
   Future<void> startScreenRecordingListening() {
     throw UnimplementedError(
-        'startScreenRecordingListening has not been implemented.');
+      'startScreenRecordingListening has not been implemented.',
+    );
   }
 
   /// Stop listening to screen recording activities
   Future<void> stopScreenRecordingListening() {
     throw UnimplementedError(
-        'stopScreenRecordingListening has not been implemented.');
+      'stopScreenRecordingListening has not been implemented.',
+    );
   }
 }

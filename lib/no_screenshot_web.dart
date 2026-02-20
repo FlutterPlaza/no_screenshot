@@ -138,11 +138,13 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
   }
 
   void _emitState({bool wasScreenshotTaken = false}) {
-    _controller.add(ScreenshotSnapshot(
-      screenshotPath: '',
-      isScreenshotProtectionOn: _isProtectionOn,
-      wasScreenshotTaken: wasScreenshotTaken,
-    ));
+    _controller.add(
+      ScreenshotSnapshot(
+        screenshotPath: '',
+        isScreenshotProtectionOn: _isProtectionOn,
+        wasScreenshotTaken: wasScreenshotTaken,
+      ),
+    );
   }
 
   // ── Context menu blocker ───────────────────────────────────────────

@@ -19,15 +19,18 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
 
   @override
   Stream<ScreenshotSnapshot> get screenshotStream {
-    _cachedStream ??= eventChannel.receiveBroadcastStream().map((event) =>
-        ScreenshotSnapshot.fromMap(jsonDecode(event) as Map<String, dynamic>));
+    _cachedStream ??= eventChannel.receiveBroadcastStream().map(
+      (event) =>
+          ScreenshotSnapshot.fromMap(jsonDecode(event) as Map<String, dynamic>),
+    );
     return _cachedStream!;
   }
 
   @override
   Future<bool> toggleScreenshot() async {
-    final result =
-        await methodChannel.invokeMethod<bool>(toggleScreenShotConst);
+    final result = await methodChannel.invokeMethod<bool>(
+      toggleScreenShotConst,
+    );
     return result ?? false;
   }
 
@@ -51,15 +54,17 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
 
   @override
   Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
-    final result = await methodChannel
-        .invokeMethod<bool>(screenSetBlur, {'radius': blurRadius});
+    final result = await methodChannel.invokeMethod<bool>(screenSetBlur, {
+      'radius': blurRadius,
+    });
     return result ?? false;
   }
 
   @override
   Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
-    final result = await methodChannel
-        .invokeMethod<bool>(screenSetColor, {'color': color});
+    final result = await methodChannel.invokeMethod<bool>(screenSetColor, {
+      'color': color,
+    });
     return result ?? false;
   }
 
@@ -71,15 +76,17 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
 
   @override
   Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
-    final result = await methodChannel
-        .invokeMethod<bool>(screenEnableBlur, {'radius': blurRadius});
+    final result = await methodChannel.invokeMethod<bool>(screenEnableBlur, {
+      'radius': blurRadius,
+    });
     return result ?? false;
   }
 
   @override
   Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
-    final result = await methodChannel
-        .invokeMethod<bool>(screenEnableColor, {'color': color});
+    final result = await methodChannel.invokeMethod<bool>(screenEnableColor, {
+      'color': color,
+    });
     return result ?? false;
   }
 

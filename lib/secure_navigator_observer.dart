@@ -73,7 +73,10 @@ class SecureNavigatorObserver extends NavigatorObserver {
   void _applyPolicyForRoute(Route<dynamic>? route) {
     final name = route?.settings.name;
     final config = (name != null ? policies[name] : null) ?? defaultConfig;
-    applyOverlayMode(config.mode,
-        blurRadius: config.blurRadius, color: config.color);
+    applyOverlayMode(
+      config.mode,
+      blurRadius: config.blurRadius,
+      color: config.color,
+    );
   }
 }

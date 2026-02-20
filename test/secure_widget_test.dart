@@ -85,15 +85,14 @@ void main() {
   });
 
   testWidgets('default mode is OverlayMode.secure', (tester) async {
-    await tester.pumpWidget(
-      const SecureWidget(child: SizedBox()),
-    );
+    await tester.pumpWidget(const SecureWidget(child: SizedBox()));
     await tester.pump();
     expect(fakePlatform.calls, contains('screenshotOff'));
   });
 
-  testWidgets('initState calls screenshotOff for OverlayMode.secure',
-      (tester) async {
+  testWidgets('initState calls screenshotOff for OverlayMode.secure', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
     );
@@ -101,8 +100,9 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotOff'));
   });
 
-  testWidgets('initState calls screenshotWithBlur for OverlayMode.blur',
-      (tester) async {
+  testWidgets('initState calls screenshotWithBlur for OverlayMode.blur', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.blur, child: SizedBox()),
     );
@@ -110,8 +110,9 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithBlur(30.0)'));
   });
 
-  testWidgets('initState calls screenshotWithColor for OverlayMode.color',
-      (tester) async {
+  testWidgets('initState calls screenshotWithColor for OverlayMode.color', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.color, child: SizedBox()),
     );
@@ -119,8 +120,9 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithColor(4278190080)'));
   });
 
-  testWidgets('initState calls screenshotWithImage for OverlayMode.image',
-      (tester) async {
+  testWidgets('initState calls screenshotWithImage for OverlayMode.image', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.image, child: SizedBox()),
     );
@@ -128,8 +130,9 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithImage'));
   });
 
-  testWidgets('initState calls screenshotOn for OverlayMode.none',
-      (tester) async {
+  testWidgets('initState calls screenshotOn for OverlayMode.none', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.none, child: SizedBox()),
     );
@@ -138,9 +141,7 @@ void main() {
   });
 
   testWidgets('dispose calls screenshotOn', (tester) async {
-    await tester.pumpWidget(
-      const SecureWidget(child: SizedBox()),
-    );
+    await tester.pumpWidget(const SecureWidget(child: SizedBox()));
     await tester.pump();
     fakePlatform.calls.clear();
 
@@ -164,18 +165,25 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithBlur(30.0)'));
   });
 
-  testWidgets('didUpdateWidget re-applies when blurRadius changes',
-      (tester) async {
+  testWidgets('didUpdateWidget re-applies when blurRadius changes', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(
-          mode: OverlayMode.blur, blurRadius: 30.0, child: SizedBox()),
+        mode: OverlayMode.blur,
+        blurRadius: 30.0,
+        child: SizedBox(),
+      ),
     );
     await tester.pump();
     fakePlatform.calls.clear();
 
     await tester.pumpWidget(
       const SecureWidget(
-          mode: OverlayMode.blur, blurRadius: 50.0, child: SizedBox()),
+        mode: OverlayMode.blur,
+        blurRadius: 50.0,
+        child: SizedBox(),
+      ),
     );
     await tester.pump();
     expect(fakePlatform.calls, contains('screenshotWithBlur(50.0)'));
@@ -190,14 +198,18 @@ void main() {
 
     await tester.pumpWidget(
       const SecureWidget(
-          mode: OverlayMode.color, color: 0xFFFF0000, child: SizedBox()),
+        mode: OverlayMode.color,
+        color: 0xFFFF0000,
+        child: SizedBox(),
+      ),
     );
     await tester.pump();
     expect(fakePlatform.calls, contains('screenshotWithColor(4294901760)'));
   });
 
-  testWidgets('didUpdateWidget does not re-apply when nothing changes',
-      (tester) async {
+  testWidgets('didUpdateWidget does not re-apply when nothing changes', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
     );

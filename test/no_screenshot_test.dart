@@ -115,8 +115,10 @@ void main() {
   });
 
   test('screenshotStream', () async {
-    expect(NoScreenshot.instance.screenshotStream,
-        isInstanceOf<Stream<ScreenshotSnapshot>>());
+    expect(
+      NoScreenshot.instance.screenshotStream,
+      isInstanceOf<Stream<ScreenshotSnapshot>>(),
+    );
   });
   test('startScreenshotListening', () async {
     expect(NoScreenshot.instance.startScreenshotListening(), completes);
@@ -136,8 +138,9 @@ void main() {
 
   test('toggleScreenshotWithBlur with custom radius', () async {
     expect(
-        await NoScreenshot.instance.toggleScreenshotWithBlur(blurRadius: 50.0),
-        true);
+      await NoScreenshot.instance.toggleScreenshotWithBlur(blurRadius: 50.0),
+      true,
+    );
   });
 
   test('toggleScreenshotWithColor', () async {
@@ -146,9 +149,9 @@ void main() {
 
   test('toggleScreenshotWithColor with custom color', () async {
     expect(
-        await NoScreenshot.instance
-            .toggleScreenshotWithColor(color: 0xFFFF0000),
-        true);
+      await NoScreenshot.instance.toggleScreenshotWithColor(color: 0xFFFF0000),
+      true,
+    );
   });
 
   test('screenshotWithImage', () async {
@@ -161,7 +164,9 @@ void main() {
 
   test('screenshotWithBlur with custom radius', () async {
     expect(
-        await NoScreenshot.instance.screenshotWithBlur(blurRadius: 50.0), true);
+      await NoScreenshot.instance.screenshotWithBlur(blurRadius: 50.0),
+      true,
+    );
   });
 
   test('screenshotWithColor', () async {
@@ -169,8 +174,10 @@ void main() {
   });
 
   test('screenshotWithColor with custom color', () async {
-    expect(await NoScreenshot.instance.screenshotWithColor(color: 0xFFFF0000),
-        true);
+    expect(
+      await NoScreenshot.instance.screenshotWithColor(color: 0xFFFF0000),
+      true,
+    );
   });
 
   test('NoScreenshot equality operator', () {

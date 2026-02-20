@@ -132,9 +132,7 @@ void main() {
 
     test('didPop applies policy for previous route', () async {
       final observer = SecureNavigatorObserver(
-        policies: {
-          '/home': const SecureRouteConfig(mode: OverlayMode.none),
-        },
+        policies: {'/home': const SecureRouteConfig(mode: OverlayMode.none)},
       );
 
       observer.didPop(_fakeRoute('/payment'), _fakeRoute('/home'));
@@ -145,22 +143,24 @@ void main() {
     test('didReplace applies policy for new route', () async {
       final observer = SecureNavigatorObserver(
         policies: {
-          '/profile':
-              const SecureRouteConfig(mode: OverlayMode.blur, blurRadius: 50.0),
+          '/profile': const SecureRouteConfig(
+            mode: OverlayMode.blur,
+            blurRadius: 50.0,
+          ),
         },
       );
 
       observer.didReplace(
-          newRoute: _fakeRoute('/profile'), oldRoute: _fakeRoute('/home'));
+        newRoute: _fakeRoute('/profile'),
+        oldRoute: _fakeRoute('/home'),
+      );
       await Future<void>.delayed(Duration.zero);
       expect(fakePlatform.calls, contains('screenshotWithBlur(50.0)'));
     });
 
     test('didRemove applies policy for previous route', () async {
       final observer = SecureNavigatorObserver(
-        policies: {
-          '/home': const SecureRouteConfig(mode: OverlayMode.none),
-        },
+        policies: {'/home': const SecureRouteConfig(mode: OverlayMode.none)},
       );
 
       observer.didRemove(_fakeRoute('/payment'), _fakeRoute('/home'));
@@ -232,7 +232,9 @@ void main() {
       observer.didPush(_fakeRoute('/branded'), null);
       await Future<void>.delayed(Duration.zero);
       expect(
-          fakePlatform.calls, contains('screenshotWithColor(${0xFF2196F3})'));
+        fakePlatform.calls,
+        contains('screenshotWithColor(${0xFF2196F3})'),
+      );
     });
   });
 }

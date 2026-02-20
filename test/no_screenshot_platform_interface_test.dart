@@ -84,8 +84,10 @@ void main() {
 
   group('NoScreenshotPlatform', () {
     test('default instance should be MethodChannelNoScreenshot', () {
-      expect(NoScreenshotPlatform.instance,
-          isInstanceOf<MethodChannelNoScreenshot>());
+      expect(
+        NoScreenshotPlatform.instance,
+        isInstanceOf<MethodChannelNoScreenshot>(),
+      );
     });
 
     test('screenshotOff should return true when called', () async {
@@ -100,160 +102,207 @@ void main() {
       expect(await platform.toggleScreenshot(), isTrue);
     });
 
-    test('screenshotStream should not throw UnimplementedError when accessed',
-        () {
-      expect(() => platform.screenshotStream, isNot(throwsUnimplementedError));
-    });
     test(
-        'startScreenshotListening should not throw UnimplementedError when called',
-        () async {
-      expect(platform.startScreenshotListening(), completes);
-    });
+      'screenshotStream should not throw UnimplementedError when accessed',
+      () {
+        expect(
+          () => platform.screenshotStream,
+          isNot(throwsUnimplementedError),
+        );
+      },
+    );
+    test(
+      'startScreenshotListening should not throw UnimplementedError when called',
+      () async {
+        expect(platform.startScreenshotListening(), completes);
+      },
+    );
 
     test(
-        'stopScreenshotListening should not throw UnimplementedError when called',
-        () async {
-      expect(platform.stopScreenshotListening(), completes);
-    });
+      'stopScreenshotListening should not throw UnimplementedError when called',
+      () async {
+        expect(platform.stopScreenshotListening(), completes);
+      },
+    );
 
     test('toggleScreenshotWithImage should return true when called', () async {
       expect(await platform.toggleScreenshotWithImage(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.toggleScreenshotWithImage() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.toggleScreenshotWithImage(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.toggleScreenshotWithImage() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.toggleScreenshotWithImage(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test('toggleScreenshotWithBlur should return true when called', () async {
       expect(await platform.toggleScreenshotWithBlur(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.toggleScreenshotWithBlur() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.toggleScreenshotWithBlur(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.toggleScreenshotWithBlur() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.toggleScreenshotWithBlur(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test('toggleScreenshotWithColor should return true when called', () async {
       expect(await platform.toggleScreenshotWithColor(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.toggleScreenshotWithColor() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.toggleScreenshotWithColor(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.toggleScreenshotWithColor() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.toggleScreenshotWithColor(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test('screenshotWithImage should return true when called', () async {
       expect(await platform.screenshotWithImage(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.screenshotWithImage() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotWithImage(), throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.screenshotWithImage() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.screenshotWithImage(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test('screenshotWithBlur should return true when called', () async {
       expect(await platform.screenshotWithBlur(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.screenshotWithBlur() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.screenshotWithBlur(), throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.screenshotWithBlur() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.screenshotWithBlur(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test('screenshotWithColor should return true when called', () async {
       expect(await platform.screenshotWithColor(), isTrue);
     });
 
     test(
-        'base NoScreenshotPlatform.screenshotWithColor() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(
-          () => basePlatform.screenshotWithColor(), throwsUnimplementedError);
-    });
-
-    test('base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.screenshotOff(), throwsUnimplementedError);
-    });
-
-    test('base NoScreenshotPlatform.screenshotOn() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.screenshotOn(), throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.screenshotWithColor() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.screenshotWithColor(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test(
-        'base NoScreenshotPlatform.toggleScreenshot() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.toggleScreenshot(), throwsUnimplementedError);
-    });
-
-    test('base NoScreenshotPlatform.screenshotStream throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.screenshotStream, throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.screenshotOff() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(() => basePlatform.screenshotOff(), throwsUnimplementedError);
+      },
+    );
 
     test(
-        'base NoScreenshotPlatform.startScreenshotListening() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.startScreenshotListening(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.screenshotOn() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(() => basePlatform.screenshotOn(), throwsUnimplementedError);
+      },
+    );
 
     test(
-        'base NoScreenshotPlatform.stopScreenshotListening() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.stopScreenshotListening(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.toggleScreenshot() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(() => basePlatform.toggleScreenshot(), throwsUnimplementedError);
+      },
+    );
 
     test(
-        'startScreenRecordingListening should not throw UnimplementedError when called',
-        () async {
-      expect(platform.startScreenRecordingListening(), completes);
-    });
+      'base NoScreenshotPlatform.screenshotStream throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(() => basePlatform.screenshotStream, throwsUnimplementedError);
+      },
+    );
 
     test(
-        'stopScreenRecordingListening should not throw UnimplementedError when called',
-        () async {
-      expect(platform.stopScreenRecordingListening(), completes);
-    });
+      'base NoScreenshotPlatform.startScreenshotListening() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.startScreenshotListening(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test(
-        'base NoScreenshotPlatform.startScreenRecordingListening() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.startScreenRecordingListening(),
-          throwsUnimplementedError);
-    });
+      'base NoScreenshotPlatform.stopScreenshotListening() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.stopScreenshotListening(),
+          throwsUnimplementedError,
+        );
+      },
+    );
 
     test(
-        'base NoScreenshotPlatform.stopScreenRecordingListening() throws UnimplementedError',
-        () {
-      final basePlatform = BaseNoScreenshotPlatform();
-      expect(() => basePlatform.stopScreenRecordingListening(),
-          throwsUnimplementedError);
-    });
+      'startScreenRecordingListening should not throw UnimplementedError when called',
+      () async {
+        expect(platform.startScreenRecordingListening(), completes);
+      },
+    );
+
+    test(
+      'stopScreenRecordingListening should not throw UnimplementedError when called',
+      () async {
+        expect(platform.stopScreenRecordingListening(), completes);
+      },
+    );
+
+    test(
+      'base NoScreenshotPlatform.startScreenRecordingListening() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.startScreenRecordingListening(),
+          throwsUnimplementedError,
+        );
+      },
+    );
+
+    test(
+      'base NoScreenshotPlatform.stopScreenRecordingListening() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(
+          () => basePlatform.stopScreenRecordingListening(),
+          throwsUnimplementedError,
+        );
+      },
+    );
   });
 }
