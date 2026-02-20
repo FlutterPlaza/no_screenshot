@@ -1,7 +1,7 @@
 import Flutter
 import UIKit
 
-public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterSceneLifeCycleDelegate {
     private var screenPrevent = UITextField()
     private var screenImage: UIImageView? = nil
     private weak var attachedWindow: UIWindow? = nil
@@ -59,6 +59,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         registrar.addMethodCallDelegate(instance, channel: methodChannel!)
         eventChannel?.setStreamHandler(instance)
         registrar.addApplicationDelegate(instance)
+        registrar.addSceneDelegate(instance)
     }
 
     // MARK: - Inline Screenshot Prevention (replaces ScreenProtectorKit)
@@ -102,7 +103,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     private func enableImageScreen(named: String) {
         guard let window = attachedWindow else { return }
-        let imageView = UIImageView(frame: UIScreen.main.bounds)
+        let imageView = UIImageView(frame: window.bounds)
         imageView.image = UIImage(named: named)
         imageView.isUserInteractionEnabled = false
         imageView.contentMode = .scaleAspectFill
@@ -116,18 +117,18 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         screenImage = nil
     }
 
-    // MARK: - App Lifecycle
+    // MARK: - Shared Lifecycle Helpers
     //
-    // Image overlay lifecycle is intentionally handled in exactly two places:
-    //   SHOW: applicationWillResignActive  (app is about to lose focus)
-    //   HIDE: applicationDidBecomeActive   (app is fully interactive again)
+    // Overlay lifecycle is intentionally handled in exactly two places:
+    //   SHOW: handleWillResignActive  (app is about to lose focus)
+    //   HIDE: handleDidBecomeActive   (app is fully interactive again)
     //
     // willResignActive always fires before didEnterBackground, and
     // didBecomeActive always fires after willEnterForeground, so a single
     // show/hide pair covers both the app-switcher peek and the full
-    // background → foreground round-trip without double-showing the image.
+    // background → foreground round-trip without double-showing the overlay.
 
-    public func applicationWillResignActive(_ application: UIApplication) {
+    private func handleWillResignActive() {
         persistState()
 
         if isImageOverlayModeEnabled {
@@ -145,7 +146,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
     }
 
-    public func applicationDidBecomeActive(_ application: UIApplication) {
+    private func handleDidBecomeActive() {
         // Remove overlays FIRST.
         if isImageOverlayModeEnabled {
             disableImageScreen()
@@ -160,20 +161,28 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         fetchPersistedState()
     }
 
-    public func applicationWillEnterForeground(_ application: UIApplication) {
-        // Image overlay removal is handled in applicationDidBecomeActive
-        // which always fires after this callback.
-    }
-
-    public func applicationDidEnterBackground(_ application: UIApplication) {
-        persistState()
-        // Image overlay was already shown in applicationWillResignActive
-        // which always fires before this callback.
-    }
-
-    public func applicationWillTerminate(_ application: UIApplication) {
+    private func handleDidEnterBackground() {
         persistState()
     }
+
+    private func handleWillTerminate() {
+        persistState()
+    }
+
+    // MARK: - App Delegate Lifecycle (for apps not yet using UIScene)
+
+    public func applicationWillResignActive(_ application: UIApplication) { handleWillResignActive() }
+    public func applicationDidBecomeActive(_ application: UIApplication) { handleDidBecomeActive() }
+    public func applicationWillEnterForeground(_ application: UIApplication) { /* handled in didBecomeActive */ }
+    public func applicationDidEnterBackground(_ application: UIApplication) { handleDidEnterBackground() }
+    public func applicationWillTerminate(_ application: UIApplication) { handleWillTerminate() }
+
+    // MARK: - Scene Delegate Lifecycle (for apps using UIScene)
+
+    public func sceneWillResignActive(_ scene: UIScene) { handleWillResignActive() }
+    public func sceneDidBecomeActive(_ scene: UIScene) { handleDidBecomeActive() }
+    public func sceneWillEnterForeground(_ scene: UIScene) { /* handled in didBecomeActive */ }
+    public func sceneDidEnterBackground(_ scene: UIScene) { handleDidEnterBackground() }
 
     func persistState() {
         // Persist the state when changed
@@ -321,7 +330,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     private func enableBlurScreen(radius: Double) {
         guard let window = attachedWindow else { return }
-        let blurView = UIVisualEffectView(frame: UIScreen.main.bounds)
+        let blurView = UIVisualEffectView(frame: window.bounds)
         blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         blurView.isUserInteractionEnabled = false
         window.addSubview(blurView)
@@ -426,7 +435,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         let b = CGFloat(color & 0xFF) / 255.0
         let uiColor = UIColor(red: r, green: g, blue: b, alpha: a)
 
-        let colorView = UIView(frame: UIScreen.main.bounds)
+        let colorView = UIView(frame: window.bounds)
         colorView.backgroundColor = uiColor
         colorView.isUserInteractionEnabled = false
         colorView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -451,20 +460,29 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     // MARK: - Screen Recording Detection
 
+    private var isScreenCaptured: Bool {
+        if let windowScene = attachedWindow?.windowScene {
+            return windowScene.screen.isCaptured
+        }
+        if let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            return windowScene.screen.isCaptured
+        }
+        return false
+    }
+
     private func startRecordingListening() {
         guard !isRecordingListening else { return }
         isRecordingListening = true
 
-        if #available(iOS 11.0, *) {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(screenCapturedDidChange),
-                name: UIScreen.capturedDidChangeNotification,
-                object: nil
-            )
-            // Check initial state
-            isScreenRecording = UIScreen.main.isCaptured
-        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenCapturedDidChange),
+            name: UIScreen.capturedDidChangeNotification,
+            object: nil
+        )
+        // Check initial state
+        isScreenRecording = isScreenCaptured
 
         updateSharedPreferencesState("")
     }
@@ -473,22 +491,18 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         guard isRecordingListening else { return }
         isRecordingListening = false
 
-        if #available(iOS 11.0, *) {
-            NotificationCenter.default.removeObserver(
-                self,
-                name: UIScreen.capturedDidChangeNotification,
-                object: nil
-            )
-        }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIScreen.capturedDidChangeNotification,
+            object: nil
+        )
 
         isScreenRecording = false
         updateSharedPreferencesState("")
     }
 
     @objc private func screenCapturedDidChange() {
-        if #available(iOS 11.0, *) {
-            isScreenRecording = UIScreen.main.isCaptured
-        }
+        isScreenRecording = isScreenCaptured
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         updateSharedPreferencesState("", timestamp: nowMs)
     }
@@ -557,14 +571,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private func attachWindowIfNeeded() {
         var activeWindow: UIWindow?
 
-        if #available(iOS 13.0, *) {
-            if let windowScene = UIApplication.shared.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-               let active = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                activeWindow = active
+        if let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            if #available(iOS 15.0, *) {
+                activeWindow = windowScene.keyWindow
+            } else {
+                activeWindow = windowScene.windows.first(where: { $0.isKeyWindow })
             }
-        } else {
-            activeWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
         }
 
         guard let window = activeWindow else {

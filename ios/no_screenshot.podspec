@@ -15,7 +15,7 @@ A new Flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'no_screenshot/Sources/no_screenshot/**/*.swift', 'Classes/**/*.{h,m}'
   s.dependency 'Flutter'
-  s.platform = :ios, '12.0'
+  s.platform = :ios, '13.0'
   s.resource_bundles = { 'no_screenshot_privacy' => ['no_screenshot/Sources/no_screenshot/PrivacyInfo.xcprivacy'] }
 
   # Flutter.framework does not contain a i386 slice.
