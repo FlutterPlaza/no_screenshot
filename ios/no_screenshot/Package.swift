@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "no_screenshot",
     platforms: [
-        .iOS("12.0")
+        .iOS("13.0")
     ],
     products: [
         .library(name: "no-screenshot", targets: ["no_screenshot"])
