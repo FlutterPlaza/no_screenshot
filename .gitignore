@@ -41,3 +41,6 @@ build/
 
 # Internal planning docs
 plan/
+
+# Article drafts
+doc/medium_article.md
