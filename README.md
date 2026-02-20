@@ -57,7 +57,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.9.1
+  no_screenshot: ^0.9.2
 ```
 
 Then run:
@@ -78,6 +78,12 @@ flutter create my_app
 ```
 
 To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
+
+> **Upgrading from 0.9.0/0.9.1?** This release includes three iOS fixes — no code changes required on your side:
+>
+> 1. **UIScene lifecycle migration** — Overlay show/hide now uses `FlutterSceneLifeCycleDelegate` (UIScene) in addition to `UIApplicationDelegate`, fixing overlay issues on iOS 26+ where the legacy app delegate callbacks are no longer delivered. Minimum deployment target is now **iOS 13.0** and requires **Flutter >= 3.38.0**.
+> 2. **SPM build fix** — Version 0.9.0/0.9.1 had a build error (`Unknown receiver 'NoScreenshotPlugin'`) when using Swift Package Manager ([#96](https://github.com/FlutterPlaza/no_screenshot/issues/96)). This is now fixed via an `@objc(NoScreenshotPlugin)` annotation.
+> 3. **Blur overlay fix** — The blur overlay was darkening the screen instead of blurring it. Now uses `CIGaussianBlur` for a true Gaussian blur with configurable radius.
 
 ## Quick Start
 
@@ -285,7 +291,7 @@ Future<void> toggleBlurCustom() async {
 | **Android API 31+** | `RenderEffect.createBlurEffect()` — zero-copy GPU blur on `decorView` (configurable radius) |
 | **Android API 17–30** | `RenderScript.ScriptIntrinsicBlur` — bitmap capture + blur + `ImageView` overlay (configurable radius, max 25f) |
 | **Android API <17** | `FLAG_SECURE` alone (no blur, but app switcher preview is hidden) |
-| **iOS** | `UIVisualEffectView` with `UIBlurEffect(style: .regular)` |
+| **iOS** | `CIGaussianBlur` — window snapshot + Core Image filter (configurable radius) |
 | **macOS** | `NSVisualEffectView` with `.hudWindow` material, `.behindWindow` blending |
 | **Linux** | Best-effort — state tracked and persisted, compositors control task switcher thumbnails |
 | **Windows** | Not supported — uses `WDA_EXCLUDEFROMCAPTURE` for prevention only |
