@@ -1,3 +1,9 @@
+## 0.10.0
+
+- feat(ios): migrate to `UIScene` lifecycle for iOS 26+ compatibility — add `FlutterSceneLifeCycleDelegate` conformance so overlay show/hide logic fires under both the legacy `UIApplicationDelegate` and the new `UIScene` lifecycle; replace deprecated `UIScreen.main` usages; remove stale iOS 11 availability checks; bump deployment target to iOS 13.0 / Flutter >=3.38.0 by @fonkamloic.
+- fix(ios): add `@objc(NoScreenshotPlugin)` annotation for Swift Package Manager builds — fixes "Unknown receiver 'NoScreenshotPlugin'" compilation error in `GeneratedPluginRegistrant.m` ([#96](https://github.com/FlutterPlaza/no_screenshot/issues/96)) by @fonkamloic.
+- fix(ios): replace `UIVisualEffectView` blur overlay with `CIGaussianBlur` — the previous implementation darkened the screen instead of blurring it; now captures a window snapshot and applies a true Gaussian blur with configurable radius by @fonkamloic.
+
 ## 0.9.1
 
 - chore: add pub.dev topics to pubspec.yaml.
