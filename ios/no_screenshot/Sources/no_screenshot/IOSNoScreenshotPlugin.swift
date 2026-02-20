@@ -1,7 +1,10 @@
 import Flutter
 import UIKit
 
-public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+#if SWIFT_PACKAGE
+@objc(NoScreenshotPlugin)
+#endif
+public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterSceneLifeCycleDelegate {
     private var screenPrevent = UITextField()
     private var screenImage: UIImageView? = nil
     private weak var attachedWindow: UIWindow? = nil
@@ -13,9 +16,8 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private var hasSharedPreferencesChanged: Bool = false
     private var isImageOverlayModeEnabled: Bool = false
     private var isBlurOverlayModeEnabled: Bool = false
-    private var blurEffectView: UIVisualEffectView? = nil
+    private var blurOverlayView: UIView? = nil
     private var blurRadius: Double = 30.0
-    private var blurAnimator: UIViewPropertyAnimator? = nil
     private var isColorOverlayModeEnabled: Bool = false
     private var colorOverlayView: UIView? = nil
     private var colorValue: Int = 0xFF000000
@@ -321,26 +323,37 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     private func enableBlurScreen(radius: Double) {
         guard let window = attachedWindow else { return }
-        let blurView = UIVisualEffectView(frame: UIScreen.main.bounds)
-        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        blurView.isUserInteractionEnabled = false
-        window.addSubview(blurView)
-        blurEffectView = blurView
 
-        let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
-            blurView.effect = UIBlurEffect(style: .regular)
+        // Capture the current window content as a snapshot.
+        let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
+        let snapshot = renderer.image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
         }
-        animator.fractionComplete = CGFloat(min(max(radius / 100.0, 0.01), 1.0))
-        animator.pausesOnCompletion = true
-        blurAnimator = animator
+
+        // Apply a true CIGaussianBlur (no tinting / darkening).
+        guard let ciImage = CIImage(image: snapshot),
+              let filter = CIFilter(name: "CIGaussianBlur") else { return }
+
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        filter.setValue(radius, forKey: kCIInputRadiusKey)
+
+        let context = CIContext(options: nil)
+        guard let output = filter.outputImage,
+              let cgImage = context.createCGImage(output, from: ciImage.extent) else { return }
+
+        let imageView = UIImageView(frame: window.bounds)
+        imageView.image = UIImage(cgImage: cgImage)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.isUserInteractionEnabled = false
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        window.addSubview(imageView)
+        blurOverlayView = imageView
     }
 
     private func disableBlurScreen() {
-        blurAnimator?.stopAnimation(true)
-        blurAnimator?.finishAnimation(at: .start)
-        blurAnimator = nil
-        blurEffectView?.removeFromSuperview()
-        blurEffectView = nil
+        blurOverlayView?.removeFromSuperview()
+        blurOverlayView = nil
     }
 
     private func toggleScreenshotWithColor(color: Int) -> Bool {
