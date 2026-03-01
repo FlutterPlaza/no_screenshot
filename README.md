@@ -18,7 +18,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Enable screenshot & screen recording | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Toggle screenshot protection | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Listen for screenshot events (stream) | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ |
-| Detect screen recording start/stop | ✅\* | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
+| Detect screen recording start/stop | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
 | Screenshot file path | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
 | Screenshot metadata (timestamp, source app) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
@@ -29,7 +29,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Per-route protection policies | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | LTR & RTL language support | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-> **\* Android recording detection:** Requires API 34+ (Android 14). Uses `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
+> **\* Android recording detection:** On Android 15+ (API 35), uses `WindowManager.addScreenRecordingCallback` for true start/stop detection. On Android 14 (API 34), falls back to `Activity.ScreenCaptureCallback` which fires on recording start only — there is no "stop" callback. Graceful no-op on older devices.
 
 > **⚠️ Linux limitations:** Linux compositors (Wayland / X11) do **not** provide any application-level API to block screenshots or screen recording (there is no `FLAG_SECURE` equivalent). Screenshot prevention, overlay modes (image, blur, color), and toggle features are **state-tracked only** — the state is persisted and reported via the stream, but the compositor cannot be instructed to hide window content. **Screenshots and screen recordings will still succeed.** Screenshot **detection** works reliably via `GFileMonitor` (inotify). Screen recording detection is best-effort via `/proc` process scanning.
 
@@ -57,7 +57,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^0.10.0
+  no_screenshot: ^1.0.0
 ```
 
 Then run:
@@ -79,6 +79,8 @@ flutter create my_app
 
 To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
 
+> **Upgrading from 0.10.x?** This release includes Android 15 screen recording detection support — no code changes required on your side. See the [CHANGELOG](CHANGELOG.md) for details.
+>
 > **Upgrading from 0.9.x?** This release includes two important iOS changes — no code changes required on your side:
 >
 > 1. **UIScene lifecycle migration** — Overlay show/hide now uses `FlutterSceneLifeCycleDelegate` (UIScene) in addition to `UIApplicationDelegate`, fixing overlay issues on iOS 26+ where the legacy app delegate callbacks are no longer delivered. Minimum deployment target is now **iOS 13.0** and requires **Flutter >= 3.38.0**.
@@ -223,14 +225,15 @@ await _noScreenshot.stopScreenRecordingListening();
 | Platform | Mechanism | Start | Stop |
 |---|---|:---:|:---:|
 | **iOS 11+** | `UIScreen.capturedDidChangeNotification` | ✅ | ✅ |
-| **Android 14+** (API 34) | `Activity.ScreenCaptureCallback` | ✅ | ❌\* |
+| **Android 15+** (API 35) | `WindowManager.addScreenRecordingCallback` | ✅ | ✅ |
+| **Android 14** (API 34) | `Activity.ScreenCaptureCallback` | ✅ | ❌\* |
 | **Android < 14** | No reliable API (no-op) | — | — |
 | **macOS** | `NSWorkspace` process polling (2s) | ✅ | ✅ |
 | **Linux** | `/proc` process scanning (2s) | ✅ | ✅ |
 | **Windows** | Process scanning for known recording apps | ✅ | ✅ |
 | **Web** | Not available (no-op) | — | — |
 
-> **\* Android limitation:** `ScreenCaptureCallback.onScreenCaptured()` fires when recording starts but there is no "stop" callback. `isScreenRecording` becomes `true` and stays `true` until `stopScreenRecordingListening()` + `startScreenRecordingListening()` is called to reset.
+> **\* Android 14 limitation:** `ScreenCaptureCallback.onScreenCaptured()` fires when recording starts but there is no "stop" callback. `isScreenRecording` becomes `true` and stays `true` until `stopScreenRecordingListening()` + `startScreenRecordingListening()` is called to reset. On **Android 15+** this limitation is resolved — `WindowManager.addScreenRecordingCallback` provides both start and stop events.
 
 > **macOS & Linux:** Recording detection is best-effort — it polls for known recording application processes. Detected apps include QuickTime Player, OBS, Loom, Kap, ffmpeg, screencapture, simplescreenrecorder, kazam, peek, recordmydesktop, and vokoscreen.
 

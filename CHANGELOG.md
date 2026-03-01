@@ -1,3 +1,9 @@
+## 1.0.0
+
+- feat(android): added Android 15 (API 35) screen recording detection via `WindowManager.addScreenRecordingCallback` — provides true start/stop detection with `SCREEN_RECORDING_STATE_VISIBLE` / `SCREEN_RECORDING_STATE_NOT_VISIBLE` ([#98](https://github.com/FlutterPlaza/no_screenshot/issues/98)) by @fonkamloic.
+- feat(android): layered backward compatibility — API 35+ uses `WindowManager.addScreenRecordingCallback`, API 34 falls back to `Activity.ScreenCaptureCallback`, API <34 graceful no-op by @fonkamloic.
+- docs: updated README with Android 15 recording detection details, platform behavior table, and upgrade notes by @fonkamloic.
+
 ## 0.10.0
 
 - feat(ios): migrate to `UIScene` lifecycle for iOS 26+ compatibility — add `FlutterSceneLifeCycleDelegate` conformance so overlay show/hide logic fires under both the legacy `UIApplicationDelegate` and the new `UIScene` lifecycle; replace deprecated `UIScreen.main` usages; remove stale iOS 11 availability checks; bump deployment target to iOS 13.0 / Flutter >=3.38.0 by @fonkamloic.

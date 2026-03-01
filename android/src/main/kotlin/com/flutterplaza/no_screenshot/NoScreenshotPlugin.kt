@@ -22,6 +22,7 @@ import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -87,6 +88,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     private var isScreenRecording: Boolean = false
     private var isRecordingListening: Boolean = false
     private var screenCaptureCallback: Any? = null
+    private var screenRecordingCallback: Any? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -112,12 +114,12 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         activity = binding.activity
         restoreScreenshotState()
         if (isRecordingListening) {
-            registerScreenCaptureCallback()
+            registerScreenRecordingCallbacks()
         }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        unregisterScreenCaptureCallback()
+        unregisterScreenRecordingCallbacks()
         removeImageOverlay()
         removeBlurOverlay()
         removeColorOverlay()
@@ -128,12 +130,12 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         activity = binding.activity
         restoreScreenshotState()
         if (isRecordingListening) {
-            registerScreenCaptureCallback()
+            registerScreenRecordingCallbacks()
         }
     }
 
     override fun onDetachedFromActivity() {
-        unregisterScreenCaptureCallback()
+        unregisterScreenRecordingCallbacks()
         removeImageOverlay()
         removeBlurOverlay()
         removeColorOverlay()
@@ -544,24 +546,77 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     }
 
     // ── Screen Recording Detection ─────────────────────────────────────
+    //
+    // API 35+ (Android 15): WindowManager.addScreenRecordingCallback
+    //   → true start/stop detection via SCREEN_RECORDING_STATE_VISIBLE / _NOT_VISIBLE
+    // API 34  (Android 14): Activity.ScreenCaptureCallback
+    //   → fires on screen capture (start only, no stop event)
+    // API <34: graceful no-op
 
     private fun startRecordingListening() {
         if (isRecordingListening) return
         isRecordingListening = true
-        registerScreenCaptureCallback()
+        registerScreenRecordingCallbacks()
         updateSharedPreferencesState("")
     }
 
     private fun stopRecordingListening() {
         if (!isRecordingListening) return
         isRecordingListening = false
-        unregisterScreenCaptureCallback()
+        unregisterScreenRecordingCallbacks()
         isScreenRecording = false
         updateSharedPreferencesState("")
     }
 
+    private fun registerScreenRecordingCallbacks() {
+        if (Build.VERSION.SDK_INT >= 35) {
+            registerScreenRecordingCallback()
+        } else if (Build.VERSION.SDK_INT >= 34) {
+            registerScreenCaptureCallback()
+        }
+    }
+
+    private fun unregisterScreenRecordingCallbacks() {
+        if (Build.VERSION.SDK_INT >= 35) {
+            unregisterScreenRecordingCallback()
+        }
+        if (Build.VERSION.SDK_INT >= 34) {
+            unregisterScreenCaptureCallback()
+        }
+    }
+
+    @Suppress("NewApi")
+    private fun registerScreenRecordingCallback() {
+        val act = activity ?: return
+        if (screenRecordingCallback != null) return
+
+        val callback = java.util.function.Consumer<Int> { state ->
+            val wasRecording = isScreenRecording
+            isScreenRecording = (state == WindowManager.SCREEN_RECORDING_STATE_VISIBLE)
+            if (isScreenRecording != wasRecording) {
+                updateSharedPreferencesState("", System.currentTimeMillis())
+            }
+        }
+        val initialState = act.windowManager.addScreenRecordingCallback(act.mainExecutor, callback)
+        screenRecordingCallback = callback
+        // Process initial state
+        val wasRecording = isScreenRecording
+        isScreenRecording = (initialState == WindowManager.SCREEN_RECORDING_STATE_VISIBLE)
+        if (isScreenRecording != wasRecording) {
+            updateSharedPreferencesState("", System.currentTimeMillis())
+        }
+    }
+
+    @Suppress("NewApi", "UNCHECKED_CAST")
+    private fun unregisterScreenRecordingCallback() {
+        val act = activity ?: return
+        val callback = screenRecordingCallback as? java.util.function.Consumer<Int> ?: return
+        act.windowManager.removeScreenRecordingCallback(callback)
+        screenRecordingCallback = null
+    }
+
     private fun registerScreenCaptureCallback() {
-        if (android.os.Build.VERSION.SDK_INT >= 34) {
+        if (Build.VERSION.SDK_INT >= 34) {
             val act = activity ?: return
             if (screenCaptureCallback != null) return
 
@@ -575,7 +630,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     }
 
     private fun unregisterScreenCaptureCallback() {
-        if (android.os.Build.VERSION.SDK_INT >= 34) {
+        if (Build.VERSION.SDK_INT >= 34) {
             val act = activity ?: return
             val callback = screenCaptureCallback as? Activity.ScreenCaptureCallback ?: return
             act.unregisterScreenCaptureCallback(callback)
