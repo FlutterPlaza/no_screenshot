@@ -253,8 +253,8 @@ Future<void> toggleOverlay() async {
 
 **Setup:** Place your overlay image in the platform-specific asset locations:
 
-- **Android:** `android/app/src/main/res/drawable/image.png`
-- **iOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
+- **Android:** `android/app/src/main/res/drawable/no_screenshot_image.png`
+- **iOS:** Add an image named `NoScreenshotImage` to your asset catalog (`Runner/Assets.xcassets/NoScreenshotImage.imageset/`)
 - **macOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
 - **Linux:** Best-effort — the state is tracked but compositors control task switcher thumbnails
 

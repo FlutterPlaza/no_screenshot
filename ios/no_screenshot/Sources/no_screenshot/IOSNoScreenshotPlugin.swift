@@ -138,7 +138,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             // visible in the app switcher (otherwise the secure text field
             // would show a blank screen).
             disablePreventScreenshot()
-            enableImageScreen(named: "image")
+            enableImageScreen(named: "NoScreenshotImage")
         } else if isBlurOverlayModeEnabled {
             disablePreventScreenshot()
             enableBlurScreen(radius: blurRadius)

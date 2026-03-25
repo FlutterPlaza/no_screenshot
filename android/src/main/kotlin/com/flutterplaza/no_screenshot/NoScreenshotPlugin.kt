@@ -273,7 +273,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
 
     private fun showImageOverlay(activity: Activity) {
         if (overlayImageView != null) return
-        val resId = activity.resources.getIdentifier("image", "drawable", activity.packageName)
+        val resId = activity.resources.getIdentifier("no_screenshot_image", "drawable", activity.packageName)
         if (resId == 0) return
         activity.runOnUiThread {
             val imageView = ImageView(activity).apply {
