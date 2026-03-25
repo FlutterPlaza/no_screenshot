@@ -1,4 +1,4 @@
-## 1.0.0
+## 1.1.0
 
 - breaking: renamed overlay image assets on all platforms to avoid generic-name collisions ([#99](https://github.com/FlutterPlaza/no_screenshot/pull/99)) by @yar-tsar.
 
@@ -11,6 +11,9 @@
   | macOS | `Assets.xcassets/image.imageset/` | `Assets.xcassets/NoScreenshotImage.imageset/` |
 
   No Dart-side code changes are required — only the asset files need to be renamed.
+
+## 1.0.0
+
 - feat(android): added Android 15 (API 35) screen recording detection via `WindowManager.addScreenRecordingCallback` — provides true start/stop detection with `SCREEN_RECORDING_STATE_VISIBLE` / `SCREEN_RECORDING_STATE_NOT_VISIBLE` ([#98](https://github.com/FlutterPlaza/no_screenshot/issues/98)) by @fonkamloic.
 - feat(android): layered backward compatibility — API 35+ uses `WindowManager.addScreenRecordingCallback`, API 34 falls back to `Activity.ScreenCaptureCallback`, API <34 graceful no-op by @fonkamloic.
 - docs: updated README with Android 15 recording detection details, platform behavior table, and upgrade notes by @fonkamloic.
