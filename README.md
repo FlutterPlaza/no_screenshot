@@ -504,7 +504,7 @@ Thanks to everyone who has contributed to this project!
 <td align="center"><a href="https://github.com/Musaddiq625"><img src="https://github.com/Musaddiq625.png" width="60" height="60" style="border-radius:50%" alt="@Musaddiq625"><br><sub>@Musaddiq625</sub></a></td>
 <td align="center"><a href="https://github.com/albertocappellina-intesys"><img src="https://github.com/albertocappellina-intesys.png" width="60" height="60" style="border-radius:50%" alt="@albertocappellina-intesys"><br><sub>@albertocappellina-intesys</sub></a></td>
 <td align="center"><a href="https://github.com/kefeh"><img src="https://github.com/kefeh.png" width="60" height="60" style="border-radius:50%" alt="@kefeh"><br><sub>@kefeh</sub></a></td>
-<td></td>
+<td align="center"><a href="https://github.com/yar-tsar"><img src="https://github.com/yar-tsar.png" width="60" height="60" style="border-radius:50%" alt="@yar-tsar"><br><sub>@yar-tsar</sub></a></td>
 </tr>
 </table>
 
