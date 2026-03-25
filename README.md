@@ -255,7 +255,7 @@ Future<void> toggleOverlay() async {
 
 - **Android:** `android/app/src/main/res/drawable/no_screenshot_image.png`
 - **iOS:** Add an image named `NoScreenshotImage` to your asset catalog (`Runner/Assets.xcassets/NoScreenshotImage.imageset/`)
-- **macOS:** Add an image named `image` to your asset catalog (`Runner/Assets.xcassets/image.imageset/`)
+- **macOS:** Add an image named `NoScreenshotImage` to your asset catalog (`Runner/Assets.xcassets/NoScreenshotImage.imageset/`)
 - **Linux:** Best-effort — the state is tracked but compositors control task switcher thumbnails
 
 When enabled, the overlay image is shown whenever the app goes to the background or appears in the app switcher. Screenshot protection is also automatically activated.

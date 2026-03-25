@@ -342,8 +342,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             guard let self = self, self.overlayImageView == nil else { return }
             guard let window = NSApplication.shared.windows.first,
                   let contentView = window.contentView else { return }
-            guard let image = NSImage(named: "image") else {
-                print("No overlay image named 'image' found in asset catalog.")
+            guard let image = NSImage(named: "NoScreenshotImage") else {
+                print("No overlay image named 'NoScreenshotImage' found in asset catalog.")
                 return
             }
 
