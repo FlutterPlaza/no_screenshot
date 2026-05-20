@@ -291,34 +291,38 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             guard let window = NSApplication.shared.windows.first,
                   let contentView = window.contentView else { return }
 
-            // Capture window content and apply CIGaussianBlur
-            let windowID = CGWindowID(window.windowNumber)
-            if let cgImage = CGWindowListCreateImage(
-                .null, .optionIncludingWindow, windowID,
-                [.boundsIgnoreFraming, .bestResolution]
-            ) {
-                let ciImage = CIImage(cgImage: cgImage)
-                let filter = CIFilter(name: "CIGaussianBlur")!
-                filter.setValue(ciImage, forKey: kCIInputImageKey)
-                filter.setValue(radius, forKey: kCIInputRadiusKey)
+            // Capture the window's view hierarchy via cacheDisplay and apply CIGaussianBlur.
+            // This mirrors the iOS implementation (UIView.drawHierarchy) and avoids
+            // CGWindowListCreateImage, which is unavailable on macOS 26 / Tahoe SDK
+            // (Apple's replacement is ScreenCaptureKit, which requires Screen Recording
+            // permission — unnecessary for a self-snapshot like this).
+            if let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) {
+                contentView.cacheDisplay(in: contentView.bounds, to: bitmapRep)
+                if let cgImage = bitmapRep.cgImage,
+                   let filter = CIFilter(name: "CIGaussianBlur") {
+                    let ciImage = CIImage(cgImage: cgImage)
+                    filter.setValue(ciImage, forKey: kCIInputImageKey)
+                    filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-                if let outputImage = filter.outputImage {
-                    let context = CIContext()
-                    let extent = ciImage.extent
-                    if let blurredCGImage = context.createCGImage(outputImage, from: extent) {
-                        let nsImage = NSImage(cgImage: blurredCGImage, size: contentView.bounds.size)
-                        let imageView = NSImageView(frame: contentView.bounds)
-                        imageView.image = nsImage
-                        imageView.imageScaling = .scaleProportionallyUpOrDown
-                        imageView.autoresizingMask = [.width, .height]
-                        contentView.addSubview(imageView, positioned: .above, relativeTo: contentView.subviews.last)
-                        self.blurOverlayView = imageView
-                        return
+                    if let outputImage = filter.outputImage {
+                        let context = CIContext()
+                        let extent = ciImage.extent
+                        if let blurredCGImage = context.createCGImage(outputImage, from: extent) {
+                            let nsImage = NSImage(cgImage: blurredCGImage, size: contentView.bounds.size)
+                            let imageView = NSImageView(frame: contentView.bounds)
+                            imageView.image = nsImage
+                            imageView.imageScaling = .scaleProportionallyUpOrDown
+                            imageView.autoresizingMask = [.width, .height]
+                            contentView.addSubview(imageView, positioned: .above, relativeTo: contentView.subviews.last)
+                            self.blurOverlayView = imageView
+                            return
+                        }
                     }
                 }
             }
 
-            // Fallback: NSVisualEffectView
+            // Fallback: NSVisualEffectView (used when cacheDisplay or CIFilter fails,
+            // e.g. zero-sized view or unsupported GPU-backed content).
             let blurView = NSVisualEffectView(frame: contentView.bounds)
             blurView.material = .hudWindow
             blurView.blendingMode = .behindWindow
