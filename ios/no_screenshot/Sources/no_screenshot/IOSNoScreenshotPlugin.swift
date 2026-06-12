@@ -14,7 +14,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     // clamp the flag to false at the source: every writer — including the
     // overlay modes, which also enable prevention — would otherwise persist
     // and broadcast is_screenshot_on: true for protection that isn't active.
-    // Assigning inside didSet does not re-trigger the observer.
+    // The flag deliberately tracks the ACTUAL protection state, not the
+    // requested one: on a Mac an overlay mode can be active while prevention
+    // is off, and is_screenshot_on reports prevention, not overlay
+    // visibility. toggleScreenshot is short-circuited on macOS hosts, so the
+    // toggle direction never depends on this clamp. Assigning inside didSet
+    // does not re-trigger the observer.
     private static var preventScreenShot: Bool = false {
         didSet {
             if isiOSAppOnMac && preventScreenShot {

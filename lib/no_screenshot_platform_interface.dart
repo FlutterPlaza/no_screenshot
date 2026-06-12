@@ -39,6 +39,9 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// Return `true` if screenshot capabilities has been
   /// successfully enabled or is currently enabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
+  ///
+  /// Always returns `true` when an iOS build runs on a Mac —
+  /// screenshots are permitted there by default.
   Future<bool> screenshotOn() {
     throw UnimplementedError('screenshotOn() has not been implemented.');
   }

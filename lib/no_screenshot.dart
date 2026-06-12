@@ -94,6 +94,8 @@ class NoScreenshot implements NoScreenshotPlatform {
   /// successfully enabled or is currently enabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
   ///
+  /// Always returns `true` when an iOS build runs on a Mac —
+  /// screenshots are permitted there by default.
   @override
   Future<bool> screenshotOn() {
     return _instancePlatform.screenshotOn();
