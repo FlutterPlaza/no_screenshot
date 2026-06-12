@@ -1,6 +1,6 @@
 PODS:
   - Flutter (1.0.0)
-  - no_screenshot (0.7.0):
+  - no_screenshot (0.10.0):
     - Flutter
 
 DEPENDENCIES:
@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  no_screenshot: e1275b655af4779619485dbfc74e1606611229cf
+  no_screenshot: 858289d30acbf967046df565d880f7d57f66f692
 
 PODFILE CHECKSUM: cc1f88378b4bfcf93a6ce00d2c587857c6008d3b
 
