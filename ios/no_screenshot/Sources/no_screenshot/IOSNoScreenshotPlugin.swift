@@ -330,6 +330,10 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         return isBlurOverlayModeEnabled
     }
 
+    // CIContext allocates GPU resources; share one instance instead of
+    // creating a new context on every blur-overlay call.
+    private static let ciContext = CIContext(options: nil)
+
     private func enableBlurScreen(radius: Double) {
         guard let window = attachedWindow else { return }
 
@@ -343,12 +347,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         guard let ciImage = CIImage(image: snapshot),
               let filter = CIFilter(name: "CIGaussianBlur") else { return }
 
-        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        // Clamp before blurring so edges don't fade to transparent,
+        // then crop back to the original extent.
+        filter.setValue(ciImage.clampedToExtent(), forKey: kCIInputImageKey)
         filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-        let context = CIContext(options: nil)
         guard let output = filter.outputImage,
-              let cgImage = context.createCGImage(output, from: ciImage.extent) else { return }
+              let cgImage = IOSNoScreenshotPlugin.ciContext.createCGImage(output, from: ciImage.extent) else { return }
 
         let imageView = UIImageView(frame: window.bounds)
         imageView.image = UIImage(cgImage: cgImage)

@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import QuartzCore
 
 public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private static var methodChannel: FlutterMethodChannel? = nil
@@ -285,6 +286,16 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         return isBlurOverlayModeEnabled
     }
 
+    // CIContext allocates GPU resources; share one instance instead of
+    // creating a new context on every blur-overlay call.
+    private static let ciContext = CIContext()
+
+    private static func containsMetalLayer(_ layer: CALayer?) -> Bool {
+        guard let layer = layer else { return false }
+        if layer is CAMetalLayer { return true }
+        return layer.sublayers?.contains { containsMetalLayer($0) } ?? false
+    }
+
     private func showBlurOverlay(radius: Double) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, self.blurOverlayView == nil else { return }
@@ -292,11 +303,16 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                   let contentView = window.contentView else { return }
 
             // Capture the window's view hierarchy via cacheDisplay and apply CIGaussianBlur.
-            // This mirrors the iOS implementation (UIView.drawHierarchy) and avoids
-            // CGWindowListCreateImage, which is unavailable in the macOS 26 (Tahoe) SDK.
-            // Apple's replacement, ScreenCaptureKit, would require Screen Recording
-            // permission — unnecessary for a self-snapshot like this.
-            if let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) {
+            // This avoids CGWindowListCreateImage, which is unavailable in the macOS 26
+            // (Tahoe) SDK; Apple's replacement, ScreenCaptureKit, would require Screen
+            // Recording permission — unnecessary for a self-snapshot like this.
+            //
+            // cacheDisplay uses AppKit's software path and cannot capture GPU-backed
+            // CAMetalLayer content (it comes out black). Flutter renders into a
+            // CAMetalLayer, so when one is present skip straight to the
+            // NSVisualEffectView fallback instead of blurring a black snapshot.
+            if !MacOSNoScreenshotPlugin.containsMetalLayer(contentView.layer),
+               let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) {
                 contentView.cacheDisplay(in: contentView.bounds, to: bitmapRep)
                 if let cgImage = bitmapRep.cgImage,
                    let filter = CIFilter(name: "CIGaussianBlur") {
@@ -307,8 +323,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                     filter.setValue(radius, forKey: kCIInputRadiusKey)
 
                     if let outputImage = filter.outputImage?.cropped(to: ciImage.extent) {
-                        let context = CIContext()
-                        if let blurredCGImage = context.createCGImage(outputImage, from: ciImage.extent) {
+                        if let blurredCGImage = MacOSNoScreenshotPlugin.ciContext.createCGImage(outputImage, from: ciImage.extent) {
                             let nsImage = NSImage(cgImage: blurredCGImage, size: contentView.bounds.size)
                             let imageView = NSImageView(frame: contentView.bounds)
                             imageView.image = nsImage
