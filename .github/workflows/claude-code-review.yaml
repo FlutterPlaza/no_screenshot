@@ -1,0 +1,65 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this Flutter plugin pull request. This plugin provides
+            screenshot/screen recording prevention and detection across
+            Android, iOS, macOS, Linux, Windows, and Web.
+
+            Focus on:
+            - Correctness bugs and edge cases
+            - Platform-channel consistency (Dart API vs Kotlin/Swift/C++ implementations)
+            - Cross-platform behavior parity
+            - Breaking changes to the public API
+            - Test coverage for new behavior
+            - Security concerns
+
+            Post your review as a SINGLE comment using one `gh pr comment`
+            call — do not post multiple comments or inline comments.
+
+            Structure the comment with exactly these sections, in this order:
+
+            ## 🔴 Critical
+            Bugs, crashes, security issues, breaking changes — anything that
+            must be fixed before merging. Write "None" if there are none.
+
+            ## 🟠 Medium
+            Issues that should be addressed but don't block the merge
+            (missing edge-case handling, platform parity gaps, missing tests).
+            Write "None" if there are none.
+
+            ## 🟡 Low
+            Minor improvements and suggestions. Write "None" if there are none.
+
+            ## 🟢 Positives
+            What the PR does well.
+
+            For each finding, reference the file and line (e.g. `lib/foo.dart:42`)
+            and explain briefly why it matters. Keep it concise and only flag
+            issues that matter — skip style nitpicks already covered by
+            `dart format` and `flutter analyze`.
+          claude_args: |
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
