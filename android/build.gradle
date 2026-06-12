@@ -49,6 +49,10 @@ android {
     }
 }
 
+// The kotlin {} extension exists on both paths: registered by KGP on
+// AGP < 9 and by AGP's built-in Kotlin on 9+. The compilerOptions DSL
+// requires KGP >= 1.9; fine here since the plugin's minimum Flutter
+// (3.38) ships KGP 2.x.
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
