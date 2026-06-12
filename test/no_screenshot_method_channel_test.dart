@@ -79,6 +79,22 @@ void main() {
       expect(result, expected);
     });
 
+    test(
+      'toggleScreenshot surfaces platform failure (e.g. iOS app on Mac)',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              if (methodCall.method == toggleScreenShotConst) {
+                return false;
+              }
+              return null;
+            });
+
+        final result = await platform.toggleScreenshot();
+        expect(result, isFalse);
+      },
+    );
+
     test('startScreenshotListening', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {

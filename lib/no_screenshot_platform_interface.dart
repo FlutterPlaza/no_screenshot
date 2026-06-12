@@ -27,6 +27,11 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// Return `true` if screenshot capabilities has been
   /// successfully disabled or is currently disabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
+  ///
+  /// Always returns `false` when an iOS build runs on a Mac
+  /// ("Designed for iPhone/iPad" on Apple silicon) — screenshot
+  /// prevention is not supported there, though overlays and
+  /// screenshot/recording detection still work.
   Future<bool> screenshotOff() {
     throw UnimplementedError('screenshotOff() has not been implemented.');
   }
@@ -78,6 +83,10 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// successfully toggle from it previous state and `false` if the attempt
   /// to toggle failed.
   /// throw `UnmimplementedError` if not implement
+  ///
+  /// Always returns `false` when an iOS build runs on a Mac
+  /// ("Designed for iPhone/iPad" on Apple silicon) — screenshot
+  /// prevention is not supported there; see [screenshotOff].
   Future<bool> toggleScreenshot() {
     throw UnimplementedError('toggleScreenshot() has not been implemented.');
   }

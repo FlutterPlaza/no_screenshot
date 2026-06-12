@@ -10,7 +10,18 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private weak var attachedWindow: UIWindow? = nil
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
-    private static var preventScreenShot: Bool = false
+    // On a macOS host prevention can never engage (see isiOSAppOnMac), so
+    // clamp the flag to false at the source: every writer — including the
+    // overlay modes, which also enable prevention — would otherwise persist
+    // and broadcast is_screenshot_on: true for protection that isn't active.
+    // Assigning inside didSet does not re-trigger the observer.
+    private static var preventScreenShot: Bool = false {
+        didSet {
+            if isiOSAppOnMac && preventScreenShot {
+                preventScreenShot = false
+            }
+        }
+    }
     private var eventSink: FlutterEventSink? = nil
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
