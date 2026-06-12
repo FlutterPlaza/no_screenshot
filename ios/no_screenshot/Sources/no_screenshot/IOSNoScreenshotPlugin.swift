@@ -332,7 +332,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     // CIContext allocates GPU resources; share one instance instead of
     // creating a new context on every blur-overlay call.
-    private static let ciContext = CIContext(options: nil)
+    private static let ciContext = CIContext()
 
     private func enableBlurScreen(radius: Double) {
         guard let window = attachedWindow else { return }
@@ -352,7 +352,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         filter.setValue(ciImage.clampedToExtent(), forKey: kCIInputImageKey)
         filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-        guard let output = filter.outputImage,
+        guard let output = filter.outputImage?.cropped(to: ciImage.extent),
               let cgImage = IOSNoScreenshotPlugin.ciContext.createCGImage(output, from: ciImage.extent) else { return }
 
         let imageView = UIImageView(frame: window.bounds)
