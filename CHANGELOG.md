@@ -1,3 +1,7 @@
+## Unreleased
+
+- fix(ios): iOS builds running on Apple-silicon Macs ("Designed for iPhone/iPad") no longer show a permanently black/white window at launch ([#107](https://github.com/FlutterPlaza/no_screenshot/issues/107)). Screenshot prevention is not supported by this technique on a macOS host, so `screenshotOff()` now returns `false` there; app-switcher overlays and screenshot/recording detection are unaffected.
+
 ## 1.1.0
 
 - breaking: renamed overlay image assets on all platforms to avoid generic-name collisions ([#99](https://github.com/FlutterPlaza/no_screenshot/pull/99)) by @yar-tsar.

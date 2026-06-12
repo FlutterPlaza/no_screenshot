@@ -72,12 +72,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     // macOS's UIKit host does not support — it permanently blanks the whole
     // window (black/white screen at launch). Prevention is skipped there;
     // overlays and detection still work.
-    private static var isiOSAppOnMac: Bool {
+    private static let isiOSAppOnMac: Bool = {
         if #available(iOS 14.0, *) {
             return ProcessInfo.processInfo.isiOSAppOnMac
         }
         return false
-    }
+    }()
 
     private func configurePreventionScreenshot(window: UIWindow) {
         guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return }
@@ -230,7 +230,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         switch call.method {
         case "screenshotOff":
             shotOff()
-            result(true)
+            // On a macOS host the secure-field protection cannot engage
+            // (see isiOSAppOnMac); report failure per the Dart API contract.
+            result(!IOSNoScreenshotPlugin.isiOSAppOnMac)
         case "screenshotOn":
             shotOn()
             result(true)
