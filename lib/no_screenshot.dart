@@ -102,9 +102,10 @@ class NoScreenshot implements NoScreenshotPlatform {
 
   /// Toggles the blur overlay shown in the app switcher.
   ///
-  /// On macOS, Flutter content is GPU-rendered and cannot be snapshotted
-  /// without a Screen Recording permission, so the system blur material is
-  /// used instead and [blurRadius] has no effect there.
+  /// On macOS, Flutter draws into a `CAMetalLayer` whose GPU content
+  /// AppKit's snapshot API cannot capture, so the system blur material
+  /// is used instead and [blurRadius] has no effect there. (Granting
+  /// Screen Recording permission would not change this.)
   @override
   Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) {
     return _instancePlatform.toggleScreenshotWithBlur(blurRadius: blurRadius);
