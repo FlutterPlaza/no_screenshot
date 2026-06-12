@@ -66,7 +66,21 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     // MARK: - Inline Screenshot Prevention (replaces ScreenProtectorKit)
 
+    // True when an iOS build runs on macOS ("Designed for iPhone/iPad" on
+    // Apple silicon). The secure-text-field capture protection below relies
+    // on reparenting the window's CALayer under a UITextField layer, which
+    // macOS's UIKit host does not support — it permanently blanks the whole
+    // window (black/white screen at launch). Prevention is skipped there;
+    // overlays and detection still work.
+    private static var isiOSAppOnMac: Bool {
+        if #available(iOS 14.0, *) {
+            return ProcessInfo.processInfo.isiOSAppOnMac
+        }
+        return false
+    }
+
     private func configurePreventionScreenshot(window: UIWindow) {
+        guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return }
         guard let rootLayer = window.layer.superlayer else { return }
         guard screenPrevent.layer.superlayer == nil else { return }
 
