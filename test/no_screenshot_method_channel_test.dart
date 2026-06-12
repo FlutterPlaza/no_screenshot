@@ -49,6 +49,22 @@ void main() {
       expect(result, expected);
     });
 
+    test(
+      'screenshotOff surfaces platform failure (e.g. iOS app on Mac)',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+              if (methodCall.method == screenShotOffConst) {
+                return false;
+              }
+              return null;
+            });
+
+        final result = await platform.screenshotOff();
+        expect(result, isFalse);
+      },
+    );
+
     test('toggleScreenshot', () async {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
