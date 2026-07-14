@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import QuartzCore
 
 public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private static var methodChannel: FlutterMethodChannel? = nil
@@ -285,40 +286,59 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         return isBlurOverlayModeEnabled
     }
 
+    // CIContext allocates GPU resources; share one instance instead of
+    // creating a new context on every blur-overlay call.
+    private static let ciContext = CIContext()
+
+    private static func containsMetalLayer(_ layer: CALayer?) -> Bool {
+        guard let layer = layer else { return false }
+        if layer is CAMetalLayer { return true }
+        return layer.sublayers?.contains { containsMetalLayer($0) } ?? false
+    }
+
     private func showBlurOverlay(radius: Double) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, self.blurOverlayView == nil else { return }
             guard let window = NSApplication.shared.windows.first,
                   let contentView = window.contentView else { return }
 
-            // Capture window content and apply CIGaussianBlur
-            let windowID = CGWindowID(window.windowNumber)
-            if let cgImage = CGWindowListCreateImage(
-                .null, .optionIncludingWindow, windowID,
-                [.boundsIgnoreFraming, .bestResolution]
-            ) {
-                let ciImage = CIImage(cgImage: cgImage)
-                let filter = CIFilter(name: "CIGaussianBlur")!
-                filter.setValue(ciImage, forKey: kCIInputImageKey)
-                filter.setValue(radius, forKey: kCIInputRadiusKey)
+            // Capture the window's view hierarchy via cacheDisplay and apply CIGaussianBlur.
+            // This avoids CGWindowListCreateImage, which is unavailable in the macOS 26
+            // (Tahoe) SDK; Apple's replacement, ScreenCaptureKit, would require Screen
+            // Recording permission — unnecessary for a self-snapshot like this.
+            //
+            // cacheDisplay uses AppKit's software path and cannot capture GPU-backed
+            // CAMetalLayer content (it comes out black). Flutter renders into a
+            // CAMetalLayer, so when one is present skip straight to the
+            // NSVisualEffectView fallback instead of blurring a black snapshot.
+            if !MacOSNoScreenshotPlugin.containsMetalLayer(contentView.layer),
+               let bitmapRep = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) {
+                contentView.cacheDisplay(in: contentView.bounds, to: bitmapRep)
+                if let cgImage = bitmapRep.cgImage,
+                   let filter = CIFilter(name: "CIGaussianBlur") {
+                    let ciImage = CIImage(cgImage: cgImage)
+                    // Clamp before blurring so edges don't fade to transparent,
+                    // then crop back to the original extent.
+                    filter.setValue(ciImage.clampedToExtent(), forKey: kCIInputImageKey)
+                    filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-                if let outputImage = filter.outputImage {
-                    let context = CIContext()
-                    let extent = ciImage.extent
-                    if let blurredCGImage = context.createCGImage(outputImage, from: extent) {
-                        let nsImage = NSImage(cgImage: blurredCGImage, size: contentView.bounds.size)
-                        let imageView = NSImageView(frame: contentView.bounds)
-                        imageView.image = nsImage
-                        imageView.imageScaling = .scaleProportionallyUpOrDown
-                        imageView.autoresizingMask = [.width, .height]
-                        contentView.addSubview(imageView, positioned: .above, relativeTo: contentView.subviews.last)
-                        self.blurOverlayView = imageView
-                        return
+                    if let outputImage = filter.outputImage?.cropped(to: ciImage.extent) {
+                        if let blurredCGImage = MacOSNoScreenshotPlugin.ciContext.createCGImage(outputImage, from: ciImage.extent) {
+                            let nsImage = NSImage(cgImage: blurredCGImage, size: contentView.bounds.size)
+                            let imageView = NSImageView(frame: contentView.bounds)
+                            imageView.image = nsImage
+                            imageView.imageScaling = .scaleProportionallyUpOrDown
+                            imageView.autoresizingMask = [.width, .height]
+                            contentView.addSubview(imageView, positioned: .above, relativeTo: contentView.subviews.last)
+                            self.blurOverlayView = imageView
+                            return
+                        }
                     }
                 }
             }
 
-            // Fallback: NSVisualEffectView
+            // Fallback: NSVisualEffectView (used when cacheDisplay or CIFilter fails,
+            // e.g. zero-sized view or unsupported GPU-backed content).
             let blurView = NSVisualEffectView(frame: contentView.bounds)
             blurView.material = .hudWindow
             blurView.blendingMode = .behindWindow
