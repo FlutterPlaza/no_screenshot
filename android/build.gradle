@@ -40,9 +40,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
+    // NOTE: do not add src/main/kotlin to sourceSets here — the Kotlin
+    // toolchain (KGP, and AGP's built-in Kotlin on 9+) already compiles it,
+    // and registering it again compiles every declaration twice
+    // ("Conflicting declarations" on Flutter >= 3.44.4, see #114).
 
     defaultConfig {
         minSdkVersion 16
