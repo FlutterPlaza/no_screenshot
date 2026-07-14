@@ -57,7 +57,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^1.0.0
+  no_screenshot: ^1.2.0
 ```
 
 Then run:
