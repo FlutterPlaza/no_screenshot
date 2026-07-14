@@ -288,6 +288,12 @@ Future<void> toggleBlurCustom() async {
 
 > **Mutual exclusivity:** Blur, image, and color overlay modes are mutually exclusive — activating one automatically deactivates the others. This is enforced at the native level on all platforms.
 
+> **Turning overlays off:** Besides the `toggle*` methods, `overlayOff()` deterministically disables whichever overlay mode is active and re-enables screenshots — idempotent, no need to know the current state:
+>
+> ```dart
+> await _noScreenshot.overlayOff();
+> ```
+
 #### Platform-specific blur implementation
 
 | Platform | Mechanism |
@@ -474,6 +480,7 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotWithImage()` | `Future<bool>` | Always enable image overlay (idempotent) |
 | `screenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Always enable blur overlay (idempotent) |
 | `screenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Always enable color overlay (idempotent) |
+| `overlayOff()` | `Future<bool>` | Always disable any active overlay mode and re-enable screenshots (idempotent) |
 | `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
 | **Granular Callbacks** | | |
 | `onScreenshotDetected` | `ScreenshotEventCallback?` | Callback fired when a screenshot is detected |

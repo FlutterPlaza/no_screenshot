@@ -69,6 +69,11 @@ class MockNoScreenshotPlatform extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> overlayOff() async {
+    return true;
+  }
+
+  @override
   Future<void> startScreenRecordingListening() async {
     return;
   }
@@ -167,6 +172,18 @@ void main() {
           () => basePlatform.toggleScreenshotWithColor(),
           throwsUnimplementedError,
         );
+      },
+    );
+
+    test('overlayOff should return true when called', () async {
+      expect(await platform.overlayOff(), isTrue);
+    });
+
+    test(
+      'base NoScreenshotPlatform.overlayOff() throws UnimplementedError',
+      () {
+        final basePlatform = BaseNoScreenshotPlatform();
+        expect(() => basePlatform.overlayOff(), throwsUnimplementedError);
       },
     );
 

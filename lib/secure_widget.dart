@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:no_screenshot/no_screenshot.dart';
 import 'package:no_screenshot/overlay_mode.dart';
 
 /// A widget that automatically enables screenshot protection when mounted
@@ -51,7 +50,10 @@ class _SecureWidgetState extends State<SecureWidget> {
 
   @override
   void dispose() {
-    NoScreenshot.instance.screenshotOn();
+    // OverlayMode.none clears any overlay mode AND lifts prevention;
+    // calling screenshotOn() alone left overlay modes active (and
+    // persisted) after unmount.
+    applyOverlayMode(OverlayMode.none);
     super.dispose();
   }
 

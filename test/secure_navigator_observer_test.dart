@@ -41,6 +41,12 @@ class _RecordingPlatform extends NoScreenshotPlatform
   }
 
   @override
+  Future<bool> overlayOff() async {
+    calls.add('overlayOff');
+    return true;
+  }
+
+  @override
   Future<bool> toggleScreenshot() async => true;
 
   @override

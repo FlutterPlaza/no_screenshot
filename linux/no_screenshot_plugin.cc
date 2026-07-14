@@ -284,6 +284,18 @@ static void handle_method_call(FlMethodChannel* channel,
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
 
+  } else if (g_strcmp0(method, "overlayOff") == 0) {
+    // Idempotent counterpart to the screenshotWith* enable methods:
+    // clears whichever overlay mode is active and restores screenshots.
+    self->is_image_overlay_mode = FALSE;
+    self->is_blur_overlay_mode = FALSE;
+    self->is_color_overlay_mode = FALSE;
+    self->prevent_screenshot = FALSE;
+    prevention_deactivate();
+    persist_state(self);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_bool(TRUE)));
+
   } else if (g_strcmp0(method, "startScreenshotListening") == 0) {
     if (!self->is_listening) {
       self->is_listening = TRUE;

@@ -176,6 +176,9 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
             enableColorOverlayMode(color: color)
             result(true)
+        case "overlayOff":
+            overlayOff()
+            result(true)
         case "startScreenshotListening":
             startListening()
             result("Listening started")
@@ -502,6 +505,31 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
                 window.sharingType = .none
+            }
+        }
+        persistState()
+    }
+
+    // Idempotent counterpart to the enable methods: clears whichever
+    // overlay mode is active (they are mutually exclusive) and restores
+    // screenshot permission, mirroring the toggle-off branches.
+    private func overlayOff() {
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            removeImageOverlay()
+        }
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            removeBlurOverlay()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            removeColorOverlay()
+        }
+        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+        DispatchQueue.main.async {
+            if let window = NSApplication.shared.windows.first {
+                window.sharingType = .readOnly
             }
         }
         persistState()

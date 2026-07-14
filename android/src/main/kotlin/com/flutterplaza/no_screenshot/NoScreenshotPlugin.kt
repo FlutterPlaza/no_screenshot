@@ -51,6 +51,7 @@ const val SET_COLOR_CONST = "toggleScreenshotWithColor"
 const val ENABLE_IMAGE_CONST = "screenshotWithImage"
 const val ENABLE_BLUR_CONST = "screenshotWithBlur"
 const val ENABLE_COLOR_CONST = "screenshotWithColor"
+const val OVERLAY_OFF_CONST = "overlayOff"
 const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
 const val PREF_KEY_BLUR_OVERLAY = "is_blur_overlay_mode_enabled"
 const val PREF_KEY_COLOR_OVERLAY = "is_color_overlay_mode_enabled"
@@ -193,6 +194,10 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             ENABLE_COLOR_CONST -> {
                 val color = call.argument<Int>("color") ?: 0xFF000000.toInt()
                 result.success(enableColorOverlay(color))
+            }
+
+            OVERLAY_OFF_CONST -> {
+                result.success(overlayOff())
             }
 
             START_SCREEN_RECORDING_LISTENING_CONST -> {
@@ -511,6 +516,30 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             removeBlurOverlay()
         }
         screenshotOff()
+        updateSharedPreferencesState("")
+        return true
+    }
+
+    // Idempotent counterpart to the enable methods: clears whichever
+    // overlay mode is active (they are mutually exclusive) and restores
+    // screenshot permission, mirroring the toggle-off branches.
+    private fun overlayOff(): Boolean {
+        if (isImageOverlayModeEnabled) {
+            isImageOverlayModeEnabled = false
+            saveImageOverlayState(false)
+            removeImageOverlay()
+        }
+        if (isBlurOverlayModeEnabled) {
+            isBlurOverlayModeEnabled = false
+            saveBlurOverlayState(false)
+            removeBlurOverlay()
+        }
+        if (isColorOverlayModeEnabled) {
+            isColorOverlayModeEnabled = false
+            saveColorOverlayState(false)
+            removeColorOverlay()
+        }
+        screenshotOn()
         updateSharedPreferencesState("")
         return true
     }

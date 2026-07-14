@@ -86,6 +86,16 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
     throw UnimplementedError('screenshotWithColor() has not been implemented.');
   }
 
+  /// Always disables any active overlay mode — image, blur, or color —
+  /// and re-enables screenshots (idempotent — safe to call repeatedly).
+  ///
+  /// The deterministic counterpart to [screenshotWithImage],
+  /// [screenshotWithBlur], and [screenshotWithColor]: unlike the
+  /// `toggle*` methods, it does not require knowing the current state.
+  Future<bool> overlayOff() {
+    throw UnimplementedError('overlayOff() has not been implemented.');
+  }
+
   /// Return `true` if screenshot capabilities has been
   /// successfully toggle from it previous state and `false` if the attempt
   /// to toggle failed.

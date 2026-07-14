@@ -18,6 +18,10 @@ Future<void> applyOverlayMode(
   final noScreenshot = NoScreenshot.instance;
   switch (mode) {
     case OverlayMode.none:
+      // Clear any active overlay mode first — screenshotOn() alone only
+      // lifts prevention and would leave a persisted overlay showing in
+      // the app switcher.
+      await noScreenshot.overlayOff();
       await noScreenshot.screenshotOn();
     case OverlayMode.secure:
       await noScreenshot.screenshotOff();

@@ -1,3 +1,8 @@
+## Unreleased
+
+- feat: added `overlayOff()` — an idempotent method that deterministically disables any active app-switcher overlay mode (image, blur, or color) and re-enables screenshots, without needing to know the current state ([#115](https://github.com/FlutterPlaza/no_screenshot/issues/115)). The counterpart to the existing `screenshotWithImage()`/`screenshotWithBlur()`/`screenshotWithColor()` enable methods.
+- fix: `SecureWidget` teardown and `applyOverlayMode(OverlayMode.none)` now clear any active overlay mode. Previously they only called `screenshotOn()`, which lifts screenshot prevention but leaves the overlay mode active (and persisted) — so a disposed `SecureWidget(mode: OverlayMode.blur)` kept showing the blur overlay in the app switcher.
+
 ## 1.2.0
 
 - fix(android): removed a duplicate Kotlin source-directory registration that made the plugin fail to compile on Flutter 3.44.4+ with "Conflicting declarations" errors ([#114](https://github.com/FlutterPlaza/no_screenshot/issues/114)).

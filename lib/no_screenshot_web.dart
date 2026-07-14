@@ -94,6 +94,12 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
     return true;
   }
 
+  @override
+  Future<bool> overlayOff() async {
+    _disableProtection();
+    return true;
+  }
+
   // ── Screenshot Listening ───────────────────────────────────────────
 
   @override

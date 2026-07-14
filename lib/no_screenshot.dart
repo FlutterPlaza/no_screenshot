@@ -147,6 +147,18 @@ class NoScreenshot implements NoScreenshotPlatform {
     return _instancePlatform.screenshotWithColor(color: color);
   }
 
+  /// Always disables any active overlay mode — image, blur, or color —
+  /// and re-enables screenshots (idempotent — safe to call repeatedly).
+  ///
+  /// The deterministic counterpart to [screenshotWithImage],
+  /// [screenshotWithBlur], and [screenshotWithColor]: unlike the
+  /// `toggle*` methods, it does not require knowing the current state.
+  /// No-op (returning `true`) when no overlay mode is active.
+  @override
+  Future<bool> overlayOff() {
+    return _instancePlatform.overlayOff();
+  }
+
   /// Return `true` if screenshot capabilities has been
   /// successfully toggle from it previous state and `false` if the attempt
   /// to toggle failed.

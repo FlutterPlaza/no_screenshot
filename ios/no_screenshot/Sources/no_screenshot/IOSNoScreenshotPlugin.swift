@@ -300,6 +300,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             let color = (call.arguments as? [String: Any])?["color"] as? Int ?? 0xFF000000
             enableColorOverlay(color: color)
             result(true)
+        case "overlayOff":
+            overlayOff()
+            result(true)
         case "startScreenshotListening":
             startListening()
             result("Listening started")
@@ -501,6 +504,27 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
         enablePreventScreenshot()
+        persistState()
+    }
+
+    // Idempotent counterpart to the enable methods: clears whichever
+    // overlay mode is active (they are mutually exclusive) and restores
+    // screenshot permission, mirroring the toggle-off branches.
+    private func overlayOff() {
+        if isImageOverlayModeEnabled {
+            isImageOverlayModeEnabled = false
+            disableImageScreen()
+        }
+        if isBlurOverlayModeEnabled {
+            isBlurOverlayModeEnabled = false
+            disableBlurScreen()
+        }
+        if isColorOverlayModeEnabled {
+            isColorOverlayModeEnabled = false
+            disableColorScreen()
+        }
+        IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
+        disablePreventScreenshot()
         persistState()
     }
 

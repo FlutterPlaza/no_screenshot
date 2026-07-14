@@ -85,6 +85,11 @@ void main() {
       expect(result, true);
     });
 
+    test('overlayOff returns true', () async {
+      final result = await platform.overlayOff();
+      expect(result, true);
+    });
+
     test('startScreenshotListening completes without error', () async {
       await expectLater(platform.startScreenshotListening(), completes);
     });

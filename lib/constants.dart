@@ -6,6 +6,7 @@ const screenSetColor = "toggleScreenshotWithColor";
 const screenEnableImage = "screenshotWithImage";
 const screenEnableBlur = "screenshotWithBlur";
 const screenEnableColor = "screenshotWithColor";
+const overlayOffConst = "overlayOff";
 const toggleScreenShotConst = "toggleScreenshot";
 const startScreenshotListeningConst = 'startScreenshotListening';
 const stopScreenshotListeningConst = 'stopScreenshotListening';

@@ -241,6 +241,17 @@ void NoScreenshotPlugin::HandleMethodCall(
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
+  } else if (method == "overlayOff") {
+    // Idempotent counterpart to the screenshotWith* enable methods:
+    // clears whichever overlay mode is active and restores screenshots.
+    is_image_overlay_mode_ = false;
+    is_blur_overlay_mode_ = false;
+    is_color_overlay_mode_ = false;
+    prevent_screenshot_ = false;
+    PreventionDeactivate(GetFlutterWindowHandle());
+    PersistState();
+    result->Success(flutter::EncodableValue(true));
+
   } else if (method == "startScreenshotListening") {
     if (!is_listening_) {
       is_listening_ = true;
