@@ -10,7 +10,23 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private weak var attachedWindow: UIWindow? = nil
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
-    private static var preventScreenShot: Bool = false
+    // On a macOS host prevention can never engage (see isiOSAppOnMac), so
+    // clamp the flag to false at the source: every writer — including the
+    // overlay modes, which also enable prevention — would otherwise persist
+    // and broadcast is_screenshot_on: true for protection that isn't active.
+    // The flag deliberately tracks the ACTUAL protection state, not the
+    // requested one: on a Mac an overlay mode can be active while prevention
+    // is off, and is_screenshot_on reports prevention, not overlay
+    // visibility. toggleScreenshot is short-circuited on macOS hosts, so the
+    // toggle direction never depends on this clamp. Assigning inside didSet
+    // does not re-trigger the observer.
+    private static var preventScreenShot: Bool = false {
+        didSet {
+            if isiOSAppOnMac && preventScreenShot {
+                preventScreenShot = false
+            }
+        }
+    }
     private var eventSink: FlutterEventSink? = nil
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
@@ -66,7 +82,18 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
     // MARK: - Inline Screenshot Prevention (replaces ScreenProtectorKit)
 
+    // The secure-field layer reparenting permanently blanks the window on
+    // macOS's UIKit host ("Designed for iPhone/iPad" on Apple silicon), so
+    // prevention is skipped there; overlays and detection still work.
+    private static let isiOSAppOnMac: Bool = {
+        if #available(iOS 14.0, *) {
+            return ProcessInfo.processInfo.isiOSAppOnMac
+        }
+        return false
+    }()
+
     private func configurePreventionScreenshot(window: UIWindow) {
+        guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return }
         guard let rootLayer = window.layer.superlayer else { return }
         guard screenPrevent.layer.superlayer == nil else { return }
 
@@ -215,8 +242,16 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "screenshotOff":
-            shotOff()
-            result(true)
+            // On a macOS host the secure-field protection cannot engage (see
+            // isiOSAppOnMac). Skip shotOff() entirely — it would persist and
+            // broadcast is_screenshot_on: true for protection that isn't
+            // active — and report failure per the Dart API contract.
+            if IOSNoScreenshotPlugin.isiOSAppOnMac {
+                result(false)
+            } else {
+                shotOff()
+                result(true)
+            }
         case "screenshotOn":
             shotOn()
             result(true)
@@ -232,8 +267,14 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             let isActive = toggleScreenshotWithColor(color: color)
             result(isActive)
         case "toggleScreenshot":
-            IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
-            result(true)
+            // Same macOS-host guard as screenshotOff: toggling would call
+            // shotOff() and poison the persisted/stream state.
+            if IOSNoScreenshotPlugin.isiOSAppOnMac {
+                result(false)
+            } else {
+                IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
+                result(true)
+            }
         case "screenshotWithImage":
             enableImageOverlay()
             result(true)

@@ -81,6 +81,10 @@ class NoScreenshot implements NoScreenshotPlatform {
   /// successfully disabled or is currently disabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
   ///
+  /// Always returns `false` when an iOS build runs on a Mac
+  /// ("Designed for iPhone/iPad" on Apple silicon) — screenshot
+  /// prevention is not supported there, though overlays and
+  /// screenshot/recording detection still work.
   @override
   Future<bool> screenshotOff() {
     return _instancePlatform.screenshotOff();
@@ -90,6 +94,8 @@ class NoScreenshot implements NoScreenshotPlatform {
   /// successfully enabled or is currently enabled and `false` otherwise.
   /// throw `UnmimplementedError` if not implement
   ///
+  /// Always returns `true` when an iOS build runs on a Mac —
+  /// screenshots are permitted there by default.
   @override
   Future<bool> screenshotOn() {
     return _instancePlatform.screenshotOn();
@@ -142,6 +148,9 @@ class NoScreenshot implements NoScreenshotPlatform {
   /// to toggle failed.
   /// throw `UnmimplementedError` if not implement
   ///
+  /// Always returns `false` when an iOS build runs on a Mac
+  /// ("Designed for iPhone/iPad" on Apple silicon) — screenshot
+  /// prevention is not supported there; see [screenshotOff].
   @override
   Future<bool> toggleScreenshot() {
     return _instancePlatform.toggleScreenshot();
