@@ -92,10 +92,15 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         return false
     }()
 
-    private func configurePreventionScreenshot(window: UIWindow) {
-        guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return }
-        guard let rootLayer = window.layer.superlayer else { return }
-        guard screenPrevent.layer.superlayer == nil else { return }
+    // Returns whether the window may be recorded as attached: true when the
+    // secure field was installed (or intentionally skipped on a macOS host,
+    // where overlays still need the window), false when the reparenting
+    // could not happen yet — e.g. the window's layer is not hosted by the
+    // render server during early startup — so the caller retries later.
+    private func configurePreventionScreenshot(window: UIWindow) -> Bool {
+        guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return true }
+        guard let rootLayer = window.layer.superlayer else { return false }
+        guard screenPrevent.layer.superlayer == nil else { return true }
 
         screenPrevent.semanticContentAttribute = .forceLeftToRight  // RTL fix
         screenPrevent.textAlignment = .left                         // RTL fix
@@ -120,6 +125,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         } else {
             screenPrevent.layer.sublayers?.first?.addSublayer(window.layer)
         }
+        return true
     }
 
     private func enablePreventScreenshot() {
@@ -646,6 +652,9 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         // foreground-inactive one: during startup (or when a method call
         // arrives before activation completes) the scene is still
         // .foregroundInactive even though its key window already exists.
+        // Assumes a single Flutter scene: with multiple connected scenes
+        // (iPad Split View / Stage Manager) this picks the first match,
+        // not necessarily the scene hosting the calling engine.
         let scenes = UIApplication.shared.connectedScenes
         let windowScene =
             (scenes.first(where: { $0.activationState == .foregroundActive })
@@ -688,12 +697,22 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             rootLayer.addSublayer(oldWindow.layer)
             screenPrevent.layer.removeFromSuperlayer()
         }
+        // The old window is now fully detached; clear it so a failed
+        // configure below leaves us unattached (retryable, and reported
+        // truthfully by shotOff) rather than pointing at a stale window.
+        self.attachedWindow = nil
 
         // Use a fresh UITextField to avoid stale layer state.
         screenPrevent = UITextField()
 
-        configurePreventionScreenshot(window: window)
-        self.attachedWindow = window
+        // Record the window only if configuration succeeded (or was
+        // intentionally skipped on a macOS host). Recording a failed
+        // attach would trip the `window === attachedWindow` guard above
+        // and permanently block retries for this window — reintroducing
+        // the silent no-op from #105 with a false success return.
+        if configurePreventionScreenshot(window: window) {
+            self.attachedWindow = window
+        }
     }
 }
 
