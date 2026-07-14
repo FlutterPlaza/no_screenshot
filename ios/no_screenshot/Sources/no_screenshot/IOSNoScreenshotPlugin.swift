@@ -123,6 +123,13 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
 
     private func enablePreventScreenshot() {
+        // Attach lazily: under the UIScene lifecycle the plugin registers
+        // before the scene activates, and if the host app's scene delegate
+        // does not forward lifecycle events (custom SceneDelegate that is
+        // not a FlutterSceneDelegate), no attach ever happens through
+        // lifecycle callbacks. A method call proves the engine is running,
+        // so attach here instead of silently protecting nothing (#105).
+        attachWindowIfNeeded()
         screenPrevent.isSecureTextEntry = true
     }
 
@@ -249,8 +256,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             if IOSNoScreenshotPlugin.isiOSAppOnMac {
                 result(false)
             } else {
-                shotOff()
-                result(true)
+                result(shotOff())
             }
         case "screenshotOn":
             shotOn()
@@ -271,9 +277,11 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
             // shotOff() and poison the persisted/stream state.
             if IOSNoScreenshotPlugin.isiOSAppOnMac {
                 result(false)
-            } else {
-                IOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
+            } else if IOSNoScreenshotPlugin.preventScreenShot {
+                shotOn()
                 result(true)
+            } else {
+                result(shotOff())
             }
         case "screenshotWithImage":
             enableImageOverlay()
@@ -303,10 +311,14 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
     }
 
-    private func shotOff() {
+    // Returns whether protection actually engaged. The requested state is
+    // persisted even on failure so the next lifecycle attach self-heals,
+    // but the caller is told the truth about right now (#105).
+    private func shotOff() -> Bool {
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.DISABLESCREENSHOT
         enablePreventScreenshot()
         persistState()
+        return attachedWindow != nil
     }
 
     private func shotOn() {
@@ -630,8 +642,16 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private func attachWindowIfNeeded() {
         var activeWindow: UIWindow?
 
-        if let windowScene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+        // Prefer the foreground-active scene, but fall back to a
+        // foreground-inactive one: during startup (or when a method call
+        // arrives before activation completes) the scene is still
+        // .foregroundInactive even though its key window already exists.
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene =
+            (scenes.first(where: { $0.activationState == .foregroundActive })
+                ?? scenes.first(where: { $0.activationState == .foregroundInactive }))
+            as? UIWindowScene
+        if let windowScene = windowScene {
             if #available(iOS 15.0, *) {
                 activeWindow = windowScene.keyWindow
             } else {

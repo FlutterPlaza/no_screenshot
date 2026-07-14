@@ -1,5 +1,7 @@
 ## Unreleased
 
+- fix(android): removed a duplicate Kotlin source-directory registration that made the plugin fail to compile on Flutter 3.44.4+ with "Conflicting declarations" errors ([#114](https://github.com/FlutterPlaza/no_screenshot/issues/114)).
+- fix(ios): screenshot prevention now attaches lazily on the first method call, so `screenshotOff()` works even when scene lifecycle events never reach the plugin — e.g. apps migrated to the UIScene lifecycle with a custom `SceneDelegate` that does not subclass `FlutterSceneDelegate` ([#105](https://github.com/FlutterPlaza/no_screenshot/issues/105)). `screenshotOff()`/`toggleScreenshot()` now return `false` instead of a misleading `true` when protection could not engage because no window is available yet.
 - fix(ios): iOS builds running on Apple-silicon Macs ("Designed for iPhone/iPad") no longer show a permanently black/white window at launch ([#107](https://github.com/FlutterPlaza/no_screenshot/issues/107)). Screenshot prevention is not supported by this technique on a macOS host, so `screenshotOff()` now returns `false` there; app-switcher overlays and screenshot/recording detection are unaffected.
 
 ## 1.1.0

@@ -86,6 +86,8 @@ To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migrati
 > 1. **UIScene lifecycle migration** — Overlay show/hide now uses `FlutterSceneLifeCycleDelegate` (UIScene) in addition to `UIApplicationDelegate`, fixing overlay issues on iOS 26+ where the legacy app delegate callbacks are no longer delivered. Minimum deployment target is now **iOS 13.0** and requires **Flutter >= 3.38.0**.
 > 2. **SPM build fix** — Version 0.9.x had a build error (`Unknown receiver 'NoScreenshotPlugin'`) when using Swift Package Manager ([#96](https://github.com/FlutterPlaza/no_screenshot/issues/96)). This is now fixed via an `@objc(NoScreenshotPlugin)` annotation.
 
+> **Migrated your iOS app to the UIScene lifecycle?** If your `Info.plist` scene manifest points to a **custom** scene delegate, it must subclass `FlutterSceneDelegate` (or forward scene lifecycle events to the plugin registry) — otherwise plugins never receive scene events. See [Flutter's UIScene migration guide](https://docs.flutter.dev/release/breaking-changes/uiscenedelegate). The plugin also attaches its protection lazily on the first method call ([#105](https://github.com/FlutterPlaza/no_screenshot/issues/105)), but correct event forwarding is required for overlays to show and hide with the app switcher.
+
 ## Quick Start
 
 ```dart

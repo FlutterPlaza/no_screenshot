@@ -32,6 +32,10 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// ("Designed for iPhone/iPad" on Apple silicon) — screenshot
   /// prevention is not supported there, though overlays and
   /// screenshot/recording detection still work.
+  ///
+  /// On iOS, also returns `false` if no window is available yet (e.g.
+  /// called before the first frame is rendered). The request is
+  /// remembered and protection engages on the next app activation.
   Future<bool> screenshotOff() {
     throw UnimplementedError('screenshotOff() has not been implemented.');
   }
