@@ -24,6 +24,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
+| Deterministic overlay off (`overlayOff()`) | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Granular callbacks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Declarative SecureWidget | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Per-route protection policies | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -293,6 +294,8 @@ Future<void> toggleBlurCustom() async {
 > ```dart
 > await _noScreenshot.overlayOff();
 > ```
+>
+> The plugin tracks a **single prevention state**, not per-caller claims: while an overlay mode is active, `overlayOff()` lifts prevention exactly like that mode's toggle-off — even if `screenshotOff()` was also called in the meantime. Call `screenshotOff()` afterwards if you want prevention without an overlay. When no overlay mode is active, `overlayOff()` is a pure no-op and never touches prevention set via `screenshotOff()`.
 
 #### Platform-specific blur implementation
 
