@@ -511,6 +511,14 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     // overlay mode is active (they are mutually exclusive) and restores
     // screenshot permission, mirroring the toggle-off branches.
     private func overlayOff() {
+        // Only lift prevention when an overlay mode was actually active
+        // (mirroring that mode's toggle-off branch). Prevention established
+        // independently via screenshotOff() must survive this call — the
+        // documented contract is a no-op when no overlay is active.
+        let hadOverlay = isImageOverlayModeEnabled || isBlurOverlayModeEnabled
+            || isColorOverlayModeEnabled
+        guard hadOverlay else { return }
+
         if isImageOverlayModeEnabled {
             isImageOverlayModeEnabled = false
             disableImageScreen()

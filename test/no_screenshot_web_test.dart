@@ -90,6 +90,32 @@ void main() {
       expect(result, true);
     });
 
+    test('overlayOff does not lift protection set by screenshotOff', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
+
+      await platform.screenshotOff();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
+
+      // overlayOff must be a no-op when no overlay mode is active —
+      // prevention established via screenshotOff() survives.
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
+
+    test('overlayOff lifts protection established by an overlay mode', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
+
+      await platform.screenshotWithBlur();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events.last.isScreenshotProtectionOn, isFalse);
+      await sub.cancel();
+    });
+
     test('startScreenshotListening completes without error', () async {
       await expectLater(platform.startScreenshotListening(), completes);
     });

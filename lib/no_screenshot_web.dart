@@ -22,6 +22,10 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
   }
 
   bool _isProtectionOn = false;
+  // Whether protection was established via an overlay-mode method
+  // (screenshotWith*/toggleScreenshotWith*). overlayOff() must only lift
+  // protection it owns — never protection set via screenshotOff().
+  bool _isOverlayModeOn = false;
   bool _isListening = false;
 
   final StreamController<ScreenshotSnapshot> _controller =
@@ -61,42 +65,53 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
   @override
   Future<bool> toggleScreenshotWithImage() async {
     _isProtectionOn ? _disableProtection() : _enableProtection();
+    _isOverlayModeOn = _isProtectionOn;
     return _isProtectionOn;
   }
 
   @override
   Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
     _isProtectionOn ? _disableProtection() : _enableProtection();
+    _isOverlayModeOn = _isProtectionOn;
     return _isProtectionOn;
   }
 
   @override
   Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
     _isProtectionOn ? _disableProtection() : _enableProtection();
+    _isOverlayModeOn = _isProtectionOn;
     return _isProtectionOn;
   }
 
   @override
   Future<bool> screenshotWithImage() async {
     _enableProtection();
+    _isOverlayModeOn = true;
     return true;
   }
 
   @override
   Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
     _enableProtection();
+    _isOverlayModeOn = true;
     return true;
   }
 
   @override
   Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
     _enableProtection();
+    _isOverlayModeOn = true;
     return true;
   }
 
   @override
   Future<bool> overlayOff() async {
-    _disableProtection();
+    // Only lift protection that an overlay mode established — protection
+    // set via screenshotOff() must survive this call (no-op contract).
+    if (_isOverlayModeOn) {
+      _isOverlayModeOn = false;
+      _disableProtection();
+    }
     return true;
   }
 

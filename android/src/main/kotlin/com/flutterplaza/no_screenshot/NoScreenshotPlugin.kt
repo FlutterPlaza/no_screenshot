@@ -524,6 +524,15 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     // overlay mode is active (they are mutually exclusive) and restores
     // screenshot permission, mirroring the toggle-off branches.
     private fun overlayOff(): Boolean {
+        // Only lift prevention when an overlay mode was actually active
+        // (mirroring that mode's toggle-off branch). Prevention established
+        // independently via screenshotOff() must survive this call — the
+        // documented contract is a no-op when no overlay is active.
+        val hadOverlay = isImageOverlayModeEnabled ||
+            isBlurOverlayModeEnabled ||
+            isColorOverlayModeEnabled
+        if (!hadOverlay) return true
+
         if (isImageOverlayModeEnabled) {
             isImageOverlayModeEnabled = false
             saveImageOverlayState(false)

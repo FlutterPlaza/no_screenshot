@@ -153,7 +153,9 @@ class NoScreenshot implements NoScreenshotPlatform {
   /// The deterministic counterpart to [screenshotWithImage],
   /// [screenshotWithBlur], and [screenshotWithColor]: unlike the
   /// `toggle*` methods, it does not require knowing the current state.
-  /// No-op (returning `true`) when no overlay mode is active.
+  /// Prevention enabled independently via [screenshotOff] is NOT
+  /// affected — when no overlay mode is active this is a pure no-op
+  /// (returning `true`).
   @override
   Future<bool> overlayOff() {
     return _instancePlatform.overlayOff();

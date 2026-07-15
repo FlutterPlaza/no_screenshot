@@ -480,7 +480,7 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotWithImage()` | `Future<bool>` | Always enable image overlay (idempotent) |
 | `screenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Always enable blur overlay (idempotent) |
 | `screenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Always enable color overlay (idempotent) |
-| `overlayOff()` | `Future<bool>` | Always disable any active overlay mode and re-enable screenshots (idempotent) |
+| `overlayOff()` | `Future<bool>` | Disable any active overlay mode and re-enable screenshots (idempotent; no-op if no overlay is active — prevention set via `screenshotOff()` is untouched) |
 | `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
 | **Granular Callbacks** | | |
 | `onScreenshotDetected` | `ScreenshotEventCallback?` | Callback fired when a screenshot is detected |
