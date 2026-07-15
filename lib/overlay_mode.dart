@@ -24,6 +24,10 @@ Future<void> applyOverlayMode(
       await noScreenshot.overlayOff();
       await noScreenshot.screenshotOn();
     case OverlayMode.secure:
+      // Clear any active overlay mode first — switching e.g. blur → secure
+      // must not leave the overlay flag set (the overlay would keep
+      // showing in the app switcher and persist across restarts).
+      await noScreenshot.overlayOff();
       await noScreenshot.screenshotOff();
     case OverlayMode.blur:
       await noScreenshot.screenshotWithBlur(blurRadius: blurRadius);

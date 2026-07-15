@@ -92,8 +92,14 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// The deterministic counterpart to [screenshotWithImage],
   /// [screenshotWithBlur], and [screenshotWithColor]: unlike the
   /// `toggle*` methods, it does not require knowing the current state.
-  /// Prevention enabled independently via [screenshotOff] is NOT
-  /// affected — when no overlay mode is active this is a pure no-op.
+  ///
+  /// When no overlay mode is active this is a pure no-op — prevention
+  /// set via [screenshotOff] is untouched. When an overlay mode IS
+  /// active, this clears it and lifts prevention exactly like that
+  /// mode's toggle-off — even if [screenshotOff] was also called while
+  /// the overlay was active (the plugin tracks a single prevention
+  /// state, not per-caller claims). Call [screenshotOff] afterwards if
+  /// you want prevention without an overlay.
   Future<bool> overlayOff() {
     throw UnimplementedError('overlayOff() has not been implemented.');
   }

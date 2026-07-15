@@ -119,6 +119,28 @@ void main() {
       },
     );
 
+    test(
+      'overlayOff after blur + screenshotOff lifts protection '
+      '(single-flag semantics, matches toggle-off)',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotWithBlur();
+        await platform.screenshotOff();
+        await platform.overlayOff();
+        await Future<void>.delayed(Duration.zero);
+
+        // Intentional: the plugin tracks a single prevention state, not
+        // per-caller claims. With an overlay active, overlayOff() clears
+        // it and lifts prevention exactly like that mode's toggle-off —
+        // an intervening screenshotOff() does not create a separate
+        // claim. Documented on NoScreenshotPlatform.overlayOff().
+        expect(events.last.isScreenshotProtectionOn, isFalse);
+        await sub.cancel();
+      },
+    );
+
     test('startScreenshotListening completes without error', () async {
       await expectLater(platform.startScreenshotListening(), completes);
     });

@@ -164,6 +164,29 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotOn'));
   });
 
+  testWidgets('didUpdateWidget blur -> secure clears the overlay mode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const SecureWidget(mode: OverlayMode.blur, child: SizedBox()),
+    );
+    await tester.pump();
+    fakePlatform.calls.clear();
+
+    await tester.pumpWidget(
+      const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
+    );
+    await tester.pump();
+    // screenshotOff() alone would leave the blur overlay flag set
+    // natively (still shown in the app switcher, persisted across
+    // restarts) — the overlay must be cleared first.
+    final overlayOffIndex = fakePlatform.calls.indexOf('overlayOff');
+    final screenshotOffIndex = fakePlatform.calls.indexOf('screenshotOff');
+    expect(overlayOffIndex, isNot(-1));
+    expect(screenshotOffIndex, isNot(-1));
+    expect(overlayOffIndex, lessThan(screenshotOffIndex));
+  });
+
   testWidgets('didUpdateWidget re-applies when mode changes', (tester) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
