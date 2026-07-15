@@ -104,17 +104,20 @@ void main() {
       await sub.cancel();
     });
 
-    test('overlayOff lifts protection established by an overlay mode', () async {
-      final events = <ScreenshotSnapshot>[];
-      final sub = platform.screenshotStream.listen(events.add);
+    test(
+      'overlayOff lifts protection established by an overlay mode',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
 
-      await platform.screenshotWithBlur();
-      await platform.overlayOff();
-      await Future<void>.delayed(Duration.zero);
+        await platform.screenshotWithBlur();
+        await platform.overlayOff();
+        await Future<void>.delayed(Duration.zero);
 
-      expect(events.last.isScreenshotProtectionOn, isFalse);
-      await sub.cancel();
-    });
+        expect(events.last.isScreenshotProtectionOn, isFalse);
+        await sub.cancel();
+      },
+    );
 
     test('startScreenshotListening completes without error', () async {
       await expectLater(platform.startScreenshotListening(), completes);
