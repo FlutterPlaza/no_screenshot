@@ -330,6 +330,7 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     private func shotOn() {
         IOSNoScreenshotPlugin.preventScreenShot = IOSNoScreenshotPlugin.ENABLESCREENSHOT
         disablePreventScreenshot()
+        detachWindowIfNeeded()
         persistState()
     }
 
@@ -591,11 +592,12 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
 
     private func updateScreenshotState(isScreenshotBlocked: Bool) {
-        attachWindowIfNeeded()
         if isScreenshotBlocked {
+            // enablePreventScreenshot attaches the window itself.
             enablePreventScreenshot()
         } else {
             disablePreventScreenshot()
+            detachWindowIfNeeded()
         }
     }
 
@@ -643,6 +645,26 @@ public class IOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.screenshotStream()
         }
+    }
+
+    // Fully undo the secure-field layer reparenting while prevention is off.
+    // Keeping the window's layer nested inside the secure text field's layer
+    // can leave the window gray-but-interactive after the app returns from
+    // the background (seen especially in Low Power Mode), so the app should
+    // run with a stock layer tree whenever protection is not engaged.
+    private func detachWindowIfNeeded() {
+        // On macOS hosts nothing is ever reparented, and attachedWindow is
+        // still needed by the overlay modes — leave it alone.
+        guard !IOSNoScreenshotPlugin.isiOSAppOnMac else { return }
+        guard let window = attachedWindow else { return }
+
+        if let rootLayer = screenPrevent.layer.superlayer {
+            rootLayer.addSublayer(window.layer)
+            screenPrevent.layer.removeFromSuperlayer()
+        }
+        // Use a fresh UITextField to avoid stale layer state on re-attach.
+        screenPrevent = UITextField()
+        attachedWindow = nil
     }
 
     private func attachWindowIfNeeded() {
