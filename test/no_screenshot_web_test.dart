@@ -119,109 +119,91 @@ void main() {
       },
     );
 
-    test(
-      'overlayOff after blur + screenshotOff keeps protection on '
-      '(independent claim survives)',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('overlayOff after blur + screenshotOff keeps protection on '
+        '(independent claim survives)', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotWithBlur();
-        await platform.screenshotOff();
-        await platform.overlayOff();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotWithBlur();
+      await platform.screenshotOff();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
 
-        // Prevention is tracked as two claims: overlayOff() releases only
-        // the overlay's claim, so the independent claim taken via
-        // screenshotOff() keeps protection engaged.
-        expect(events.last.isScreenshotProtectionOn, isTrue);
-        await sub.cancel();
-      },
-    );
+      // Prevention is tracked as two claims: overlayOff() releases only
+      // the overlay's claim, so the independent claim taken via
+      // screenshotOff() keeps protection engaged.
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
 
-    test(
-      'screenshotOn keeps protection on while an overlay mode is active '
-      '(overlay claim survives)',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('screenshotOn keeps protection on while an overlay mode is active '
+        '(overlay claim survives)', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotWithBlur();
-        await platform.screenshotOn();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotWithBlur();
+      await platform.screenshotOn();
+      await Future<void>.delayed(Duration.zero);
 
-        expect(events.last.isScreenshotProtectionOn, isTrue);
-        await sub.cancel();
-      },
-    );
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
 
-    test(
-      'blur + screenshotOn + screenshotOff + overlayOff keeps protection on '
-      '(fresh independent claim survives a later overlayOff)',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('blur + screenshotOn + screenshotOff + overlayOff keeps protection on '
+        '(fresh independent claim survives a later overlayOff)', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotWithBlur();
-        await platform.screenshotOn();
-        await platform.screenshotOff();
-        await platform.overlayOff();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotWithBlur();
+      await platform.screenshotOn();
+      await platform.screenshotOff();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
 
-        expect(events.last.isScreenshotProtectionOn, isTrue);
-        await sub.cancel();
-      },
-    );
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
 
-    test(
-      'screenshotOff + blur + overlayOff keeps protection on',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('screenshotOff + blur + overlayOff keeps protection on', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotOff();
-        await platform.screenshotWithBlur();
-        await platform.overlayOff();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotOff();
+      await platform.screenshotWithBlur();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
 
-        expect(events.last.isScreenshotProtectionOn, isTrue);
-        await sub.cancel();
-      },
-    );
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
 
-    test(
-      'screenshotOff + blur toggle on/off keeps protection on '
-      '(independent claim survives the overlay toggle-off)',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('screenshotOff + blur toggle on/off keeps protection on '
+        '(independent claim survives the overlay toggle-off)', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotOff();
-        await platform.toggleScreenshotWithBlur();
-        await platform.toggleScreenshotWithBlur();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotOff();
+      await platform.toggleScreenshotWithBlur();
+      await platform.toggleScreenshotWithBlur();
+      await Future<void>.delayed(Duration.zero);
 
-        expect(events.last.isScreenshotProtectionOn, isTrue);
-        await sub.cancel();
-      },
-    );
+      expect(events.last.isScreenshotProtectionOn, isTrue);
+      await sub.cancel();
+    });
 
-    test(
-      'releasing both claims fully disables protection',
-      () async {
-        final events = <ScreenshotSnapshot>[];
-        final sub = platform.screenshotStream.listen(events.add);
+    test('releasing both claims fully disables protection', () async {
+      final events = <ScreenshotSnapshot>[];
+      final sub = platform.screenshotStream.listen(events.add);
 
-        await platform.screenshotOff();
-        await platform.screenshotWithBlur();
-        await platform.screenshotOn();
-        await platform.overlayOff();
-        await Future<void>.delayed(Duration.zero);
+      await platform.screenshotOff();
+      await platform.screenshotWithBlur();
+      await platform.screenshotOn();
+      await platform.overlayOff();
+      await Future<void>.delayed(Duration.zero);
 
-        expect(events.last.isScreenshotProtectionOn, isFalse);
-        await sub.cancel();
-      },
-    );
+      expect(events.last.isScreenshotProtectionOn, isFalse);
+      await sub.cancel();
+    });
 
     test('startScreenshotListening completes without error', () async {
       await expectLater(platform.startScreenshotListening(), completes);
