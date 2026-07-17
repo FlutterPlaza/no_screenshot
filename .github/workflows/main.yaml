@@ -88,7 +88,10 @@ jobs:
       - run: flutter pub get
 
       - name: Run browser-gated tests
-        run: flutter test --platform chrome
+        # Only the @TestOn('browser') suite — the full suite runs on the VM
+        # in the Test job, and VM-oriented tests assert double interpolations
+        # ("50.0") that the JS runtime prints as "50".
+        run: flutter test --platform chrome test/no_screenshot_web_test.dart
 
   test:
     name: Test
