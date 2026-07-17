@@ -18,17 +18,19 @@ Future<void> applyOverlayMode(
   final noScreenshot = NoScreenshot.instance;
   switch (mode) {
     case OverlayMode.none:
-      // Clear any active overlay mode first — screenshotOn() alone only
-      // lifts prevention and would leave a persisted overlay showing in
-      // the app switcher.
+      // Release both prevention claims: overlayOff() clears the overlay
+      // mode (and its claim), screenshotOn() releases the independent
+      // claim. Each call is needed — they release different claims.
       await noScreenshot.overlayOff();
       await noScreenshot.screenshotOn();
     case OverlayMode.secure:
-      // Clear any active overlay mode first — switching e.g. blur → secure
-      // must not leave the overlay flag set (the overlay would keep
-      // showing in the app switcher and persist across restarts).
-      await noScreenshot.overlayOff();
+      // Take the independent prevention claim FIRST, then release the
+      // overlay's claim: prevention stays continuously engaged across an
+      // overlay → secure transition (no unprotected window between the
+      // two calls), and the overlay flag can't leak into the app
+      // switcher or persist across restarts.
       await noScreenshot.screenshotOff();
+      await noScreenshot.overlayOff();
     case OverlayMode.blur:
       await noScreenshot.screenshotWithBlur(blurRadius: blurRadius);
     case OverlayMode.color:

@@ -7,6 +7,10 @@ namespace no_screenshot {
 
 struct PersistedState {
   bool prevent_screenshot = false;
+  bool independent_prevention = false;
+  // Whether the independent_prevention key was present in the file —
+  // absent on files written by older versions (used for migration).
+  bool has_independent_prevention = false;
   bool is_image_overlay_mode = false;
   bool is_blur_overlay_mode = false;
   bool is_color_overlay_mode = false;

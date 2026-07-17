@@ -177,14 +177,15 @@ void main() {
       const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
     );
     await tester.pump();
-    // screenshotOff() alone would leave the blur overlay flag set
-    // natively (still shown in the app switcher, persisted across
-    // restarts) — the overlay must be cleared first.
+    // The independent claim is taken FIRST (screenshotOff) and the
+    // overlay's claim released second (overlayOff), so prevention stays
+    // continuously engaged across the transition — and the overlay flag
+    // cannot leak into the app switcher or persist across restarts.
     final overlayOffIndex = fakePlatform.calls.indexOf('overlayOff');
     final screenshotOffIndex = fakePlatform.calls.indexOf('screenshotOff');
     expect(overlayOffIndex, isNot(-1));
     expect(screenshotOffIndex, isNot(-1));
-    expect(overlayOffIndex, lessThan(screenshotOffIndex));
+    expect(screenshotOffIndex, lessThan(overlayOffIndex));
   });
 
   testWidgets('didUpdateWidget re-applies when mode changes', (tester) async {

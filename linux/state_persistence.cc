@@ -25,6 +25,7 @@ void state_persistence_free(StatePersistence* self) {
 
 void state_persistence_save(StatePersistence* self,
                             gboolean prevent_screenshot,
+                            gboolean independent_prevention,
                             gboolean is_image_overlay_mode,
                             gboolean is_blur_overlay_mode,
                             gboolean is_color_overlay_mode,
@@ -36,6 +37,7 @@ void state_persistence_save(StatePersistence* self,
   g_autofree gchar* json = g_strdup_printf(
       "{\n"
       "  \"prevent_screenshot\": %s,\n"
+      "  \"independent_prevention\": %s,\n"
       "  \"is_image_overlay_mode\": %s,\n"
       "  \"is_blur_overlay_mode\": %s,\n"
       "  \"is_color_overlay_mode\": %s,\n"
@@ -43,6 +45,7 @@ void state_persistence_save(StatePersistence* self,
       "  \"color_value\": %d\n"
       "}\n",
       prevent_screenshot ? "true" : "false",
+      independent_prevention ? "true" : "false",
       is_image_overlay_mode ? "true" : "false",
       is_blur_overlay_mode ? "true" : "false",
       is_color_overlay_mode ? "true" : "false",
@@ -56,7 +59,8 @@ void state_persistence_save(StatePersistence* self,
 }
 
 PersistedState state_persistence_load(StatePersistence* self) {
-  PersistedState state = {FALSE, FALSE, FALSE, FALSE, 30.0, (gint)0xFF000000};
+  PersistedState state = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+                          30.0,  (gint)0xFF000000};
 
   g_autofree gchar* contents = NULL;
   g_autoptr(GError) error = NULL;
@@ -69,6 +73,12 @@ PersistedState state_persistence_load(StatePersistence* self) {
   // Simple string search — avoids pulling in a full JSON parser.
   if (g_strstr_len(contents, -1, "\"prevent_screenshot\": true") != NULL) {
     state.prevent_screenshot = TRUE;
+  }
+  if (g_strstr_len(contents, -1, "\"independent_prevention\":") != NULL) {
+    state.has_independent_prevention = TRUE;
+    if (g_strstr_len(contents, -1, "\"independent_prevention\": true") != NULL) {
+      state.independent_prevention = TRUE;
+    }
   }
   if (g_strstr_len(contents, -1, "\"is_image_overlay_mode\": true") != NULL) {
     state.is_image_overlay_mode = TRUE;

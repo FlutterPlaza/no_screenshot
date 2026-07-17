@@ -5,7 +5,13 @@ import QuartzCore
 public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private static var methodChannel: FlutterMethodChannel? = nil
     private static var eventChannel: FlutterEventChannel? = nil
-    private static var preventScreenShot: Bool = false
+    // Prevention is tracked as two separate claims: the plain
+    // screenshotOff()/screenshotOn() pair owns `independentPrevention`, and
+    // an active overlay mode is its own claim. The window's sharingType is
+    // .none while EITHER claim is held (see applyEffectivePrevention), so
+    // releasing one claim never drops protection the other still demands.
+    private static var independentPrevention: Bool = false
+    private static var preventScreenShot: Bool = false  // effective state
     private var eventSink: FlutterEventSink? = nil
     private var lastSharedPreferencesState: String = ""
     private var hasSharedPreferencesChanged: Bool = false
@@ -43,10 +49,8 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         "simplescreenrecorder"
     ]
 
-    private static let ENABLESCREENSHOT = false
-    private static let DISABLESCREENSHOT = true
-
     private static let preventScreenShotKey = "preventScreenShot"
+    private static let independentPreventionKey = "independentPrevention"
     private static let imageOverlayModeKey = "imageOverlayMode"
     private static let blurOverlayModeKey = "blurOverlayMode"
     private static let blurRadiusKey = "blurRadius"
@@ -121,6 +125,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
 
     func persistState() {
         UserDefaults.standard.set(MacOSNoScreenshotPlugin.preventScreenShot, forKey: MacOSNoScreenshotPlugin.preventScreenShotKey)
+        UserDefaults.standard.set(MacOSNoScreenshotPlugin.independentPrevention, forKey: MacOSNoScreenshotPlugin.independentPreventionKey)
         UserDefaults.standard.set(isImageOverlayModeEnabled, forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
         UserDefaults.standard.set(isBlurOverlayModeEnabled, forKey: MacOSNoScreenshotPlugin.blurOverlayModeKey)
         UserDefaults.standard.set(blurRadius, forKey: MacOSNoScreenshotPlugin.blurRadiusKey)
@@ -131,7 +136,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     }
 
     func fetchPersistedState() {
-        let fetchVal = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.preventScreenShotKey) ? MacOSNoScreenshotPlugin.DISABLESCREENSHOT : MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+        let fetchVal = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.preventScreenShotKey)
         isImageOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.imageOverlayModeKey)
         isBlurOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.blurOverlayModeKey)
         let savedRadius = UserDefaults.standard.double(forKey: MacOSNoScreenshotPlugin.blurRadiusKey)
@@ -139,7 +144,19 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         isColorOverlayModeEnabled = UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.colorOverlayModeKey)
         colorValue = UserDefaults.standard.integer(forKey: MacOSNoScreenshotPlugin.colorValueKey)
         if colorValue == 0 { colorValue = 0xFF000000 }
-        updateScreenshotState(isScreenshotBlocked: fetchVal)
+        if UserDefaults.standard.object(forKey: MacOSNoScreenshotPlugin.independentPreventionKey) != nil {
+            MacOSNoScreenshotPlugin.independentPrevention =
+                UserDefaults.standard.bool(forKey: MacOSNoScreenshotPlugin.independentPreventionKey)
+        } else {
+            // Migrate from versions that persisted only the effective state:
+            // prevention held without an overlay was independent. Persist
+            // immediately so migration is one-shot and can never re-run
+            // against a later overlay flag (which would drop the claim).
+            MacOSNoScreenshotPlugin.independentPrevention = fetchVal && !overlayClaim
+            UserDefaults.standard.set(MacOSNoScreenshotPlugin.independentPrevention,
+                                      forKey: MacOSNoScreenshotPlugin.independentPreventionKey)
+        }
+        applyEffectivePrevention()
         print("Fetched state: \(MacOSNoScreenshotPlugin.preventScreenShot), imageOverlay: \(isImageOverlayModeEnabled), blurOverlay: \(isBlurOverlayModeEnabled), blurRadius: \(blurRadius), colorOverlay: \(isColorOverlayModeEnabled), colorValue: \(colorValue)")
     }
 
@@ -152,7 +169,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             shotOn()
             result(true)
         case "toggleScreenshot":
-            MacOSNoScreenshotPlugin.preventScreenShot ? shotOn() : shotOff()
+            MacOSNoScreenshotPlugin.independentPrevention ? shotOn() : shotOff()
             result(true)
         case "toggleScreenshotWithImage":
             let isActive = toggleScreenshotWithImage()
@@ -196,27 +213,33 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         }
     }
 
-    private func shotOff() {
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-        print("Screenshot and screen recording prevention activated.")
+    private var overlayClaim: Bool {
+        isImageOverlayModeEnabled || isBlurOverlayModeEnabled || isColorOverlayModeEnabled
+    }
 
+    // Recomputes the effective prevention state from both claims and drives
+    // the window's sharingType accordingly.
+    private func applyEffectivePrevention() {
+        let effective = MacOSNoScreenshotPlugin.independentPrevention || overlayClaim
+        MacOSNoScreenshotPlugin.preventScreenShot = effective
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
-                window.sharingType = .none // Prevents both screenshots and screen recordings
+                window.sharingType = effective ? .none : .readOnly
             }
         }
+    }
+
+    private func shotOff() {
+        MacOSNoScreenshotPlugin.independentPrevention = true
+        applyEffectivePrevention()
+        print("Screenshot and screen recording prevention activated.")
         persistState()
     }
 
     private func shotOn() {
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
+        MacOSNoScreenshotPlugin.independentPrevention = false
+        applyEffectivePrevention()
         print("Screenshot and screen recording prevention deactivated.")
-
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = .readOnly // Allows screenshots and screen recordings
-            }
-        }
         persistState()
     }
 
@@ -233,22 +256,12 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                 isColorOverlayModeEnabled = false
                 removeColorOverlay()
             }
-            // Enable screenshot prevention
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .none
-                }
-            }
+            // Mode is now active — the overlay holds a prevention claim.
+            applyEffectivePrevention()
         } else {
-            // Disable screenshot prevention and remove any overlay
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .readOnly
-                }
-            }
+            // Mode is now inactive — release only the overlay's claim.
             removeImageOverlay()
+            applyEffectivePrevention()
         }
 
         persistState()
@@ -269,20 +282,10 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                 isColorOverlayModeEnabled = false
                 removeColorOverlay()
             }
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .none
-                }
-            }
+            applyEffectivePrevention()
         } else {
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .readOnly
-                }
-            }
             removeBlurOverlay()
+            applyEffectivePrevention()
         }
 
         persistState()
@@ -400,20 +403,10 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
                 isBlurOverlayModeEnabled = false
                 removeBlurOverlay()
             }
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .none
-                }
-            }
+            applyEffectivePrevention()
         } else {
-            MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
-            DispatchQueue.main.async {
-                if let window = NSApplication.shared.windows.first {
-                    window.sharingType = .readOnly
-                }
-            }
             removeColorOverlay()
+            applyEffectivePrevention()
         }
 
         persistState()
@@ -461,12 +454,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             isColorOverlayModeEnabled = false
             removeColorOverlay()
         }
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = .none
-            }
-        }
+        applyEffectivePrevention()
         persistState()
     }
 
@@ -481,12 +469,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             isColorOverlayModeEnabled = false
             removeColorOverlay()
         }
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = .none
-            }
-        }
+        applyEffectivePrevention()
         persistState()
     }
 
@@ -501,12 +484,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             isBlurOverlayModeEnabled = false
             removeBlurOverlay()
         }
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.DISABLESCREENSHOT
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = .none
-            }
-        }
+        applyEffectivePrevention()
         persistState()
     }
 
@@ -514,13 +492,10 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
     // overlay mode is active (they are mutually exclusive) and restores
     // screenshot permission, mirroring the toggle-off branches.
     private func overlayOff() {
-        // Only lift prevention when an overlay mode was actually active
-        // (mirroring that mode's toggle-off branch). Prevention established
-        // independently via screenshotOff() must survive this call — the
-        // documented contract is a no-op when no overlay is active.
-        let hadOverlay = isImageOverlayModeEnabled || isBlurOverlayModeEnabled
-            || isColorOverlayModeEnabled
-        guard hadOverlay else { return }
+        // Pure no-op when no overlay mode is active. Clearing the overlay
+        // releases only the overlay's prevention claim — an independent
+        // claim held via screenshotOff() keeps the window unsharable.
+        guard overlayClaim else { return }
 
         if isImageOverlayModeEnabled {
             isImageOverlayModeEnabled = false
@@ -534,12 +509,7 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
             isColorOverlayModeEnabled = false
             removeColorOverlay()
         }
-        MacOSNoScreenshotPlugin.preventScreenShot = MacOSNoScreenshotPlugin.ENABLESCREENSHOT
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = .readOnly
-            }
-        }
+        applyEffectivePrevention()
         persistState()
     }
 
@@ -768,15 +738,6 @@ public class MacOSNoScreenshotPlugin: NSObject, FlutterPlugin, FlutterStreamHand
         isScreenRecording = false
         updateSharedPreferencesState("")
         print("Recording detection stopped.")
-    }
-
-    private func updateScreenshotState(isScreenshotBlocked: Bool) {
-        DispatchQueue.main.async {
-            if let window = NSApplication.shared.windows.first {
-                window.sharingType = isScreenshotBlocked ? .none : .readOnly
-            }
-        }
-        print("Updated screenshot state to \(isScreenshotBlocked ? "Blocked" : "Unblocked")")
     }
 
     private func updateSharedPreferencesState(_ screenshotData: String, timestamp: Int64 = 0, sourceApp: String = "") {

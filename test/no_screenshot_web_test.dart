@@ -120,8 +120,8 @@ void main() {
     );
 
     test(
-      'overlayOff after blur + screenshotOff lifts protection '
-      '(single-flag semantics, matches toggle-off)',
+      'overlayOff after blur + screenshotOff keeps protection on '
+      '(independent claim survives)',
       () async {
         final events = <ScreenshotSnapshot>[];
         final sub = platform.screenshotStream.listen(events.add);
@@ -131,11 +131,93 @@ void main() {
         await platform.overlayOff();
         await Future<void>.delayed(Duration.zero);
 
-        // Intentional: the plugin tracks a single prevention state, not
-        // per-caller claims. With an overlay active, overlayOff() clears
-        // it and lifts prevention exactly like that mode's toggle-off —
-        // an intervening screenshotOff() does not create a separate
-        // claim. Documented on NoScreenshotPlatform.overlayOff().
+        // Prevention is tracked as two claims: overlayOff() releases only
+        // the overlay's claim, so the independent claim taken via
+        // screenshotOff() keeps protection engaged.
+        expect(events.last.isScreenshotProtectionOn, isTrue);
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'screenshotOn keeps protection on while an overlay mode is active '
+      '(overlay claim survives)',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotWithBlur();
+        await platform.screenshotOn();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(events.last.isScreenshotProtectionOn, isTrue);
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'blur + screenshotOn + screenshotOff + overlayOff keeps protection on '
+      '(fresh independent claim survives a later overlayOff)',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotWithBlur();
+        await platform.screenshotOn();
+        await platform.screenshotOff();
+        await platform.overlayOff();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(events.last.isScreenshotProtectionOn, isTrue);
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'screenshotOff + blur + overlayOff keeps protection on',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotOff();
+        await platform.screenshotWithBlur();
+        await platform.overlayOff();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(events.last.isScreenshotProtectionOn, isTrue);
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'screenshotOff + blur toggle on/off keeps protection on '
+      '(independent claim survives the overlay toggle-off)',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotOff();
+        await platform.toggleScreenshotWithBlur();
+        await platform.toggleScreenshotWithBlur();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(events.last.isScreenshotProtectionOn, isTrue);
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'releasing both claims fully disables protection',
+      () async {
+        final events = <ScreenshotSnapshot>[];
+        final sub = platform.screenshotStream.listen(events.add);
+
+        await platform.screenshotOff();
+        await platform.screenshotWithBlur();
+        await platform.screenshotOn();
+        await platform.overlayOff();
+        await Future<void>.delayed(Duration.zero);
+
         expect(events.last.isScreenshotProtectionOn, isFalse);
         await sub.cancel();
       },

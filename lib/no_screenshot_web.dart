@@ -22,9 +22,12 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
   }
 
   bool _isProtectionOn = false;
-  // Whether protection was established via an overlay-mode method
-  // (screenshotWith*/toggleScreenshotWith*). overlayOff() must only lift
-  // protection it owns — never protection set via screenshotOff().
+  // Prevention is tracked as two separate claims, mirroring the native
+  // platforms: the plain screenshotOff()/screenshotOn() pair owns
+  // `_independentOn`, and the overlay-mode methods own `_isOverlayModeOn`.
+  // Protection is applied while EITHER claim is held (_applyEffective), so
+  // releasing one claim never drops protection the other still demands.
+  bool _independentOn = false;
   bool _isOverlayModeOn = false;
   bool _isListening = false;
 
@@ -46,71 +49,75 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
 
   @override
   Future<bool> screenshotOff() async {
-    _enableProtection();
+    _independentOn = true;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> screenshotOn() async {
-    _disableProtection();
+    _independentOn = false;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> toggleScreenshot() async {
-    _isProtectionOn ? _disableProtection() : _enableProtection();
+    _independentOn = !_independentOn;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> toggleScreenshotWithImage() async {
-    _isProtectionOn ? _disableProtection() : _enableProtection();
-    _isOverlayModeOn = _isProtectionOn;
-    return _isProtectionOn;
+    _isOverlayModeOn = !_isOverlayModeOn;
+    _applyEffective();
+    return _isOverlayModeOn;
   }
 
   @override
   Future<bool> toggleScreenshotWithBlur({double blurRadius = 30.0}) async {
-    _isProtectionOn ? _disableProtection() : _enableProtection();
-    _isOverlayModeOn = _isProtectionOn;
-    return _isProtectionOn;
+    _isOverlayModeOn = !_isOverlayModeOn;
+    _applyEffective();
+    return _isOverlayModeOn;
   }
 
   @override
   Future<bool> toggleScreenshotWithColor({int color = 0xFF000000}) async {
-    _isProtectionOn ? _disableProtection() : _enableProtection();
-    _isOverlayModeOn = _isProtectionOn;
-    return _isProtectionOn;
+    _isOverlayModeOn = !_isOverlayModeOn;
+    _applyEffective();
+    return _isOverlayModeOn;
   }
 
   @override
   Future<bool> screenshotWithImage() async {
-    _enableProtection();
     _isOverlayModeOn = true;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> screenshotWithBlur({double blurRadius = 30.0}) async {
-    _enableProtection();
     _isOverlayModeOn = true;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> screenshotWithColor({int color = 0xFF000000}) async {
-    _enableProtection();
     _isOverlayModeOn = true;
+    _applyEffective();
     return true;
   }
 
   @override
   Future<bool> overlayOff() async {
-    // Only lift protection that an overlay mode established — protection
-    // set via screenshotOff() must survive this call (no-op contract).
+    // Pure no-op when no overlay mode is active. Clearing the overlay
+    // releases only the overlay's claim — an independent claim held via
+    // screenshotOff() keeps protection applied.
     if (_isOverlayModeOn) {
       _isOverlayModeOn = false;
-      _disableProtection();
+      _applyEffective();
     }
     return true;
   }
@@ -139,6 +146,11 @@ class NoScreenshotWeb extends NoScreenshotPlatform {
   Future<void> stopScreenRecordingListening() async {}
 
   // ── Internal ───────────────────────────────────────────────────────
+
+  void _applyEffective() {
+    final effective = _independentOn || _isOverlayModeOn;
+    effective ? _enableProtection() : _disableProtection();
+  }
 
   void _enableProtection() {
     if (_isProtectionOn) return;
