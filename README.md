@@ -296,6 +296,8 @@ Future<void> toggleBlurCustom() async {
 > ```
 >
 > The plugin tracks **two separate prevention claims**: `screenshotOff()`/`screenshotOn()` own one, and an active overlay mode owns the other. Protection stays engaged while **either** claim is held — so `overlayOff()` never drops prevention you established with `screenshotOff()`, and `screenshotOn()` never drops protection an active overlay still demands. Release both (e.g. `overlayOff()` + `screenshotOn()`) to fully disable protection.
+>
+> **Ordering tip:** when switching from an overlay to plain prevention, call `screenshotOff()` *before* `overlayOff()` — the independent claim is taken before the overlay's claim is released, so protection never drops in between (this is what `SecureWidget`/`applyOverlayMode(OverlayMode.secure)` do). To fully disable, order doesn't matter.
 
 #### Platform-specific blur implementation
 

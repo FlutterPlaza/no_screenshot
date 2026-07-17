@@ -132,11 +132,6 @@ static void handle_method_call(FlMethodChannel* channel,
   if (g_strcmp0(method, "screenshotOff") == 0) {
     self->independent_prevention = TRUE;
     apply_effective_prevention(self);
-  if (!state.has_independent_prevention) {
-    // Persist immediately so migration from the legacy effective-only
-    // state is one-shot and can never re-run against a later overlay flag.
-    persist_state(self);
-  }
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
@@ -491,6 +486,11 @@ void no_screenshot_plugin_register_with_registrar(
   }
 
   apply_effective_prevention(self);
+  if (!state.has_independent_prevention) {
+    // Persist immediately so migration from the legacy effective-only
+    // state is one-shot and can never re-run against a later overlay flag.
+    persist_state(self);
+  }
 
   // Method channel
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
