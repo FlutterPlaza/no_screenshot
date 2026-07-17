@@ -58,7 +58,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^1.2.0
+  no_screenshot: ^1.3.0-beta.1
 ```
 
 Then run:
@@ -80,6 +80,8 @@ flutter create my_app
 
 To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
 
+> **Testing 1.3.0-beta?** This release adds `overlayOff()` and changes prevention to a two-claim model: `screenshotOff()`/`screenshotOn()` and the overlay modes each own a prevention claim, and protection stays on while either is held. Apps that use only one of the two APIs behave exactly as before; mixed sequences now resolve fail-secure (see the [CHANGELOG](CHANGELOG.md) for the exact deltas). Please verify your protection flows and report issues.
+>
 > **Upgrading from 0.10.x?** This release includes Android 15 screen recording detection support — no code changes required on your side. See the [CHANGELOG](CHANGELOG.md) for details.
 >
 > **Upgrading from 0.9.x?** This release includes two important iOS changes — no code changes required on your side:

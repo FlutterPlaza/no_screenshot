@@ -1,7 +1,11 @@
-## Unreleased
+## 1.3.0-beta.1
+
+> **Beta — please test before the stable 1.3.0.** This release changes how prevention state is
+> tracked internally (details below). If your app mixes `screenshotOff()`/`screenshotOn()` with
+> the overlay-mode APIs, please verify your flows and report issues.
 
 - feat: added `overlayOff()` — an idempotent method that deterministically disables any active app-switcher overlay mode (image, blur, or color), without needing to know the current state ([#115](https://github.com/FlutterPlaza/no_screenshot/issues/115)). The counterpart to the existing `screenshotWithImage()`/`screenshotWithBlur()`/`screenshotWithColor()` enable methods.
-- feat!: prevention is now tracked as **two separate claims** on every platform — `screenshotOff()`/`screenshotOn()`/`toggleScreenshot()` own an *independent* claim, and an active overlay mode holds its own claim. Protection stays engaged while **either** claim is held. No API signatures changed, and apps that use only the plain methods or only the overlay methods behave exactly as before; sequences that *mix* the two APIs now resolve fail-secure instead of silently dropping protection:
+- feat (**behavior change**): prevention is now tracked as **two separate claims** on every platform — `screenshotOff()`/`screenshotOn()`/`toggleScreenshot()` own an *independent* claim, and an active overlay mode holds its own claim. Protection stays engaged while **either** claim is held. No API signatures changed, and apps that use only the plain methods or only the overlay methods behave exactly as before; sequences that *mix* the two APIs now resolve fail-secure instead of silently dropping protection:
   - `screenshotWithBlur()` → `screenshotOff()` → `overlayOff()`: prevention now **stays on** (the independent claim survives; previously it was silently dropped).
   - `screenshotWithBlur()` → `screenshotOn()`: prevention now **stays on** while the overlay is active (the overlay's claim survives; previously prevention dropped while the blur overlay kept showing in the app switcher).
   - `screenshotOff()` → `toggleScreenshotWithBlur()` on/off: prevention now **stays on** after the overlay toggles off (previously dropped).
