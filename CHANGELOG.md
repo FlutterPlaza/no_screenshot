@@ -1,3 +1,7 @@
+## Unreleased
+
+- fix(android): the plugin's build script no longer applies the Kotlin Gradle Plugin (KGP), not even conditionally — the Flutter tool detects KGP usage by statically scanning plugin build scripts, so the previous AGP-version conditional still triggered the "Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP)" warning ([#120](https://github.com/FlutterPlaza/no_screenshot/issues/120)). Kotlin is now provided by the Flutter tool itself: AGP's built-in Kotlin on AGP 9+, and an auto-applied KGP on older AGP versions. **The minimum Flutter version is now 3.44** (was 3.38), the first release whose Gradle tooling auto-applies KGP for plugins.
+
 ## 1.3.0-beta.1
 
 > **Beta — please test before the stable 1.3.0.** This release changes how prevention state is
