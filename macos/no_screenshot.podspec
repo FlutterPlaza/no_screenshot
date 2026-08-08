@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'no_screenshot'
-  s.version          = '2.0.0'
+  s.version          = '2.0.1'
   s.summary          = 'Flutter plugin to enable, disable or toggle screenshot support in your application.'
   s.description      = <<-DESC
 A new Flutter plugin project.
