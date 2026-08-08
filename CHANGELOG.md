@@ -1,4 +1,4 @@
-## Unreleased
+## 2.0.1
 
 - fix(windows): screenshot prevention now applies `SetWindowDisplayAffinity` to the **top-level** window instead of the child Flutter view ([#119](https://github.com/FlutterPlaza/no_screenshot/issues/119)). Display affinity is a top-level-window property, and the Flutter runner reparents the view via `SetParent`, so the previous code silently protected nothing — `screenshotOff()` reported success while window content stayed fully capturable. The plugin now resolves the root ancestor on every call and re-asserts persisted prevention once the view is attached to its real top-level window, covering both the standard runner and multi-window embeddings (e.g. `desktop_multi_window`). Notes: with prevention active, the entire top-level window (title bar included) is now hidden from capture, matching native behavior; the plugin now effectively owns the top-level window's display affinity, so don't combine it with other plugins that set it (e.g. `window_manager`'s prevent-screen-capture); engines without a view (headless add-to-app) remain a no-op.
 
