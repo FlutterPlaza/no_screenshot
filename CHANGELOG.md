@@ -1,5 +1,11 @@
-## Unreleased
+## 2.0.0
 
+> **Breaking release.** Two things to check before upgrading:
+>
+> 1. **Prevention is now tracked as two separate claims** (released for testing in 1.3.0-beta.1, see below). Apps that use only `screenshotOff()`/`screenshotOn()` or only the overlay-mode APIs behave exactly as before; apps that *mix* the two now resolve fail-secure — protection stays on until both claims are released (`overlayOff()` + `screenshotOn()`).
+> 2. **The minimum Flutter version is now 3.44** (Dart 3.12).
+
+- All changes from 1.3.0-beta.1 (see below): the new `overlayOff()` method, the two-claim prevention model, and the `SecureWidget`/`applyOverlayMode` overlay-teardown fixes.
 - fix(android): the plugin's build script no longer applies the Kotlin Gradle Plugin (KGP), not even conditionally — the Flutter tool detects KGP usage by statically scanning plugin build scripts, so the previous AGP-version conditional still triggered the "Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP)" warning ([#120](https://github.com/FlutterPlaza/no_screenshot/issues/120)). Kotlin is now provided by the Flutter tool itself: AGP's built-in Kotlin on AGP 9+, and an auto-applied KGP on older AGP versions. **The minimum Flutter version is now 3.44** (was 3.38), the first release whose Gradle tooling auto-applies KGP for plugins.
 
 ## 1.3.0-beta.1
