@@ -25,6 +25,74 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Linux desktop dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev
+
+      - name: Build Linux example
+        run: flutter build linux --debug
+        working-directory: example
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build Windows example
+        run: flutter build windows --debug
+        working-directory: example
+
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build Android example
+        run: flutter build apk --debug
+        working-directory: example
+
+  test-web:
+    name: Test Web (Chrome)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - name: Run browser-gated tests
+        # Only the @TestOn('browser') suite — the full suite runs on the VM
+        # in the Test job, and VM-oriented tests assert double interpolations
+        # ("50.0") that the JS runtime prints as "50".
+        run: flutter test --platform chrome test/no_screenshot_web_test.dart
+
   test:
     name: Test
     runs-on: ubuntu-latest

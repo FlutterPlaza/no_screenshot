@@ -27,7 +27,8 @@ struct _NoScreenshotPlugin {
   FlEventChannel* event_channel;
 
   // State
-  gboolean prevent_screenshot;
+  gboolean prevent_screenshot;      // effective (independent OR overlay claim)
+  gboolean independent_prevention;  // claim owned by screenshotOff()/On()
   gboolean is_image_overlay_mode;
   gboolean is_blur_overlay_mode;
   gboolean is_color_overlay_mode;

@@ -1,3 +1,20 @@
+## 1.3.0-beta.1
+
+> **Beta — please test before the stable 1.3.0.** This release changes how prevention state is
+> tracked internally (details below). If your app mixes `screenshotOff()`/`screenshotOn()` with
+> the overlay-mode APIs, please verify your flows and report issues.
+
+- feat: added `overlayOff()` — an idempotent method that deterministically disables any active app-switcher overlay mode (image, blur, or color), without needing to know the current state ([#115](https://github.com/FlutterPlaza/no_screenshot/issues/115)). The counterpart to the existing `screenshotWithImage()`/`screenshotWithBlur()`/`screenshotWithColor()` enable methods.
+- feat (**behavior change**): prevention is now tracked as **two separate claims** on every platform — `screenshotOff()`/`screenshotOn()`/`toggleScreenshot()` own an *independent* claim, and an active overlay mode holds its own claim. Protection stays engaged while **either** claim is held. No API signatures changed, and apps that use only the plain methods or only the overlay methods behave exactly as before; sequences that *mix* the two APIs now resolve fail-secure instead of silently dropping protection:
+  - `screenshotWithBlur()` → `screenshotOff()` → `overlayOff()`: prevention now **stays on** (the independent claim survives; previously it was silently dropped).
+  - `screenshotWithBlur()` → `screenshotOn()`: prevention now **stays on** while the overlay is active (the overlay's claim survives; previously prevention dropped while the blur overlay kept showing in the app switcher).
+  - `screenshotOff()` → `toggleScreenshotWithBlur()` on/off: prevention now **stays on** after the overlay toggles off (previously dropped).
+  - To fully disable protection, release both claims — e.g. `overlayOff()` + `screenshotOn()` (what `SecureWidget`/`applyOverlayMode(OverlayMode.none)` do).
+  - The persisted state gains an `independent_prevention` key; state written by older versions is migrated automatically (one-shot) on first launch.
+  - `toggleScreenshot()` now toggles the plugin's own independent claim rather than inspecting the current window flag. If your app sets `FLAG_SECURE` (or the platform equivalent) outside this plugin, do not mix that with `toggleScreenshot()` — use `screenshotOff()`/`screenshotOn()` explicitly.
+- fix: `SecureWidget` teardown, `applyOverlayMode(OverlayMode.none)`, and `applyOverlayMode(OverlayMode.secure)` now clear any active overlay mode. Previously they only called `screenshotOn()`, which leaves the overlay mode active (and persisted) — so a disposed `SecureWidget(mode: OverlayMode.blur)` kept showing the blur overlay in the app switcher.
+- fix: `applyOverlayMode(OverlayMode.secure)` takes the independent prevention claim *before* releasing the overlay's claim, so prevention stays continuously engaged across an overlay → secure transition (no transient unprotected frame).
+
 ## 1.2.0
 
 - fix(android): removed a duplicate Kotlin source-directory registration that made the plugin fail to compile on Flutter 3.44.4+ with "Conflicting declarations" errors ([#114](https://github.com/FlutterPlaza/no_screenshot/issues/114)).

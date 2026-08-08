@@ -41,6 +41,12 @@ class _RecordingPlatform extends NoScreenshotPlatform
   }
 
   @override
+  Future<bool> overlayOff() async {
+    calls.add('overlayOff');
+    return true;
+  }
+
+  @override
   Future<bool> toggleScreenshot() async => true;
 
   @override
@@ -130,25 +136,56 @@ void main() {
     expect(fakePlatform.calls, contains('screenshotWithImage'));
   });
 
-  testWidgets('initState calls screenshotOn for OverlayMode.none', (
-    tester,
-  ) async {
+  testWidgets('initState calls overlayOff and screenshotOn for '
+      'OverlayMode.none', (tester) async {
     await tester.pumpWidget(
       const SecureWidget(mode: OverlayMode.none, child: SizedBox()),
     );
     await tester.pump();
+    expect(fakePlatform.calls, contains('overlayOff'));
     expect(fakePlatform.calls, contains('screenshotOn'));
   });
 
-  testWidgets('dispose calls screenshotOn', (tester) async {
-    await tester.pumpWidget(const SecureWidget(child: SizedBox()));
+  testWidgets('dispose clears overlay mode and re-enables screenshots', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const SecureWidget(mode: OverlayMode.blur, child: SizedBox()),
+    );
     await tester.pump();
     fakePlatform.calls.clear();
 
     // Remove the widget to trigger dispose
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
+    // screenshotOn() alone would leave the blur overlay mode active
+    // natively — dispose must clear the overlay too.
+    expect(fakePlatform.calls, contains('overlayOff'));
     expect(fakePlatform.calls, contains('screenshotOn'));
+  });
+
+  testWidgets('didUpdateWidget blur -> secure clears the overlay mode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const SecureWidget(mode: OverlayMode.blur, child: SizedBox()),
+    );
+    await tester.pump();
+    fakePlatform.calls.clear();
+
+    await tester.pumpWidget(
+      const SecureWidget(mode: OverlayMode.secure, child: SizedBox()),
+    );
+    await tester.pump();
+    // The independent claim is taken FIRST (screenshotOff) and the
+    // overlay's claim released second (overlayOff), so prevention stays
+    // continuously engaged across the transition — and the overlay flag
+    // cannot leak into the app switcher or persist across restarts.
+    final overlayOffIndex = fakePlatform.calls.indexOf('overlayOff');
+    final screenshotOffIndex = fakePlatform.calls.indexOf('screenshotOff');
+    expect(overlayOffIndex, isNot(-1));
+    expect(screenshotOffIndex, isNot(-1));
+    expect(screenshotOffIndex, lessThan(overlayOffIndex));
   });
 
   testWidgets('didUpdateWidget re-applies when mode changes', (tester) async {

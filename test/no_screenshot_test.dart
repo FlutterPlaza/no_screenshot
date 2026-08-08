@@ -60,6 +60,11 @@ class MockNoScreenshotPlatform
   }
 
   @override
+  Future<bool> overlayOff() async {
+    return Future.value(true);
+  }
+
+  @override
   Future<void> startScreenshotListening() {
     return Future.value();
   }
@@ -171,6 +176,10 @@ void main() {
 
   test('screenshotWithColor', () async {
     expect(await NoScreenshot.instance.screenshotWithColor(), true);
+  });
+
+  test('overlayOff', () async {
+    expect(await NoScreenshot.instance.overlayOff(), true);
   });
 
   test('screenshotWithColor with custom color', () async {

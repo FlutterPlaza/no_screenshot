@@ -91,6 +91,12 @@ class MethodChannelNoScreenshot extends NoScreenshotPlatform {
   }
 
   @override
+  Future<bool> overlayOff() async {
+    final result = await methodChannel.invokeMethod<bool>(overlayOffConst);
+    return result ?? false;
+  }
+
+  @override
   Future<void> startScreenshotListening() {
     return methodChannel.invokeMethod<void>(startScreenshotListeningConst);
   }

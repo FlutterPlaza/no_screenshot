@@ -36,6 +36,7 @@ void StatePersistence::Save(const PersistedState& state) {
   std::snprintf(buf, sizeof(buf),
                 "{\n"
                 "  \"prevent_screenshot\": %s,\n"
+                "  \"independent_prevention\": %s,\n"
                 "  \"is_image_overlay_mode\": %s,\n"
                 "  \"is_blur_overlay_mode\": %s,\n"
                 "  \"is_color_overlay_mode\": %s,\n"
@@ -43,6 +44,7 @@ void StatePersistence::Save(const PersistedState& state) {
                 "  \"color_value\": %d\n"
                 "}\n",
                 state.prevent_screenshot ? "true" : "false",
+                state.independent_prevention ? "true" : "false",
                 state.is_image_overlay_mode ? "true" : "false",
                 state.is_blur_overlay_mode ? "true" : "false",
                 state.is_color_overlay_mode ? "true" : "false",
@@ -67,6 +69,12 @@ PersistedState StatePersistence::Load() {
 
   if (contents.find("\"prevent_screenshot\": true") != std::string::npos) {
     state.prevent_screenshot = true;
+  }
+  if (contents.find("\"independent_prevention\":") != std::string::npos) {
+    state.has_independent_prevention = true;
+    if (contents.find("\"independent_prevention\": true") != std::string::npos) {
+      state.independent_prevention = true;
+    }
   }
   if (contents.find("\"is_image_overlay_mode\": true") != std::string::npos) {
     state.is_image_overlay_mode = true;

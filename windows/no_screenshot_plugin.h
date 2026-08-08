@@ -45,6 +45,8 @@ class NoScreenshotPlugin : public flutter::Plugin {
                          int64_t timestamp_ms = 0,
                          const std::string& source_app = "");
   void PersistState();
+  bool OverlayClaim() const;
+  void ApplyEffectivePrevention();
   std::string BuildEventJson();
 
   // Helpers
@@ -58,7 +60,8 @@ class NoScreenshotPlugin : public flutter::Plugin {
   std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
 
   // State
-  bool prevent_screenshot_ = false;
+  bool prevent_screenshot_ = false;      // effective (independent OR overlay)
+  bool independent_prevention_ = false;  // claim owned by screenshotOff()/On()
   bool is_image_overlay_mode_ = false;
   bool is_blur_overlay_mode_ = false;
   bool is_color_overlay_mode_ = false;

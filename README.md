@@ -24,6 +24,7 @@ A Flutter plugin to **disable screenshots**, **block screen recording**, **detec
 | Image overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Blur overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Color overlay in app switcher / recents | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
+| Deterministic overlay off (`overlayOff()`) | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ |
 | Granular callbacks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Declarative SecureWidget | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Per-route protection policies | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -57,7 +58,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^1.2.0
+  no_screenshot: ^1.3.0-beta.1
 ```
 
 Then run:
@@ -79,6 +80,8 @@ flutter create my_app
 
 To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
 
+> **Testing 1.3.0-beta?** This release adds `overlayOff()` and changes prevention to a two-claim model: `screenshotOff()`/`screenshotOn()` and the overlay modes each own a prevention claim, and protection stays on while either is held. Apps that use only one of the two APIs behave exactly as before; mixed sequences now resolve fail-secure (see the [CHANGELOG](CHANGELOG.md) for the exact deltas). Please verify your protection flows and report issues.
+>
 > **Upgrading from 0.10.x?** This release includes Android 15 screen recording detection support — no code changes required on your side. See the [CHANGELOG](CHANGELOG.md) for details.
 >
 > **Upgrading from 0.9.x?** This release includes two important iOS changes — no code changes required on your side:
@@ -288,6 +291,16 @@ Future<void> toggleBlurCustom() async {
 
 > **Mutual exclusivity:** Blur, image, and color overlay modes are mutually exclusive — activating one automatically deactivates the others. This is enforced at the native level on all platforms.
 
+> **Turning overlays off:** Besides the `toggle*` methods, `overlayOff()` deterministically disables whichever overlay mode is active and releases its prevention claim — idempotent, no need to know the current state:
+>
+> ```dart
+> await _noScreenshot.overlayOff();
+> ```
+>
+> The plugin tracks **two separate prevention claims**: `screenshotOff()`/`screenshotOn()` own one, and an active overlay mode owns the other. Protection stays engaged while **either** claim is held — so `overlayOff()` never drops prevention you established with `screenshotOff()`, and `screenshotOn()` never drops protection an active overlay still demands. Release both (e.g. `overlayOff()` + `screenshotOn()`) to fully disable protection.
+>
+> **Ordering tip:** when switching from an overlay to plain prevention, call `screenshotOff()` *before* `overlayOff()` — the independent claim is taken before the overlay's claim is released, so protection never drops in between (this is what `SecureWidget`/`applyOverlayMode(OverlayMode.secure)` do). To fully disable, order doesn't matter.
+
 #### Platform-specific blur implementation
 
 | Platform | Mechanism |
@@ -462,7 +475,7 @@ The example app includes an RTL toggle to verify correct behavior:
 |---|---|---|
 | `NoScreenshot.instance` | `NoScreenshot` | Singleton instance of the plugin |
 | `screenshotOff()` | `Future<bool>` | Disable screenshots & screen recording |
-| `screenshotOn()` | `Future<bool>` | Enable screenshots & screen recording |
+| `screenshotOn()` | `Future<bool>` | Release the prevention claim taken by `screenshotOff()` (protection stays on while an overlay mode is active) |
 | `toggleScreenshot()` | `Future<bool>` | Toggle screenshot protection on/off |
 | `toggleScreenshotWithImage()` | `Future<bool>` | Toggle image overlay mode (returns new state) |
 | `toggleScreenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Toggle blur overlay mode with optional radius (returns new state) |
@@ -474,6 +487,7 @@ The example app includes an RTL toggle to verify correct behavior:
 | `screenshotWithImage()` | `Future<bool>` | Always enable image overlay (idempotent) |
 | `screenshotWithBlur({double blurRadius = 30.0})` | `Future<bool>` | Always enable blur overlay (idempotent) |
 | `screenshotWithColor({int color = 0xFF000000})` | `Future<bool>` | Always enable color overlay (idempotent) |
+| `overlayOff()` | `Future<bool>` | Disable any active overlay mode and release its prevention claim (idempotent; pure no-op when no overlay is active — prevention set via `screenshotOff()` is never affected) |
 | `screenshotStream` | `Stream<ScreenshotSnapshot>` | Stream of screenshot and recording activity events |
 | **Granular Callbacks** | | |
 | `onScreenshotDetected` | `ScreenshotEventCallback?` | Callback fired when a screenshot is detected |

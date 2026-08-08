@@ -46,6 +46,11 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   ///
   /// Always returns `true` when an iOS build runs on a Mac —
   /// screenshots are permitted there by default.
+  ///
+  /// Releases only the prevention claim made via [screenshotOff]. While
+  /// an overlay mode is active, protection remains engaged (the overlay
+  /// holds its own claim) until the overlay is turned off — e.g. via
+  /// [overlayOff].
   Future<bool> screenshotOn() {
     throw UnimplementedError('screenshotOn() has not been implemented.');
   }
@@ -84,6 +89,24 @@ abstract class NoScreenshotPlatform extends PlatformInterface {
   /// Always enables color overlay mode (idempotent — safe to call repeatedly).
   Future<bool> screenshotWithColor({int color = 0xFF000000}) {
     throw UnimplementedError('screenshotWithColor() has not been implemented.');
+  }
+
+  /// Always disables any active overlay mode — image, blur, or color —
+  /// and releases its prevention claim (idempotent — safe to call
+  /// repeatedly).
+  ///
+  /// The deterministic counterpart to [screenshotWithImage],
+  /// [screenshotWithBlur], and [screenshotWithColor]: unlike the
+  /// `toggle*` methods, it does not require knowing the current state.
+  ///
+  /// Prevention set via [screenshotOff] is never affected: the plugin
+  /// tracks two separate prevention claims — one owned by
+  /// [screenshotOff]/[screenshotOn], one owned by the overlay modes —
+  /// and protection stays engaged while either claim is held. This call
+  /// releases only the overlay's claim; when no overlay mode is active
+  /// it is a pure no-op.
+  Future<bool> overlayOff() {
+    throw UnimplementedError('overlayOff() has not been implemented.');
   }
 
   /// Return `true` if screenshot capabilities has been

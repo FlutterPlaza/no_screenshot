@@ -336,6 +336,30 @@ void main() {
       },
     );
 
+    test('overlayOff', () async {
+      const bool expected = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            if (methodCall.method == overlayOffConst) {
+              return expected;
+            }
+            return null;
+          });
+
+      final result = await platform.overlayOff();
+      expect(result, expected);
+    });
+
+    test('overlayOff returns false when channel returns null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            return null;
+          });
+
+      final result = await platform.overlayOff();
+      expect(result, isFalse);
+    });
+
     test('screenshotWithColor', () async {
       const bool expected = true;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

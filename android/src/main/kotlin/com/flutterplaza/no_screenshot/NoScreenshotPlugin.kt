@@ -51,11 +51,13 @@ const val SET_COLOR_CONST = "toggleScreenshotWithColor"
 const val ENABLE_IMAGE_CONST = "screenshotWithImage"
 const val ENABLE_BLUR_CONST = "screenshotWithBlur"
 const val ENABLE_COLOR_CONST = "screenshotWithColor"
+const val OVERLAY_OFF_CONST = "overlayOff"
 const val PREF_KEY_IMAGE_OVERLAY = "is_image_overlay_mode_enabled"
 const val PREF_KEY_BLUR_OVERLAY = "is_blur_overlay_mode_enabled"
 const val PREF_KEY_COLOR_OVERLAY = "is_color_overlay_mode_enabled"
 const val PREF_KEY_BLUR_RADIUS = "blur_radius"
 const val PREF_KEY_COLOR_VALUE = "color_value"
+const val PREF_KEY_INDEPENDENT_PREVENTION = "independent_prevention"
 const val IS_SCREEN_RECORDING = "is_screen_recording"
 const val START_SCREEN_RECORDING_LISTENING_CONST = "startScreenRecordingListening"
 const val STOP_SCREEN_RECORDING_LISTENING_CONST = "stopScreenRecordingListening"
@@ -84,6 +86,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
     private var overlayColorView: View? = null
     private var blurRadius: Float = 30f
     private var colorValue: Int = 0xFF000000.toInt()
+    private var independentPrevention: Boolean = false
     private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
     private var isScreenRecording: Boolean = false
     private var isRecordingListening: Boolean = false
@@ -193,6 +196,10 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             ENABLE_COLOR_CONST -> {
                 val color = call.argument<Int>("color") ?: 0xFF000000.toInt()
                 result.success(enableColorOverlay(color))
+            }
+
+            OVERLAY_OFF_CONST -> {
+                result.success(overlayOff())
             }
 
             START_SCREEN_RECORDING_LISTENING_CONST -> {
@@ -319,9 +326,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                 saveColorOverlayState(false)
                 removeColorOverlay()
             }
-            screenshotOff()
+            applyEffectivePrevention()
         } else {
-            screenshotOn()
+            applyEffectivePrevention()
             removeImageOverlay()
         }
         updateSharedPreferencesState("")
@@ -346,9 +353,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                 saveColorOverlayState(false)
                 removeColorOverlay()
             }
-            screenshotOff()
+            applyEffectivePrevention()
         } else {
-            screenshotOn()
+            applyEffectivePrevention()
             removeBlurOverlay()
         }
         updateSharedPreferencesState("")
@@ -448,9 +455,9 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
                 saveBlurOverlayState(false)
                 removeBlurOverlay()
             }
-            screenshotOff()
+            applyEffectivePrevention()
         } else {
-            screenshotOn()
+            applyEffectivePrevention()
             removeColorOverlay()
         }
         updateSharedPreferencesState("")
@@ -470,7 +477,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             saveColorOverlayState(false)
             removeColorOverlay()
         }
-        screenshotOff()
+        applyEffectivePrevention()
         updateSharedPreferencesState("")
         return true
     }
@@ -490,7 +497,7 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             saveColorOverlayState(false)
             removeColorOverlay()
         }
-        screenshotOff()
+        applyEffectivePrevention()
         updateSharedPreferencesState("")
         return true
     }
@@ -510,7 +517,39 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
             saveBlurOverlayState(false)
             removeBlurOverlay()
         }
-        screenshotOff()
+        applyEffectivePrevention()
+        updateSharedPreferencesState("")
+        return true
+    }
+
+    // Idempotent counterpart to the enable methods: clears whichever
+    // overlay mode is active (they are mutually exclusive) and restores
+    // screenshot permission, mirroring the toggle-off branches.
+    private fun overlayOff(): Boolean {
+        // Pure no-op when no overlay mode is active. Clearing the overlay
+        // releases only the overlay's prevention claim — an independent
+        // claim held via screenshotOff() keeps FLAG_SECURE applied.
+        val hadOverlay = isImageOverlayModeEnabled ||
+            isBlurOverlayModeEnabled ||
+            isColorOverlayModeEnabled
+        if (!hadOverlay) return true
+
+        if (isImageOverlayModeEnabled) {
+            isImageOverlayModeEnabled = false
+            saveImageOverlayState(false)
+            removeImageOverlay()
+        }
+        if (isBlurOverlayModeEnabled) {
+            isBlurOverlayModeEnabled = false
+            saveBlurOverlayState(false)
+            removeBlurOverlay()
+        }
+        if (isColorOverlayModeEnabled) {
+            isColorOverlayModeEnabled = false
+            saveColorOverlayState(false)
+            removeColorOverlay()
+        }
+        applyEffectivePrevention()
         updateSharedPreferencesState("")
         return true
     }
@@ -691,30 +730,43 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         screenshotObserver?.let { context.contentResolver.unregisterContentObserver(it) }
     }
 
-    private fun screenshotOff(): Boolean = try {
-        activity?.window?.addFlags(LayoutParams.FLAG_SECURE)
-        saveScreenshotState(true)
+    // ── Prevention claims ───────────────────────────────────────────────
+    // Prevention is tracked as two separate claims: the plain
+    // screenshotOff()/screenshotOn() pair owns `independentPrevention`,
+    // and an active overlay mode is its own claim. FLAG_SECURE is applied
+    // while EITHER claim is held, so releasing one claim never drops
+    // protection the other still demands.
+
+    private fun overlayClaim(): Boolean =
+        isImageOverlayModeEnabled || isBlurOverlayModeEnabled || isColorOverlayModeEnabled
+
+    private fun applyEffectivePrevention(): Boolean = try {
+        val effective = independentPrevention || overlayClaim()
+        if (effective) {
+            activity?.window?.addFlags(LayoutParams.FLAG_SECURE)
+        } else {
+            activity?.window?.clearFlags(LayoutParams.FLAG_SECURE)
+        }
+        saveScreenshotState(effective)
         true
     } catch (e: Exception) {
         false
     }
 
-    private fun screenshotOn(): Boolean = try {
-        activity?.window?.clearFlags(LayoutParams.FLAG_SECURE)
-        saveScreenshotState(false)
-        true
-    } catch (e: Exception) {
-        false
+    private fun screenshotOff(): Boolean {
+        independentPrevention = true
+        saveIndependentPrevention(true)
+        return applyEffectivePrevention()
+    }
+
+    private fun screenshotOn(): Boolean {
+        independentPrevention = false
+        saveIndependentPrevention(false)
+        return applyEffectivePrevention()
     }
 
     private fun toggleScreenshot() {
-        activity?.window?.attributes?.flags?.let { flags ->
-            if (flags and LayoutParams.FLAG_SECURE != 0) {
-                screenshotOn()
-            } else {
-                screenshotOff()
-            }
-        }
+        if (independentPrevention) screenshotOn() else screenshotOff()
     }
 
     private fun saveScreenshotState(isSecure: Boolean) {
@@ -753,24 +805,35 @@ class NoScreenshotPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activ
         }
     }
 
+    private fun saveIndependentPrevention(enabled: Boolean) {
+        Executors.newSingleThreadExecutor().execute {
+            preferences.edit().putBoolean(PREF_KEY_INDEPENDENT_PREVENTION, enabled).apply()
+        }
+    }
+
     private fun restoreScreenshotState() {
         Executors.newSingleThreadExecutor().execute {
             val isSecure = preferences.getBoolean(PREF_KEY_SCREENSHOT, false)
-            val overlayEnabled = preferences.getBoolean(PREF_KEY_IMAGE_OVERLAY, false)
-            val blurEnabled = preferences.getBoolean(PREF_KEY_BLUR_OVERLAY, false)
-            val colorEnabled = preferences.getBoolean(PREF_KEY_COLOR_OVERLAY, false)
-            isImageOverlayModeEnabled = overlayEnabled
-            isBlurOverlayModeEnabled = blurEnabled
-            isColorOverlayModeEnabled = colorEnabled
+            isImageOverlayModeEnabled = preferences.getBoolean(PREF_KEY_IMAGE_OVERLAY, false)
+            isBlurOverlayModeEnabled = preferences.getBoolean(PREF_KEY_BLUR_OVERLAY, false)
+            isColorOverlayModeEnabled = preferences.getBoolean(PREF_KEY_COLOR_OVERLAY, false)
             blurRadius = preferences.getFloat(PREF_KEY_BLUR_RADIUS, 30f)
             colorValue = preferences.getInt(PREF_KEY_COLOR_VALUE, 0xFF000000.toInt())
+            independentPrevention = if (preferences.contains(PREF_KEY_INDEPENDENT_PREVENTION)) {
+                preferences.getBoolean(PREF_KEY_INDEPENDENT_PREVENTION, false)
+            } else {
+                // Migrate from versions that persisted only the effective
+                // state: prevention held without an overlay was independent.
+                // Persist immediately so migration is one-shot — otherwise a
+                // later overlay enable + re-attach would re-migrate against
+                // the overlay flag and silently drop the claim (fail-open).
+                val migrated = isSecure && !overlayClaim()
+                preferences.edit().putBoolean(PREF_KEY_INDEPENDENT_PREVENTION, migrated).apply()
+                migrated
+            }
 
             activity?.runOnUiThread {
-                if (isImageOverlayModeEnabled || isBlurOverlayModeEnabled || isColorOverlayModeEnabled || isSecure) {
-                    screenshotOff()
-                } else {
-                    screenshotOn()
-                }
+                applyEffectivePrevention()
             }
         }
     }

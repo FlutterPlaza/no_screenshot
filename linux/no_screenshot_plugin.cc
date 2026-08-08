@@ -57,8 +57,28 @@ static void update_shared_state(NoScreenshotPlugin* self,
   }
 }
 
+// Prevention is tracked as two separate claims: the plain
+// screenshotOff()/screenshotOn() pair owns `independent_prevention`, and an
+// active overlay mode is its own claim. Prevention is active while EITHER
+// claim is held, so releasing one never drops the other's protection.
+static gboolean overlay_claim(NoScreenshotPlugin* self) {
+  return self->is_image_overlay_mode || self->is_blur_overlay_mode ||
+         self->is_color_overlay_mode;
+}
+
+static void apply_effective_prevention(NoScreenshotPlugin* self) {
+  gboolean effective = self->independent_prevention || overlay_claim(self);
+  self->prevent_screenshot = effective;
+  if (effective) {
+    prevention_activate();
+  } else {
+    prevention_deactivate();
+  }
+}
+
 static void persist_state(NoScreenshotPlugin* self) {
   state_persistence_save(self->persistence, self->prevent_screenshot,
+                         self->independent_prevention,
                          self->is_image_overlay_mode,
                          self->is_blur_overlay_mode,
                          self->is_color_overlay_mode,
@@ -110,27 +130,22 @@ static void handle_method_call(FlMethodChannel* channel,
   g_autoptr(FlMethodResponse) response = NULL;
 
   if (g_strcmp0(method, "screenshotOff") == 0) {
-    self->prevent_screenshot = TRUE;
-    prevention_activate();
+    self->independent_prevention = TRUE;
+    apply_effective_prevention(self);
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
 
   } else if (g_strcmp0(method, "screenshotOn") == 0) {
-    self->prevent_screenshot = FALSE;
-    prevention_deactivate();
+    self->independent_prevention = FALSE;
+    apply_effective_prevention(self);
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
 
   } else if (g_strcmp0(method, "toggleScreenshot") == 0) {
-    if (self->prevent_screenshot) {
-      self->prevent_screenshot = FALSE;
-      prevention_deactivate();
-    } else {
-      self->prevent_screenshot = TRUE;
-      prevention_activate();
-    }
+    self->independent_prevention = !self->independent_prevention;
+    apply_effective_prevention(self);
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
@@ -145,12 +160,8 @@ static void handle_method_call(FlMethodChannel* channel,
       if (self->is_color_overlay_mode) {
         self->is_color_overlay_mode = FALSE;
       }
-      self->prevent_screenshot = TRUE;
-      prevention_activate();
-    } else {
-      self->prevent_screenshot = FALSE;
-      prevention_deactivate();
     }
+    apply_effective_prevention(self);
     g_message(
         "no_screenshot: toggleScreenshotWithImage → %s (overlay is "
         "best-effort on Linux — compositors control task switcher "
@@ -178,12 +189,8 @@ static void handle_method_call(FlMethodChannel* channel,
       if (self->is_color_overlay_mode) {
         self->is_color_overlay_mode = FALSE;
       }
-      self->prevent_screenshot = TRUE;
-      prevention_activate();
-    } else {
-      self->prevent_screenshot = FALSE;
-      prevention_deactivate();
     }
+    apply_effective_prevention(self);
     g_message(
         "no_screenshot: toggleScreenshotWithBlur → %s (radius=%.1f, blur is "
         "best-effort on Linux — compositors control task switcher "
@@ -211,12 +218,8 @@ static void handle_method_call(FlMethodChannel* channel,
       if (self->is_blur_overlay_mode) {
         self->is_blur_overlay_mode = FALSE;
       }
-      self->prevent_screenshot = TRUE;
-      prevention_activate();
-    } else {
-      self->prevent_screenshot = FALSE;
-      prevention_deactivate();
     }
+    apply_effective_prevention(self);
     g_message(
         "no_screenshot: toggleScreenshotWithColor → %s (color=0x%08X, "
         "color overlay is best-effort on Linux — compositors control task "
@@ -234,8 +237,7 @@ static void handle_method_call(FlMethodChannel* channel,
     if (self->is_color_overlay_mode) {
       self->is_color_overlay_mode = FALSE;
     }
-    self->prevent_screenshot = TRUE;
-    prevention_activate();
+    apply_effective_prevention(self);
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
@@ -256,8 +258,7 @@ static void handle_method_call(FlMethodChannel* channel,
     if (self->is_color_overlay_mode) {
       self->is_color_overlay_mode = FALSE;
     }
-    self->prevent_screenshot = TRUE;
-    prevention_activate();
+    apply_effective_prevention(self);
     persist_state(self);
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
@@ -278,9 +279,28 @@ static void handle_method_call(FlMethodChannel* channel,
     if (self->is_blur_overlay_mode) {
       self->is_blur_overlay_mode = FALSE;
     }
-    self->prevent_screenshot = TRUE;
-    prevention_activate();
+    apply_effective_prevention(self);
     persist_state(self);
+    response = FL_METHOD_RESPONSE(
+        fl_method_success_response_new(fl_value_new_bool(TRUE)));
+
+  } else if (g_strcmp0(method, "overlayOff") == 0) {
+    // Idempotent counterpart to the screenshotWith* enable methods:
+    // clears whichever overlay mode is active and restores screenshots.
+    // Only lifts prevention when an overlay was actually active —
+    // prevention established via screenshotOff() must survive this call.
+    gboolean had_overlay = self->is_image_overlay_mode ||
+                           self->is_blur_overlay_mode ||
+                           self->is_color_overlay_mode;
+    if (had_overlay) {
+      self->is_image_overlay_mode = FALSE;
+      self->is_blur_overlay_mode = FALSE;
+      self->is_color_overlay_mode = FALSE;
+      // Release only the overlay's claim — an independent claim held via
+      // screenshotOff() keeps prevention active.
+      apply_effective_prevention(self);
+      persist_state(self);
+    }
     response = FL_METHOD_RESPONSE(
         fl_method_success_response_new(fl_value_new_bool(TRUE)));
 
@@ -451,15 +471,25 @@ void no_screenshot_plugin_register_with_registrar(
 
   // Load persisted state
   PersistedState state = state_persistence_load(self->persistence);
-  self->prevent_screenshot = state.prevent_screenshot;
   self->is_image_overlay_mode = state.is_image_overlay_mode;
   self->is_blur_overlay_mode = state.is_blur_overlay_mode;
   self->is_color_overlay_mode = state.is_color_overlay_mode;
   self->blur_radius = state.blur_radius;
   self->color_value = state.color_value;
+  if (state.has_independent_prevention) {
+    self->independent_prevention = state.independent_prevention;
+  } else {
+    // Migrate from versions that persisted only the effective state:
+    // prevention held without an overlay was independent.
+    self->independent_prevention =
+        state.prevent_screenshot && !overlay_claim(self);
+  }
 
-  if (self->prevent_screenshot) {
-    prevention_activate();
+  apply_effective_prevention(self);
+  if (!state.has_independent_prevention) {
+    // Persist immediately so migration from the legacy effective-only
+    // state is one-shot and can never re-run against a later overlay flag.
+    persist_state(self);
   }
 
   // Method channel

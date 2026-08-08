@@ -81,16 +81,24 @@ NoScreenshotPlugin::NoScreenshotPlugin(
 
   // Load persisted state
   PersistedState state = persistence_.Load();
-  prevent_screenshot_ = state.prevent_screenshot;
   is_image_overlay_mode_ = state.is_image_overlay_mode;
   is_blur_overlay_mode_ = state.is_blur_overlay_mode;
   is_color_overlay_mode_ = state.is_color_overlay_mode;
   blur_radius_ = state.blur_radius;
   color_value_ = state.color_value;
+  if (state.has_independent_prevention) {
+    independent_prevention_ = state.independent_prevention;
+  } else {
+    // Migrate from versions that persisted only the effective state:
+    // prevention held without an overlay was independent.
+    independent_prevention_ = state.prevent_screenshot && !OverlayClaim();
+  }
 
-  if (prevent_screenshot_) {
-    HWND hwnd = GetFlutterWindowHandle();
-    if (hwnd) PreventionActivate(hwnd);
+  ApplyEffectivePrevention();
+  if (!state.has_independent_prevention) {
+    // Persist immediately so migration from the legacy effective-only
+    // state is one-shot and can never re-run against a later overlay flag.
+    PersistState();
   }
 
   // Initial state push
@@ -105,12 +113,36 @@ NoScreenshotPlugin::~NoScreenshotPlugin() {
 }
 
 HWND NoScreenshotPlugin::GetFlutterWindowHandle() {
-  return registrar_->GetView()->GetNativeWindow();
+  if (registrar_ == nullptr) return nullptr;
+  auto* view = registrar_->GetView();
+  return view ? view->GetNativeWindow() : nullptr;
 }
 
 // ---------------------------------------------------------------------------
 // Method call handler
 // ---------------------------------------------------------------------------
+
+// Prevention is tracked as two separate claims: the plain
+// screenshotOff()/screenshotOn() pair owns independent_prevention_, and an
+// active overlay mode is its own claim. SetWindowDisplayAffinity stays
+// applied while EITHER claim is held, so releasing one claim never drops
+// protection the other still demands.
+bool NoScreenshotPlugin::OverlayClaim() const {
+  return is_image_overlay_mode_ || is_blur_overlay_mode_ ||
+         is_color_overlay_mode_;
+}
+
+void NoScreenshotPlugin::ApplyEffectivePrevention() {
+  const bool effective = independent_prevention_ || OverlayClaim();
+  prevent_screenshot_ = effective;
+  HWND hwnd = GetFlutterWindowHandle();
+  if (hwnd == nullptr) return;
+  if (effective) {
+    PreventionActivate(hwnd);
+  } else {
+    PreventionDeactivate(hwnd);
+  }
+}
 
 void NoScreenshotPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
@@ -118,25 +150,20 @@ void NoScreenshotPlugin::HandleMethodCall(
   const std::string& method = method_call.method_name();
 
   if (method == "screenshotOff") {
-    prevent_screenshot_ = true;
-    PreventionActivate(GetFlutterWindowHandle());
+    independent_prevention_ = true;
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
   } else if (method == "screenshotOn") {
-    prevent_screenshot_ = false;
-    PreventionDeactivate(GetFlutterWindowHandle());
+    independent_prevention_ = false;
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
   } else if (method == "toggleScreenshot") {
-    if (prevent_screenshot_) {
-      prevent_screenshot_ = false;
-      PreventionDeactivate(GetFlutterWindowHandle());
-    } else {
-      prevent_screenshot_ = true;
-      PreventionActivate(GetFlutterWindowHandle());
-    }
+    independent_prevention_ = !independent_prevention_;
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
@@ -145,12 +172,8 @@ void NoScreenshotPlugin::HandleMethodCall(
     if (is_image_overlay_mode_) {
       is_blur_overlay_mode_ = false;
       is_color_overlay_mode_ = false;
-      prevent_screenshot_ = true;
-      PreventionActivate(GetFlutterWindowHandle());
-    } else {
-      prevent_screenshot_ = false;
-      PreventionDeactivate(GetFlutterWindowHandle());
     }
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(is_image_overlay_mode_));
 
@@ -167,12 +190,8 @@ void NoScreenshotPlugin::HandleMethodCall(
     if (is_blur_overlay_mode_) {
       is_image_overlay_mode_ = false;
       is_color_overlay_mode_ = false;
-      prevent_screenshot_ = true;
-      PreventionActivate(GetFlutterWindowHandle());
-    } else {
-      prevent_screenshot_ = false;
-      PreventionDeactivate(GetFlutterWindowHandle());
     }
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(is_blur_overlay_mode_));
 
@@ -189,12 +208,8 @@ void NoScreenshotPlugin::HandleMethodCall(
     if (is_color_overlay_mode_) {
       is_image_overlay_mode_ = false;
       is_blur_overlay_mode_ = false;
-      prevent_screenshot_ = true;
-      PreventionActivate(GetFlutterWindowHandle());
-    } else {
-      prevent_screenshot_ = false;
-      PreventionDeactivate(GetFlutterWindowHandle());
     }
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(is_color_overlay_mode_));
 
@@ -202,8 +217,7 @@ void NoScreenshotPlugin::HandleMethodCall(
     is_image_overlay_mode_ = true;
     is_blur_overlay_mode_ = false;
     is_color_overlay_mode_ = false;
-    prevent_screenshot_ = true;
-    PreventionActivate(GetFlutterWindowHandle());
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
@@ -219,8 +233,7 @@ void NoScreenshotPlugin::HandleMethodCall(
     is_blur_overlay_mode_ = true;
     is_image_overlay_mode_ = false;
     is_color_overlay_mode_ = false;
-    prevent_screenshot_ = true;
-    PreventionActivate(GetFlutterWindowHandle());
+    ApplyEffectivePrevention();
     PersistState();
     result->Success(flutter::EncodableValue(true));
 
@@ -236,9 +249,26 @@ void NoScreenshotPlugin::HandleMethodCall(
     is_color_overlay_mode_ = true;
     is_image_overlay_mode_ = false;
     is_blur_overlay_mode_ = false;
-    prevent_screenshot_ = true;
-    PreventionActivate(GetFlutterWindowHandle());
+    ApplyEffectivePrevention();
     PersistState();
+    result->Success(flutter::EncodableValue(true));
+
+  } else if (method == "overlayOff") {
+    // Idempotent counterpart to the screenshotWith* enable methods:
+    // clears whichever overlay mode is active and restores screenshots.
+    // Only lifts prevention when an overlay was actually active —
+    // prevention established via screenshotOff() must survive this call.
+    const bool had_overlay = is_image_overlay_mode_ ||
+                             is_blur_overlay_mode_ || is_color_overlay_mode_;
+    if (had_overlay) {
+      is_image_overlay_mode_ = false;
+      is_blur_overlay_mode_ = false;
+      is_color_overlay_mode_ = false;
+      // Release only the overlay's claim — an independent claim held via
+      // screenshotOff() keeps the display affinity applied.
+      ApplyEffectivePrevention();
+      PersistState();
+    }
     result->Success(flutter::EncodableValue(true));
 
   } else if (method == "startScreenshotListening") {
@@ -340,6 +370,7 @@ void NoScreenshotPlugin::UpdateSharedState(const std::string& screenshot_path,
 void NoScreenshotPlugin::PersistState() {
   PersistedState state;
   state.prevent_screenshot = prevent_screenshot_;
+  state.independent_prevention = independent_prevention_;
   state.is_image_overlay_mode = is_image_overlay_mode_;
   state.is_blur_overlay_mode = is_blur_overlay_mode_;
   state.is_color_overlay_mode = is_color_overlay_mode_;
