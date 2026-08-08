@@ -77,6 +77,12 @@ class NoScreenshotPlugin : public flutter::Plugin {
   bool has_pending_event_ = false;
   UINT_PTR stream_timer_id_ = 0;
 
+  // Window the display affinity is currently applied to. Tracked so
+  // deactivation always targets the window that was actually protected,
+  // even if the view has been reparented since (#119).
+  HWND applied_hwnd_ = nullptr;
+  int window_proc_delegate_id_ = -1;
+
   // P8 metadata
   int64_t last_timestamp_ms_ = 0;
   std::string last_source_app_;
