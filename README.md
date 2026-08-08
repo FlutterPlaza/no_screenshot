@@ -58,7 +58,7 @@ Add `no_screenshot` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  no_screenshot: ^1.3.0-beta.1
+  no_screenshot: ^2.0.0
 ```
 
 Then run:
@@ -80,9 +80,9 @@ flutter create my_app
 
 To migrate an existing project from CocoaPods to SPM, see [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-on-swift-package-manager).
 
-> **Testing 1.3.0-beta?** This release adds `overlayOff()` and changes prevention to a two-claim model: `screenshotOff()`/`screenshotOn()` and the overlay modes each own a prevention claim, and protection stays on while either is held. Apps that use only one of the two APIs behave exactly as before; mixed sequences now resolve fail-secure (see the [CHANGELOG](CHANGELOG.md) for the exact deltas). Please verify your protection flows and report issues.
+> **Upgrading to 2.0.0?** This release adds `overlayOff()` and changes prevention to a two-claim model: `screenshotOff()`/`screenshotOn()` and the overlay modes each own a prevention claim, and protection stays on while either is held. Apps that use only one of the two APIs behave exactly as before; mixed sequences now resolve fail-secure (see the [CHANGELOG](CHANGELOG.md) for the exact deltas).
 >
-> The upcoming release also completes the [Built-in Kotlin migration](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors) — the plugin no longer applies the Kotlin Gradle Plugin, which removes Flutter's "plugins that apply KGP" build warning ([#120](https://github.com/FlutterPlaza/no_screenshot/issues/120)). This raises the minimum Flutter version to **3.44**.
+> 2.0.0 also completes the [Built-in Kotlin migration](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors) — the plugin no longer applies the Kotlin Gradle Plugin, which removes Flutter's "plugins that apply KGP" build warning ([#120](https://github.com/FlutterPlaza/no_screenshot/issues/120)). This raises the minimum Flutter version to **3.44** (Dart 3.12).
 >
 > **Upgrading from 0.10.x?** This release includes Android 15 screen recording detection support — no code changes required on your side. See the [CHANGELOG](CHANGELOG.md) for details.
 >
