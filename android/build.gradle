@@ -10,6 +10,9 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:8.6.0'
+        // KGP stays on the buildscript classpath even though this script never
+        // applies it: on AGP < 9 the Flutter tool applies KGP to this project
+        // and resolves it from here.
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -23,13 +26,12 @@ allprojects {
 
 apply plugin: 'com.android.library'
 
-// AGP 9+ ships built-in Kotlin support and no longer allows applying the
-// Kotlin Gradle Plugin; only apply it on older AGP versions. See
+// This script must not apply the Kotlin Gradle Plugin, not even conditionally:
+// the Flutter tool statically scans plugin build scripts for KGP usage (a
+// runtime conditional still matches and triggers the "plugins that apply KGP"
+// warning, see #120) and provides Kotlin itself — built-in Kotlin on AGP 9+,
+// auto-applied KGP on older AGP (requires Flutter >= 3.44). See
 // https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
-def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
-if (agpMajor < 9) {
-    apply plugin: 'kotlin-android'
-}
 
 android {
     namespace "com.flutterplaza.no_screenshot"
@@ -50,10 +52,8 @@ android {
     }
 }
 
-// The kotlin {} extension exists on both paths: registered by KGP on
-// AGP < 9 and by AGP's built-in Kotlin on 9+. The compilerOptions DSL
-// requires KGP >= 1.9; fine here since the plugin's minimum Flutter
-// (3.38) ships KGP 2.x.
+// The kotlin {} extension exists on both paths: registered by the KGP the
+// Flutter tool applies on AGP < 9, and by AGP's built-in Kotlin on 9+.
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
