@@ -89,16 +89,11 @@ NoScreenshotPlugin::NoScreenshotPlugin(
   window_proc_delegate_id_ = registrar_->RegisterTopLevelWindowProcDelegate(
       [this](HWND hwnd, UINT message, WPARAM wparam,
              LPARAM lparam) -> std::optional<LRESULT> {
-        // Adopt only the window that actually hosts our view — an embedder
-        // may forward several top-level windows' messages into one engine,
-        // and migrating to a foreign window would thrash the affinity.
-        if (prevent_screenshot_ && applied_hwnd_ != hwnd &&
-            hwnd == GetFlutterWindowHandle()) {
-          if (applied_hwnd_ != nullptr && ::IsWindow(applied_hwnd_)) {
-            PreventionDeactivate(applied_hwnd_);
-          }
-          PreventionActivate(hwnd);
-          applied_hwnd_ = hwnd;
+        // Cheap pre-check first: the delegate runs for every window message,
+        // so only resolve the view's root when a migration is possible.
+        // MaybeMigrate adopts only the window that actually hosts our view.
+        if (prevent_screenshot_ && affinity_.applied_window() != hwnd) {
+          affinity_.MaybeMigrate(hwnd, GetFlutterWindowHandle());
         }
         return std::nullopt;
       });
@@ -142,16 +137,9 @@ NoScreenshotPlugin::~NoScreenshotPlugin() {
 HWND NoScreenshotPlugin::GetFlutterWindowHandle() {
   if (registrar_ == nullptr) return nullptr;
   auto* view = registrar_->GetView();
-  HWND view_hwnd = view ? view->GetNativeWindow() : nullptr;
-  if (view_hwnd == nullptr) return nullptr;
-  // SetWindowDisplayAffinity only takes effect on top-level windows, and the
-  // Flutter view is a child window that the runner reparents via SetParent —
-  // affinity set on the view itself silently protects nothing (#119). Resolve
-  // the root ancestor on every call, never cached: the parent chain changes
-  // when the runner attaches the view after plugin registration. For a view
-  // that is itself top-level, GA_ROOT returns the view unchanged.
-  HWND root = ::GetAncestor(view_hwnd, GA_ROOT);
-  return root ? root : view_hwnd;
+  // Affinity set on the child view itself silently protects nothing (#119) —
+  // resolve the top-level ancestor per call; see ResolveRootWindow.
+  return ResolveRootWindow(view ? view->GetNativeWindow() : nullptr);
 }
 
 // ---------------------------------------------------------------------------
@@ -171,31 +159,7 @@ bool NoScreenshotPlugin::OverlayClaim() const {
 void NoScreenshotPlugin::ApplyEffectivePrevention() {
   const bool effective = independent_prevention_ || OverlayClaim();
   prevent_screenshot_ = effective;
-  HWND hwnd = GetFlutterWindowHandle();
-  if (hwnd == nullptr) {
-    // View not resolvable (headless engine or teardown). Releasing
-    // prevention must still clear a previously protected window; an active
-    // claim keeps that window protected (fail-secure).
-    if (!effective && applied_hwnd_ != nullptr && ::IsWindow(applied_hwnd_)) {
-      PreventionDeactivate(applied_hwnd_);
-      applied_hwnd_ = nullptr;
-    }
-    return;
-  }
-  // If a previous apply targeted a different window (the view resolved
-  // before the runner reparented it), clear that one first so no window is
-  // left holding a stale affinity.
-  if (applied_hwnd_ != nullptr && applied_hwnd_ != hwnd &&
-      ::IsWindow(applied_hwnd_)) {
-    PreventionDeactivate(applied_hwnd_);
-  }
-  if (effective) {
-    PreventionActivate(hwnd);
-    applied_hwnd_ = hwnd;
-  } else {
-    PreventionDeactivate(hwnd);
-    applied_hwnd_ = nullptr;
-  }
+  affinity_.ApplyEffective(effective, GetFlutterWindowHandle());
 }
 
 void NoScreenshotPlugin::HandleMethodCall(
