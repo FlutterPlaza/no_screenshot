@@ -15,6 +15,7 @@
 #include "recording_detection.h"
 #include "screenshot_detection.h"
 #include "state_persistence.h"
+#include "window_affinity.h"
 
 namespace no_screenshot {
 
@@ -77,10 +78,8 @@ class NoScreenshotPlugin : public flutter::Plugin {
   bool has_pending_event_ = false;
   UINT_PTR stream_timer_id_ = 0;
 
-  // Window the display affinity is currently applied to. Tracked so
-  // deactivation always targets the window that was actually protected,
-  // even if the view has been reparented since (#119).
-  HWND applied_hwnd_ = nullptr;
+  // Tracks which window the display affinity is applied to (#119).
+  AffinityTracker affinity_;
   int window_proc_delegate_id_ = -1;
 
   // P8 metadata

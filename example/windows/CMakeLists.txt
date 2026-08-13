@@ -52,6 +52,12 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# === Tests ===
+# Build the no_screenshot plugin's native unit tests as part of the example
+# (#128). The aggregate `unit_tests` target follows the flutter/packages
+# repo-tooling convention.
+set(include_no_screenshot_tests TRUE)
+add_custom_target(unit_tests DEPENDS no_screenshot_test)
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
