@@ -56,22 +56,68 @@ jobs:
         run: flutter build windows --debug
         working-directory: example
 
+      # Native googletest coverage for the display-affinity logic (#128).
+      # The example build already compiles the test target (it is part of
+      # ALL); this explicit build is a cheap no-op guard so the test binary's
+      # existence never silently depends on the INSTALL target's behavior.
+      - name: Build native unit tests
+        run: cmake --build build/windows/x64 --config Debug --target unit_tests
+        working-directory: example
+
+      - name: Run native unit tests
+        shell: pwsh
+        working-directory: example
+        run: |
+          $exe = Get-ChildItem -Recurse -Path build/windows/x64 -Filter no_screenshot_test.exe |
+            Where-Object { $_.FullName -match '[\\/]Debug[\\/]' } | Select-Object -First 1
+          if (-not $exe) { Write-Error "no_screenshot_test.exe not found"; exit 1 }
+          & $exe.FullName
+          exit $LASTEXITCODE
+
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
 
       - name: Build Android example
+        run: flutter build apk --debug
+        working-directory: example
+
+  # The example defaults to android.builtInKotlin=false (Flutter's current
+  # AGP 9 default, flutter/flutter#183910), so the job above exercises the
+  # legacy auto-applied-KGP path. This lane flips the flag to cover the
+  # AGP 9+ built-in Kotlin path the plugin relies on (#120, #129).
+  build-android-builtin-kotlin:
+    name: Build Android (AGP 9 built-in Kotlin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Switch the example to AGP's built-in Kotlin
+        run: |
+          sed -i 's/^android.builtInKotlin=false$/android.builtInKotlin=true/' example/android/gradle.properties
+          grep -q '^android.builtInKotlin=true$' example/android/gradle.properties
+
+      - name: Build Android example (built-in Kotlin)
         run: flutter build apk --debug
         working-directory: example
 
@@ -96,6 +142,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -121,6 +169,11 @@ jobs:
           fi
 
       - name: Upload coverage to Codecov
+        # Dependabot-triggered runs don't receive repository secrets, and a
+        # tokenless upload to a protected branch fails hard — skip the upload
+        # there instead of failing the whole job (coverage is still enforced
+        # by the step above).
+        if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

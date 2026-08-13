@@ -6,6 +6,9 @@ on:
 
 jobs:
   claude-review:
+    # Dependabot-triggered runs don't receive repository secrets, so the
+    # review can't authenticate there — and version bumps don't need it.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,7 +21,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@v1.0.183
+        uses: anthropics/claude-code-action@v1.0.191
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
