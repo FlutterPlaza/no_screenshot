@@ -32,4 +32,4 @@ jobs:
       id-token: write
     # Uses the reusable publish workflow provided by dart-lang/setup-dart.
     # This handles OIDC token exchange and runs `dart pub publish --force`.
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1.8.0
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1.8.1
